@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
   backend:
@@ -18,6 +18,7 @@ services:
       - NODE_ENV=development
     depends_on:
       - mongodb
+      - auth-db
     restart: always
 
   mongodb:
@@ -32,7 +33,7 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
       - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
     volumes:
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ${PWD}/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - mongo-data:/data/db
 
   mongo-express:
@@ -47,6 +48,21 @@ services:
       - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASS}
       - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@mongodb:${MONGO_PORT}/
       - ME_CONFIG_BASICAUTH=false
+
+  auth-db:
+    env_file:
+      - .development.env
+    image: mysql:9.4.0
+    restart: always
+    volumes:
+      - /sql_data:/var/lib/mysql
+    ports:
+      - 3307:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASS}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASS}
 
 volumes:
   mongo-data:

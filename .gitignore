@@ -59,3 +59,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # volume for mongodb docker 
 mongo_data
+
+
+# volume for mysql docker
+sql_data

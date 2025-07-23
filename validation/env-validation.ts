@@ -35,6 +35,21 @@ class EnvironmentVariables {
 
   @IsString()
   MONGO_HOST: string;
+
+  @IsNumber()
+  @Min(0)
+  @Max(65535)
+  MYSQL_PORT: number;
+  @IsString()
+  MYSQL_DATABASE: string;
+  @IsString()
+  MYSQL_ROOT_PASS: string;
+  @IsString()
+  MYSQL_USER: string;
+  @IsString()
+  MYSQL_PASS: string;
+  @IsString()
+  MYSQL_HOST: string;
 }
 
 export function validate(config: Record<string, unknown>) {

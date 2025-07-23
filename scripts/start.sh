@@ -23,7 +23,7 @@ if [ "$found" = false ]; then
 else
   export NODE_ENV="$ENV"
   ENV_FILE="$(dirname "$0")/../.$ENV.env"
-  if [ "$build" == "build"]; then
+  if [ "$build" == "build" ]; then
     docker compose --env-file "$ENV_FILE" up --build
   else 
     docker compose --env-file "$ENV_FILE" up
