@@ -5,11 +5,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SnapsModule } from './snaps/snaps.module';
 import configuration from 'scripts/config/configuration';
-
+import { validate } from '../validation/env-validation';
 @Module({
   imports: [
     SnapsModule,
     ConfigModule.forRoot({
+      validate,
       envFilePath: `.${process.env.NODE_ENV}.env`,
       isGlobal: true,
       load: [configuration],

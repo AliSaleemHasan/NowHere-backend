@@ -3,6 +3,10 @@
 environments=("development" "deployment")
 ENV="$1"
 
+
+build="$2"
+
+
 found=false
 for item in "${environments[@]}"; do
   if [[ "$item" == "$ENV" ]]; then
@@ -11,6 +15,7 @@ for item in "${environments[@]}"; do
   fi
 done
 
+
 if [ "$found" = false ]; then
   echo "❌ Error: '$ENV' is not an allowed value."
   echo "✅ Allowed values are: ${environments[*]}"
@@ -18,5 +23,9 @@ if [ "$found" = false ]; then
 else
   export NODE_ENV="$ENV"
   ENV_FILE="$(dirname "$0")/../.$ENV.env"
-  docker compose --env-file "$ENV_FILE" up
+  if [ "$build" == "build"]; then
+    docker compose --env-file "$ENV_FILE" up --build
+  else 
+    docker compose --env-file "$ENV_FILE" up
+  fi
 fi
