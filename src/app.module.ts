@@ -7,13 +7,15 @@ import { SnapsModule } from './snaps/snaps.module';
 import configuration from 'scripts/config/configuration';
 import { validate } from '../validation/env-validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { JwtGuard } from 'guards/jwt-guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
-    SnapsModule,
     ConfigModule.forRoot({
       validate,
-      envFilePath: `.${process.env.NODE_ENV}.env`,
       isGlobal: true,
       load: [configuration],
     }),
@@ -39,6 +41,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       }),
       inject: [ConfigService],
     }),
+    UsersModule,
+    AuthModule,
     SnapsModule,
   ],
   controllers: [AppController],

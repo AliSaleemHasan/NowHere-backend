@@ -2,8 +2,6 @@ version: '3.9'
 
 services:
   backend:
-    env_file:
-      - .development.env
     container_name: nest-dev
     build:
       context: .
@@ -12,18 +10,13 @@ services:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     ports:
-      - ${NEST_PORT}:${NEST_PORT}
+      - '3000:3000'
     command: npm run start:dev
-    environment:
-      - NODE_ENV=development
     depends_on:
       - mongodb
       - auth-db
-    restart: always
 
   mongodb:
-    env_file:
-      - .development.env
     image: mongo
     restart: always
     ports:
@@ -37,8 +30,6 @@ services:
       - mongo-data:/data/db
 
   mongo-express:
-    env_file:
-      - .development.env
     image: mongo-express
     restart: always
     ports:
@@ -50,8 +41,6 @@ services:
       - ME_CONFIG_BASICAUTH=false
 
   auth-db:
-    env_file:
-      - .development.env
     image: mysql:9.4.0
     restart: always
     volumes:
