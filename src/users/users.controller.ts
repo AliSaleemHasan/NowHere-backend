@@ -19,9 +19,9 @@ export class UsersController {
     this.usersService.createUser(createUserDto);
   }
 
-  @Get(':username')
-  getByUsername(@Param('username') username: string) {
+  @Get(':email')
+  getByEmail(@Param('email') email: string) {
     // TODO: add security on this param
-    this.usersService.getUserByUsername(username);
+    this.usersService.getUserByEmail(email);
   }
 }

@@ -17,9 +17,9 @@ export class AuthService {
     private usersService: UsersService,
     private configService: ConfigService,
   ) {}
-  async validateUser(username: string, password: string): Promise<User> {
+  async validateUser(email: string, password: string): Promise<User> {
     // first getting the user from the data base
-    const user = await this.usersService.getUserByUsername(username);
+    const user = await this.usersService.getUserByEmail(email);
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException();
@@ -27,12 +27,9 @@ export class AuthService {
     return user;
   }
 
-  async login(username: string, password: string) {
-    const validatedUser = await this.validateUser(username, password);
-    const tokens = this.generateTokens(
-      validatedUser.username,
-      validatedUser._id,
-    );
+  async login(email: string, password: string) {
+    const validatedUser = await this.validateUser(email, password);
+    const tokens = this.generateTokens(validatedUser.email, validatedUser._id);
     return tokens;
   }
   async signup(createUserDto: CreateUserDTO) {
@@ -43,7 +40,7 @@ export class AuthService {
       await this.usersService.createUser(createUserDto);
     } catch (error) {
       console.error('Signup error:', error);
-      throw new BadRequestException('Username already exists');
+      throw new BadRequestException('Email already exists');
     }
   }
 
@@ -54,17 +51,14 @@ export class AuthService {
       const payload = await this.jwt.verifyAsync<JWTPayload>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       });
-      const newTokens = await this.generateTokens(
-        payload.username,
-        payload.sub,
-      );
+      const newTokens = await this.generateTokens(payload.email, payload.sub);
       return newTokens;
     } catch {
       throw new UnauthorizedException();
     }
   }
-  async generateTokens(username: string, _id: number) {
-    const payload = { sub: _id, username };
+  async generateTokens(email: string, _id: number) {
+    const payload = { sub: _id, email };
 
     console.log(this.configService.get('ACCESS_SECRET'));
     const accessToken = await this.jwt.sign(payload, {
