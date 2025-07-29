@@ -43,8 +43,8 @@ services:
   auth-db:
     image: mysql:9.4.0
     restart: always
-    volumes:
-      - /sql_data:/var/lib/mysql
+    # volumes:
+    #   - sql_data:/var/lib/mysql
     ports:
       - 3307:3306
     environment:

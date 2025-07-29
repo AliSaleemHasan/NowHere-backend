@@ -4,13 +4,12 @@ import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SnapsModule } from './snaps/snaps.module';
-import configuration from 'scripts/config/configuration';
-import { validate } from '../validation/env-validation';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { JwtGuard } from 'guards/jwt-guard';
 import { APP_GUARD } from '@nestjs/core';
+import configuration from 'common/config/configuration';
+import { validate } from 'common/env-validation';
 
 @Module({
   imports: [
