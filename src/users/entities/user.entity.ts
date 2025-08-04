@@ -1,17 +1,23 @@
-import { Entity, Column, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { IsEmail, IsStrongPassword } from 'class-validator';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
   _id: number;
 
   @Column()
+  @IsStrongPassword({
+    minLength: 8,
+    minLowercase: 1,
+    minNumbers: 1,
+    minSymbols: 1,
+    minUppercase: 1,
+  })
   password: string;
 
-  @Column()
-  email: string;
-
   @Column({ unique: true })
-  username: string;
+  @IsEmail()
+  email: string;
 
   @Column({ nullable: false })
   first_name: string;

@@ -25,8 +25,4 @@ export class SnapsService {
   // update(id: number, updateSnapDto: UpdateSnapDto) {
   //   return `This action updates a #${id} snap`;
   // }
-
-  remove(id: number) {
-    return 'removed';
-  }
 }

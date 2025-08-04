@@ -63,3 +63,7 @@ mongo_data
 
 # volume for mysql docker
 sql_data
+
+
+# handling file uploads 
+uploads

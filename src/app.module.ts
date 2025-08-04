@@ -7,7 +7,6 @@ import { SnapsModule } from './snaps/snaps.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { APP_GUARD } from '@nestjs/core';
 import configuration from 'common/config/configuration';
 import { validate } from 'common/env-validation';
 

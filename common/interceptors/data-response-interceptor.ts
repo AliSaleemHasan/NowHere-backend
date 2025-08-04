@@ -1,5 +1,6 @@
 import { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
 import { map, Observable } from 'rxjs';
+import { Request } from 'express';
 
 export class DataResponseInterceptor implements NestInterceptor {
   intercept(

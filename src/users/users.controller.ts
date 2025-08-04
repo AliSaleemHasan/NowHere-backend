@@ -3,13 +3,12 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDTO } from './dto/create-user.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('users')
 @Controller('users')
@@ -22,16 +21,21 @@ export class UsersController {
     description:
       'Sign up a new user to the application by save the infromation for later use...',
   })
-  createUser(@Body('user', ValidationPipe) createUserDto: CreateUserDTO) {
-    this.usersService.createUser(createUserDto);
+  async createUser(@Body('user', ValidationPipe) createUserDto: CreateUserDTO) {
+    await this.usersService.createUser(createUserDto);
   }
 
   @Get(':email')
   @ApiOperation({
     description: 'Just for internal use to authenticate users by emails',
   })
-  getByEmail(@Param('email') email: string) {
+  async getByEmail(@Param('email') email: string) {
     // TODO: add security on this param
-    this.usersService.getUserByEmail(email);
+    await this.usersService.getUserByEmail(email);
+  }
+
+  @Get()
+  async getAllUsers() {
+    return await this.usersService.getAllUsers();
   }
 }

@@ -2,23 +2,41 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Patch,
   Param,
-  Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { SnapsService } from './snaps.service';
-import { CreateSnapDto } from './dto/create-snap.dto';
 import { Snap } from './schemas/snap.schema';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 // import { UpdateSnapDto } from './dto/update-snap.dto';
+import { Express } from 'express';
 
 @Controller('snaps')
 export class SnapsController {
   constructor(private readonly snapsService: SnapsService) {}
 
   @Post()
-  create(@Body() createSnapDto: CreateSnapDto) {
-    return this.snapsService.create(createSnapDto);
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, callback) => {
+          // you can generate a unique name here, e.g. timestamp + original ext
+          const name = file.originalname;
+          callback(null, name);
+        },
+      }),
+    }),
+  )
+  create(@UploadedFile('file') file: Express.Multer.File) {
+    console.log(file);
+    return {
+      message: 'Upload successful',
+      filename: file.filename,
+      path: file.path,
+    };
   }
 
   @Get()
@@ -35,9 +53,4 @@ export class SnapsController {
   // update(@Param('id') id: string, @Body() updateSnapDto: UpdateSnapDto) {
   //   return this.snapsService.update(+id, updateSnapDto);
   // }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.snapsService.remove(+id);
-  }
 }
