@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { DataResponseInterceptor } from 'common/interceptors/data-response-interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from 'common/filters/http-exception-filter';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { ValidationError } from 'class-validator';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -16,6 +18,20 @@ async function bootstrap() {
   SwaggerModule.setup('api', app, documentFactory);
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new DataResponseInterceptor());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      enableDebugMessages: true,
+      disableErrorMessages: false,
+      stopAtFirstError: true,
+      exceptionFactory: (errors: ValidationError[]) => {
+        const messages = errors.map((err) =>
+          Object.values(err.constraints || {}).join(', '),
+        );
+        return new BadRequestException(messages);
+      },
+    }),
+  );
+
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();

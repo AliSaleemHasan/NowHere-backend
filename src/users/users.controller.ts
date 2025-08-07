@@ -4,11 +4,13 @@ import {
   Get,
   Param,
   Post,
+  UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { JwtGuard } from 'common/guards/jwt-guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -35,6 +37,7 @@ export class UsersController {
   }
 
   @Get()
+  @UseGuards(JwtGuard)
   async getAllUsers() {
     return await this.usersService.getAllUsers();
   }

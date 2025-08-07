@@ -36,6 +36,7 @@ export class AuthService {
     console.log(tokens);
     return { user, tokens };
   }
+
   async signup(createUserDto: CreateUserDTO) {
     const salt = await bcrypt.genSalt();
     createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
@@ -49,24 +50,26 @@ export class AuthService {
   }
 
   // this function is for refreshing the token if
-  async refreshToken(token: string) {
+  async refreshToken(token?: string) {
+    if (!token) throw new UnauthorizedException('No refresh token provided!');
+
     // validate the recieved refresh token
     try {
       const payload = await this.jwt.verifyAsync<JWTPayload>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       });
       const newTokens = await this.generateTokens(payload.user, payload.sub);
-      return newTokens;
+      return { user: payload.user, tokens: newTokens };
     } catch {
       throw new UnauthorizedException(
         'User Session has been ended, please login-agin',
       );
     }
   }
+
   async generateTokens(user: Partial<User>, _id: number) {
     const payload = { sub: _id, user };
 
-    console.log(this.configService.get('ACCESS_SECRET'));
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('ACCESS_SECRET'),
       expiresIn: this.configService.get('ACCESS_EXP'),

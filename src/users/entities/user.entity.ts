@@ -5,7 +5,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   _id: number;
 
-  @Column()
+  @Column({ nullable: false })
   @IsStrongPassword({
     minLength: 8,
     minLowercase: 1,
