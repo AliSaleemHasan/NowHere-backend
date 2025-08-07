@@ -3,11 +3,20 @@ import { AppModule } from './app.module';
 import { DataResponseInterceptor } from 'common/interceptors/data-response-interceptor';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from 'common/filters/http-exception-filter';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConsoleLogger,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ValidationError } from 'class-validator';
+import { NowHereLogger } from 'common/loggers/nowhere-logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: new NowHereLogger('MainApp', {
+      prefix: 'NowHere    ',
+    }),
+  });
   const config = new DocumentBuilder()
     .setTitle('Nowhere API')
     .setDescription("Know what's happening near you!")
