@@ -4,6 +4,7 @@ import { SnapsController } from './snaps.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Snap, SnapSchema } from './schemas/snap.schema';
 import { AuthModule } from 'src/auth/auth.module';
+import { SnapsGetaway } from './getaway';
 
 @Module({
   imports: [
@@ -11,6 +12,6 @@ import { AuthModule } from 'src/auth/auth.module';
     AuthModule,
   ],
   controllers: [SnapsController],
-  providers: [SnapsService],
+  providers: [SnapsService, SnapsGetaway],
 })
 export class SnapsModule {}

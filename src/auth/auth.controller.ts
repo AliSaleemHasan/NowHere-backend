@@ -34,9 +34,7 @@ export class AuthController {
 
   @Get('refresh')
   async refresh(@Req() request: Request) {
-    console.log(request.headers);
     const token = extractTokenFromHeader(request);
-    console.log(token);
     return await this.authService.refreshToken(token);
   }
 

@@ -33,7 +33,6 @@ export class AuthService {
   async login(email: string, password: string) {
     const { password: _, ...user } = await this.validateUser(email, password);
     const tokens = await this.generateTokens(user, user._id);
-    console.log(tokens);
     return { user, tokens };
   }
 

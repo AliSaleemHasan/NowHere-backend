@@ -32,6 +32,7 @@ async function bootstrap() {
       enableDebugMessages: true,
       disableErrorMessages: false,
       stopAtFirstError: true,
+      skipNullProperties: true,
       exceptionFactory: (errors: ValidationError[]) => {
         const messages = errors.map((err) =>
           Object.values(err.constraints || {}).join(', '),
