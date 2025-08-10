@@ -12,25 +12,28 @@ import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { SnapsService } from './snaps.service';
 import { CreateSnapDto } from './dto/create-snap.dto';
+import { formDataToObject } from 'common/utils/form-data-to-json';
+import { BadRequestException } from '@nestjs/common';
 
 type UserSocket = {
   userId: string;
   socketId: string;
-  coords: [number, number];
+  coordinates: [number, number];
 };
 
-type LocationChangeBody = Pick<UserSocket, 'coords'>;
-@WebSocketGateway({})
+type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
+@WebSocketGateway({
+  cors: {
+    origin: ['http://localhost:3000'],
+  },
+})
 export class SnapsGetaway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
   server: Server;
 
-  constructor(
-    private authService: AuthService,
-    private snapsService: SnapsService,
-  ) {}
+  constructor(private authService: AuthService) {}
 
   usersLocationMap: Map<string, UserSocket>;
   afterInit(server: any) {
@@ -44,6 +47,7 @@ export class SnapsGetaway
   async handleConnection(client: Socket, ...args: any[]) {
     // TODO: change this to client.handshake.auth.token
     const token = client.handshake.headers.authorization;
+
     try {
       const user = await this.authService.verifyJwtToken(token);
       client.data.userId = user._id;
@@ -68,7 +72,7 @@ export class SnapsGetaway
     const userId = client.data.userId;
     this.usersLocationMap.set(userId, {
       userId,
-      coords: data.coords,
+      coordinates: data.coordinates,
       socketId: client.id,
     });
     return this.usersLocationMap.get(userId);
@@ -108,31 +112,34 @@ export class SnapsGetaway
       const distance = this.getDistanceInMeters(
         lat,
         lng,
-        user.coords[1],
-        user.coords[0],
+        user.coordinates[1],
+        user.coordinates[0],
       );
       return distance <= radiusInMeters;
     });
   }
 
+  @SubscribeMessage('snap-added')
+  handleGetNewSnaps(@MessageBody() snap: CreateSnapDto) {
+    return snap;
+  }
+
   // A user Posts a Snap
-  @SubscribeMessage('new-snap')
-  async handleNewSnap(@MessageBody() body: CreateSnapDto) {
+  async handleNewSnap(body: CreateSnapDto) {
     // first handle posting this snap to snaps Service
     try {
-      const created = await this.snapsService.create(body);
       const users = this.findNearbyUsers(
         body.location.coordinates[1],
         body.location.coordinates[0],
-        2,
+        100,
       );
 
       users.forEach((user) => {
-        this.server.to(user.socketId).emit('new-snap', created);
+        this.server.to(user.socketId).emit('snap-added', body);
       });
-      //
     } catch (err) {
-      console.error(err);
+      console.log(err);
+      throw new BadRequestException(err);
     }
   }
 }

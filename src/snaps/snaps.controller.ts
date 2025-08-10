@@ -8,6 +8,9 @@ import {
   UseGuards,
   UploadedFiles,
   Body,
+  Delete,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { SnapsService } from './snaps.service';
 import { Snap } from './schemas/snap.schema';
@@ -24,9 +27,10 @@ export class SnapsController {
   constructor(private readonly snapsService: SnapsService) {}
 
   @Post()
+  @UsePipes(new ValidationPipe({ skipMissingProperties: true }))
   @UseGuards(JwtGuard)
   @UseInterceptors(
-    FilesInterceptor('files', 4, {
+    FilesInterceptor('snaps', 4, {
       storage: diskStorage({
         destination: './uploads',
         filename: (req, file, callback) => {
@@ -39,18 +43,10 @@ export class SnapsController {
   )
   create(
     @ReqUser('_id') id: string,
-    @UploadedFiles() files: Array<Express.Multer.File>,
+    @UploadedFiles() snaps: Array<Express.Multer.File>,
     @Body() createSnapDto: CreateSnapDto,
   ) {
-    let snaps: string[] = [];
-    files.forEach((image) => snaps.push(image.path));
-    createSnapDto._userId = id;
-    createSnapDto.snaps = snaps;
-
-    let location = createSnapDto.location;
-    if (typeof location === 'string') location = JSON.parse(location);
-    createSnapDto.location = location;
-    return this.snapsService.create(createSnapDto);
+    return this.snapsService.create(id, snaps, createSnapDto);
   }
 
   @Get()
@@ -63,6 +59,10 @@ export class SnapsController {
     return this.snapsService.findOne(id);
   }
 
+  @Delete()
+  deleteAll() {
+    return this.snapsService.deleteAll();
+  }
   // @Patch(':id')
   // update(@Param('id') id: string, @Body() updateSnapDto: UpdateSnapDto) {
   //   return this.snapsService.update(+id, updateSnapDto);

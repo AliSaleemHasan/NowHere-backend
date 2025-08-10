@@ -17,16 +17,6 @@ import { JwtGuard } from 'common/guards/jwt-guard';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Post()
-  @ApiOperation({
-    summary: "Create a user (user's sign up)",
-    description:
-      'Sign up a new user to the application by save the infromation for later use...',
-  })
-  async createUser(@Body('user', ValidationPipe) createUserDto: CreateUserDTO) {
-    await this.usersService.createUser(createUserDto);
-  }
-
   @Get(':email')
   @ApiOperation({
     description: 'Just for internal use to authenticate users by emails',
@@ -37,7 +27,7 @@ export class UsersController {
   }
 
   @Get()
-  @UseGuards(JwtGuard)
+  // @UseGuards(JwtGuard)
   async getAllUsers() {
     return await this.usersService.getAllUsers();
   }
