@@ -33,6 +33,7 @@ export class SnapsService {
       const created = await createdSnap.save();
 
       await this.snapsGateaway.handleNewSnap(created);
+      return created;
     } catch (err) {
       handleMongoError(err);
     }

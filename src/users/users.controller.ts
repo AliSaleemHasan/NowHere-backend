@@ -22,8 +22,10 @@ export class UsersController {
     description: 'Just for internal use to authenticate users by emails',
   })
   async getByEmail(@Param('email') email: string) {
-    // TODO: add security on this param
-    await this.usersService.getUserByEmail(email);
+    const user = await this.usersService.getUserByEmail(email);
+    if (!user) return 'User not Found';
+    let { password, ...rest } = user;
+    return rest;
   }
 
   @Get()

@@ -10,13 +10,10 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
-import { SnapsService } from './snaps.service';
 import { CreateSnapDto } from './dto/create-snap.dto';
-import { formDataToObject } from 'common/utils/form-data-to-json';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, Body } from '@nestjs/common';
 
 type UserSocket = {
-  userId: string;
   socketId: string;
   coordinates: [number, number];
 };
@@ -27,9 +24,7 @@ type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
     origin: ['http://localhost:3000'],
   },
 })
-export class SnapsGetaway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
@@ -43,24 +38,25 @@ export class SnapsGetaway
     console.log('UsersLocationMap Created ...');
   }
 
-  // we check if the user is loggedIn first
-  async handleConnection(client: Socket, ...args: any[]) {
-    // TODO: change this to client.handshake.auth.token
-    const token = client.handshake.headers.authorization;
+  // // we check if the user is loggedIn first
+  // async handleConnection(client: Socket, ...args: any[]) {
+  //   console.log(client.handshake.auth.token);
+  //   // TODO: change this to client.handshake.auth.token
+  //   const token = client.handshake.auth.token;
 
-    try {
-      const user = await this.authService.verifyJwtToken(token);
-      client.data.userId = user._id;
-    } catch (err) {
-      client.disconnect(true); // if not logged in the connection will be refused
-    }
-  }
+  //   try {
+  //     const user = await this.authService.validateToken(token);
+  //     client.data.userId = user._id;
+  //   } catch (err) {
+  //     console.log(err);
+  //     client.disconnect(true); // if not logged in the connection will be refused
+  //   }
+  // }
 
   // remove  client from the map
   handleDisconnect(client: Socket) {
-    const userId = client.data.userId;
-
-    if (this.usersLocationMap.get(userId)) this.usersLocationMap.delete(userId);
+    if (this.usersLocationMap.get(client.id))
+      this.usersLocationMap.delete(client.id);
   }
 
   // when user Locaiton Change
@@ -69,13 +65,11 @@ export class SnapsGetaway
     @MessageBody() data: LocationChangeBody,
     @ConnectedSocket() client: Socket,
   ) {
-    const userId = client.data.userId;
-    this.usersLocationMap.set(userId, {
-      userId,
+    this.usersLocationMap.set(client.id, {
       coordinates: data.coordinates,
       socketId: client.id,
     });
-    return this.usersLocationMap.get(userId);
+    return this.usersLocationMap.get(client.id);
   }
 
   getDistanceInMeters(
@@ -119,6 +113,7 @@ export class SnapsGetaway
     });
   }
 
+  // for testing purposes
   @SubscribeMessage('snap-added')
   handleGetNewSnaps(@MessageBody() snap: CreateSnapDto) {
     return snap;
@@ -138,7 +133,6 @@ export class SnapsGetaway
         this.server.to(user.socketId).emit('snap-added', body);
       });
     } catch (err) {
-      console.log(err);
       throw new BadRequestException(err);
     }
   }

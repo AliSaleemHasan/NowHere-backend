@@ -41,6 +41,6 @@ export class AuthController {
   @Get('validate')
   async validateToken(@Req() request: Request) {
     const token = extractTokenFromHeader(request);
-    return await this.authService.verifyJwtToken(token);
+    return await this.authService.validateToken(token);
   }
 }

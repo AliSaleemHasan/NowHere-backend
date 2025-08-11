@@ -83,7 +83,7 @@ export class AuthService {
   }
 
   // a function to verify a jwt token and return it's paylod
-  async verifyJwtToken(token?: string): Promise<Partial<User>> {
+  async validateToken(token?: string): Promise<Omit<User, 'password'>> {
     if (!token) throw new UnauthorizedException('User is not loggedin/found');
     try {
       const payload = await this.jwt.verifyAsync<JWTPayload>(token, {
@@ -91,9 +91,15 @@ export class AuthService {
       });
 
       if (!payload.user) throw new Error('User is not found in the token');
+
+      const user = await this.usersService.getUserByEmail(payload.user.email);
+
+      if (!user)
+        throw new UnauthorizedException('User not found, please sign up');
+
       return payload.user;
     } catch (err: any) {
-      throw new UnauthorizedException(JSON.stringify(err));
+      throw new UnauthorizedException(JSON.stringify(err.message));
     }
   }
 }
