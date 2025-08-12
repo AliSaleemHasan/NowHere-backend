@@ -36,3 +36,5 @@ export class Snap {
 }
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);
+
+SnapSchema.index({ location: '2dsphere' });

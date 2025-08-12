@@ -1,7 +1,7 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
-import { Snap } from './schemas/snap.schema';
-import { Model } from 'mongoose';
+import { Snap, SnapDocument } from './schemas/snap.schema';
+import { FilterQuery, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from './getaway';
 import { handleMongoError } from 'common/utils/handle-mongoose-errors';
@@ -42,6 +42,24 @@ export class SnapsService {
 
   findAll() {
     return this.snapModel.find();
+  }
+
+  async findNear(
+    location: [number, number],
+
+    maxDistanceInMeters: number = 20000,
+  ) {
+    return await this.snapModel.find({
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: location,
+          },
+          $maxDistance: maxDistanceInMeters,
+        },
+      },
+    });
   }
 
   findOne(id: string) {

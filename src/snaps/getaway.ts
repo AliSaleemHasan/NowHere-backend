@@ -11,7 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
 import { CreateSnapDto } from './dto/create-snap.dto';
-import { BadRequestException, Body } from '@nestjs/common';
+import { BadRequestException, Body, Logger } from '@nestjs/common';
 
 type UserSocket = {
   socketId: string;
@@ -25,6 +25,7 @@ type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
   },
 })
 export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
+  private readonly logger = new Logger(SnapsGetaway.name, { timestamp: true });
   @WebSocketServer()
   server: Server;
 
@@ -32,10 +33,10 @@ export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
 
   usersLocationMap: Map<string, UserSocket>;
   afterInit(server: any) {
-    console.log('Server Started');
-    console.log('Creating in memory User Location Map');
+    this.logger.log('Server Started');
+    this.logger.log('Creating in memory User Location Map');
     this.usersLocationMap = new Map<string, UserSocket>();
-    console.log('UsersLocationMap Created ...');
+    this.logger.log('UsersLocationMap Created ...');
   }
 
   // // we check if the user is loggedIn first

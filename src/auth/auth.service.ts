@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -12,6 +13,8 @@ import { UsersService } from 'src/users/users.service';
 import { JWTPayload } from 'types/jwt-payload.type';
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name, { timestamp: true });
+
   constructor(
     private jwt: JwtService,
     private usersService: UsersService,
@@ -43,7 +46,7 @@ export class AuthService {
     try {
       return await this.usersService.createUser(createUserDto);
     } catch (error) {
-      console.error('Signup error:', error);
+      this.logger.error('Signup error:', error);
       throw new BadRequestException('Email already exists');
     }
   }

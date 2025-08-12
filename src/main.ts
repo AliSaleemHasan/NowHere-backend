@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { NowHereLogger } from 'common/loggers/nowhere-logger';
+import { setupSwagger } from 'common/config/setup-swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -17,14 +18,8 @@ async function bootstrap() {
       prefix: 'NowHere    ',
     }),
   });
-  const config = new DocumentBuilder()
-    .setTitle('Nowhere API')
-    .setDescription("Know what's happening near you!")
-    .setVersion('1.0')
-    .build();
 
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+  setupSwagger(app);
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new DataResponseInterceptor());
   app.useGlobalPipes(
