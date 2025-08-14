@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  _id: number;
+  _id: string;
 
   @Column({ nullable: false })
   @IsStrongPassword({

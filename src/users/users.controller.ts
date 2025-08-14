@@ -13,18 +13,23 @@ import { JwtGuard } from 'common/guards/jwt-guard';
 import { User } from './entities/user.entity';
 import { GetByEmailDocs } from './docs/get-by-email.doc';
 import { GetAllUsersDocs } from './docs/get-all-users.doc';
+import { GetByIdDocs } from './docs/get-by-id.doc';
 
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @Get(':email')
   @GetByEmailDocs()
   async getByEmail(@Param('email') email: string) {
-    const user = await this.usersService.getUserByEmail(email);
-    if (!user) return 'User not Found';
-    let { password, ...rest } = user;
-    return rest;
+    return await this.usersService.getUserByEmail(email);
+  }
+
+  @Get('id/:id')
+  @GetByIdDocs()
+  async getUserById(@Param('id') id: string) {
+    return await this.usersService.getUserById(id);
   }
 
   //TODO: add jwt guard on this controller

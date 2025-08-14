@@ -1,6 +1,6 @@
 import { User } from 'src/users/entities/user.entity';
 
 export type JWTPayload = {
-  sub: number;
+  sub: string;
   user: Omit<User, 'password'>;
 };

@@ -17,8 +17,11 @@ export class UsersService {
 
   //   getUsers() just for admin (to be created when adding authorization)
 
-  async getUserById(_id: number) {
-    return await this.userRepository.find({ where: { _id } });
+  async getUserById(_id: string) {
+    const user = await this.userRepository.findOne({ where: { _id } });
+    if (!user) return 'User not found!';
+    const { password, ...rest } = user;
+    return rest;
   }
 
   async getUserByEmail(email: string) {

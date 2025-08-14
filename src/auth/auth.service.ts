@@ -69,7 +69,7 @@ export class AuthService {
     }
   }
 
-  async generateTokens(user: Partial<User>, _id: number) {
+  async generateTokens(user: Partial<User>, _id: string) {
     const payload = { sub: _id, user };
 
     const accessToken = await this.jwt.signAsync(payload, {
