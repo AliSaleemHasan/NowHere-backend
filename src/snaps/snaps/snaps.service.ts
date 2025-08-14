@@ -8,7 +8,7 @@ import { CreateSnapDto } from './dto/create-snap.dto';
 import { Snap, SnapDocument } from './schemas/snap.schema';
 import { FilterQuery, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { SnapsGetaway } from './getaway';
+import { SnapsGetaway } from '../getaway';
 import { handleMongoError } from 'common/utils/handle-mongoose-errors';
 import { ConfigService } from '@nestjs/config';
 // import { UpdateSnapDto } from './dto/update-snap.dto';

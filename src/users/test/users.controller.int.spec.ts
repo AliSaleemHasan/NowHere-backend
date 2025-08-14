@@ -14,7 +14,7 @@ describe('UserController (integration)', () => {
       controllers: [UsersController],
       imports: [
         TypeOrmModule.forRoot({
-          type: 'better-sqlite3',
+          type: 'sqlite',
           database: ':memory:',
           dropSchema: true,
           entities: [User],

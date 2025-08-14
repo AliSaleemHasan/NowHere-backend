@@ -76,8 +76,10 @@ export class SnapsController {
   async findNear(@Param() location: FindLocationNear) {
     return await this.snapsService.findNear([location.lng, location.lat]);
   }
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateSnapDto: UpdateSnapDto) {
-  //   return this.snapsService.update(+id, updateSnapDto);
-  // }
+
+  //
+  //      Handle snap settings
+  //
+
+  // first get snaps settings for user
 }

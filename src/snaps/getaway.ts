@@ -10,7 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from 'src/auth/auth.service';
-import { CreateSnapDto } from './dto/create-snap.dto';
+import { CreateSnapDto } from './snaps/dto/create-snap.dto';
 import { BadRequestException, Body, Logger } from '@nestjs/common';
 
 type UserSocket = {
@@ -28,8 +28,6 @@ export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
   private readonly logger = new Logger(SnapsGetaway.name, { timestamp: true });
   @WebSocketServer()
   server: Server;
-
-  constructor(private authService: AuthService) {}
 
   usersLocationMap: Map<string, UserSocket>;
   afterInit(server: any) {

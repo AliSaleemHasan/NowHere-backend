@@ -15,7 +15,7 @@ describe('Users (e2e)', () => {
     const moduleRef = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
-          type: 'better-sqlite3',
+          type: 'sqlite',
           database: ':memory:',
           entities: [User],
           synchronize: true,

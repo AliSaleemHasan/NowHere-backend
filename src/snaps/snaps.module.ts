@@ -1,17 +1,25 @@
 import { Module } from '@nestjs/common';
-import { SnapsService } from './snaps.service';
-import { SnapsController } from './snaps.controller';
+import { SnapsService } from './snaps/snaps.service';
+import { SnapsController } from './snaps/snaps.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Snap, SnapSchema } from './schemas/snap.schema';
-import { AuthModule } from 'src/auth/auth.module';
+import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
 import { SnapsGetaway } from './getaway';
+import { SettingsController } from './settings/settings.controller';
+import { SettingsService } from './settings/settings.service';
+import {
+  SnapSettings,
+  SnapSettingsSchema,
+} from './settings/schemas/settings.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
-    AuthModule,
+    MongooseModule.forFeature([
+      { name: Snap.name, schema: SnapSchema },
+      { name: SnapSettings.name, schema: SnapSettingsSchema },
+    ]),
   ],
-  controllers: [SnapsController],
-  providers: [SnapsService, SnapsGetaway],
+  controllers: [SnapsController, SettingsController],
+  providers: [SnapsService, SnapsGetaway, SettingsService, SettingsService],
+  exports: [SettingsService],
 })
 export class SnapsModule {}
