@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { SnapSettings } from './schemas/settings.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { AuthService } from 'src/auth/auth.service';
 
 @Injectable()
 export class SettingsService {
@@ -12,8 +11,8 @@ export class SettingsService {
 
   // first getting the setting of the user
 
-  async getUserSetting(id: string) {
-    console.log(id);
+  async getUserSetting(id?: string) {
+    if (!id) return null;
     // first check if the user settings are saved
 
     const userSettings = await this.settingsModel.findOne({ _userId: id });

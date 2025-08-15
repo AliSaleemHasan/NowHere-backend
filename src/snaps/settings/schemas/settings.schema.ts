@@ -10,11 +10,11 @@ export class SnapSettings {
   _userId: string;
 
   // now for the distination to show the snaps in meters
-  @Prop({ type: Number, default: 1000 })
+  @Prop({ type: Number, default: 100 })
   max_distance: number;
 
   // the minimum distance for sharing more than one post
-  @Prop({ type: Number, default: 500 })
+  @Prop({ type: Number, default: 1000 })
   new_snap_distance: number;
 }
 

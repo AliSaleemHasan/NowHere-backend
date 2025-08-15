@@ -1,9 +1,4 @@
-import {
-  ForbiddenException,
-  HttpException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
 import { Snap, SnapDocument, Tags } from './schemas/snap.schema';
 import { FilterQuery, Model, Query } from 'mongoose';
@@ -16,13 +11,14 @@ import {
   MAX_DISTANCE_TO_SEE,
   MIN_DISTANCE_TO_POST,
 } from 'common/constants/settings';
-// import { UpdateSnapDto } from './dto/update-snap.dto';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class SnapsService {
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
-    @InjectModel(SnapSettings.name) private settingsModel: Model<SnapSettings>,
+    private settingsService: SettingsService,
+
     private snapsGateaway: SnapsGetaway,
     private configService: ConfigService,
   ) {}
@@ -84,9 +80,13 @@ export class SnapsService {
   ) {
     // first get the seeting of the user
     let user_settings: SnapSettings | null;
-    user_settings = await this.settingsModel.findOne({ _userId: _userId });
+    user_settings = await this.settingsService.getUserSetting(_userId);
+
+    console.log(user_settings);
 
     let distance = user_settings?.max_distance || maxDistanceInMeters;
+
+    console.log(distance);
     if (canPost) distance = user_settings?.max_distance || minPostDistance;
     return await this.snapModel
       .find({
