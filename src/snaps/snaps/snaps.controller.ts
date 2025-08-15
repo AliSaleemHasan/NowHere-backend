@@ -10,6 +10,7 @@ import {
   Delete,
   UsePipes,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { SnapsService } from './snaps.service';
 import { Snap } from './schemas/snap.schema';
@@ -24,6 +25,7 @@ import { FindAllSnapsDocs } from './docs/find-all-snaps.doc';
 import { FindOneSnapDocs } from './docs/find-one-snap.doc';
 import { DeleteAllSnapsDocs } from './docs/delete-all-snaps.doc';
 import { FindNearSnapsDocs } from './docs/find-near-snaps.doc';
+import { FindSnapDTO } from './dto/find-snap.dto';
 
 @Controller('snaps')
 export class SnapsController {
@@ -57,6 +59,11 @@ export class SnapsController {
   @FindAllSnapsDocs()
   async findAll(): Promise<Snap[]> {
     return this.snapsService.findAll();
+  }
+
+  @Get('tags')
+  findByTags(@Query() query: FindSnapDTO) {
+    return this.snapsService.findByTags(query.tags);
   }
 
   @Get(':id')

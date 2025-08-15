@@ -3,6 +3,19 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type SnapDocument = HydratedDocument<Snap>;
 
+export enum Tags {
+  PROOMOTION = 'PROMOTION',
+  INTERESTING = 'INTERESTING',
+  FINDINGS = 'FINDINGS',
+  LOST = 'LOST',
+  HIDDEN_GEM = 'HIDDEN_GEM',
+  SOCIAL = 'SOCIAL',
+}
+
+export enum GeoPointType {
+  Point = 'Point',
+}
+
 @Schema({ timestamps: true }) // auto-adds createdAt and updatedAt
 export class Snap {
   @Prop({ required: true })
@@ -21,8 +34,8 @@ export class Snap {
   @Prop({
     type: {
       type: String,
-      enum: ['Point'],
-      default: 'Point',
+      enum: GeoPointType,
+      default: GeoPointType.Point,
     },
     coordinates: {
       type: [Number], // [longitude, latitude]
@@ -30,9 +43,12 @@ export class Snap {
     },
   })
   location: {
-    type: 'Point';
+    type: GeoPointType.Point;
     coordinates: [number, number];
   };
+
+  @Prop({ type: String, enum: Tags, default: Tags.SOCIAL })
+  tag: Tags;
 }
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);

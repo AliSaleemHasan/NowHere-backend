@@ -1,14 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-// export enum Tags {
-//   PROOMOTION = 'PROMOTION',
-//   INTERESTING = 'INTERESTING',
-//   FINDINGS = 'FINDINGS',
-//   LOST = 'LOST',
-//   HIDDEN_GEM = 'HIDDEN_GEM',
-//   SOCIAL = 'SOCIAL',
-// }
 export type SnapDocument = HydratedDocument<SnapSettings>;
 @Schema()
 export class SnapSettings {

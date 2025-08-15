@@ -5,8 +5,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
-import { Snap, SnapDocument } from './schemas/snap.schema';
-import { FilterQuery, Model } from 'mongoose';
+import { Snap, SnapDocument, Tags } from './schemas/snap.schema';
+import { FilterQuery, Model, Query } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from '../getaway';
 import { handleMongoError } from 'common/utils/handle-mongoose-errors';
@@ -44,6 +44,7 @@ export class SnapsService {
 
     try {
       // first save the data
+
       const createdSnap = new this.snapModel(createSnapDto);
       const created = await createdSnap.save();
 
@@ -65,22 +66,29 @@ export class SnapsService {
     maxDistanceInMeters: number = this.configService.get('MAX_DISTANCE_NEAR') ||
       20000,
   ) {
-    return await this.snapModel.find({
-      ...(_userId && { _userId }),
-      location: {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: location,
+    return await this.snapModel
+      .find({
+        ...(_userId && { _userId }),
+        location: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: location,
+            },
+            $maxDistance: maxDistanceInMeters,
           },
-          $maxDistance: maxDistanceInMeters,
         },
-      },
-    });
+      })
+      .exec();
   }
 
   findOne(id: string) {
-    return this.snapModel.findById(id).exec();
+    return this.snapModel.findOne({ id }).exec();
+  }
+
+  findByTags(tags: Tags[] = [Tags.SOCIAL]) {
+    console.log(tags);
+    return this.snapModel.find({ tag: { $in: tags } }).exec();
   }
 
   deleteAll() {
