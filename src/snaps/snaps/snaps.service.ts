@@ -11,12 +11,18 @@ import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from '../getaway';
 import { handleMongoError } from 'common/utils/handle-mongoose-errors';
 import { ConfigService } from '@nestjs/config';
+import { SnapSettings } from '../settings/schemas/settings.schema';
+import {
+  MAX_DISTANCE_TO_SEE,
+  MIN_DISTANCE_TO_POST,
+} from 'common/constants/settings';
 // import { UpdateSnapDto } from './dto/update-snap.dto';
 
 @Injectable()
 export class SnapsService {
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
+    @InjectModel(SnapSettings.name) private settingsModel: Model<SnapSettings>,
     private snapsGateaway: SnapsGetaway,
     private configService: ConfigService,
   ) {}
@@ -36,7 +42,13 @@ export class SnapsService {
     if (typeof location === 'string') location = JSON.parse(location);
     createSnapDto.location = location;
 
-    const alreadyHasPostedNear = await this.findNear(location.coordinates, id);
+    const alreadyHasPostedNear = await this.findNear(
+      location.coordinates,
+      id,
+      undefined,
+      MIN_DISTANCE_TO_POST,
+      true,
+    );
     if (alreadyHasPostedNear.length > 0)
       throw new ForbiddenException(
         'User has already posted in this area today!!',
@@ -64,8 +76,18 @@ export class SnapsService {
     location: [number, number],
     _userId?: string,
     maxDistanceInMeters: number = this.configService.get('MAX_DISTANCE_NEAR') ||
-      20000,
+      MAX_DISTANCE_TO_SEE,
+    minPostDistance: number = this.configService.get(
+      'MIN_DISTANCE_SAME_USER',
+    ) || MIN_DISTANCE_TO_POST,
+    canPost?: boolean, // to check if the user is trying to post snap in the same region
   ) {
+    // first get the seeting of the user
+    let user_settings: SnapSettings | null;
+    user_settings = await this.settingsModel.findOne({ _userId: _userId });
+
+    let distance = user_settings?.max_distance || maxDistanceInMeters;
+    if (canPost) distance = user_settings?.max_distance || minPostDistance;
     return await this.snapModel
       .find({
         ...(_userId && { _userId }),
@@ -75,7 +97,7 @@ export class SnapsService {
               type: 'Point',
               coordinates: location,
             },
-            $maxDistance: maxDistanceInMeters,
+            $maxDistance: distance,
           },
         },
       })
@@ -83,7 +105,7 @@ export class SnapsService {
   }
 
   findOne(id: string) {
-    return this.snapModel.findOne({ id }).exec();
+    return this.snapModel.findById(id).exec();
   }
 
   findByTags(tags: Tags[] = [Tags.SOCIAL]) {

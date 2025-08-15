@@ -11,6 +11,7 @@ import configuration from 'common/config/configuration';
 import { validate } from 'common/env-validation';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { join } from 'path';
     UsersModule,
     AuthModule,
     SnapsModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -69,6 +69,7 @@ export class SnapsController {
   @Get(':id')
   @FindOneSnapDocs()
   findOne(@Param('id') id: string) {
+    console.log(id);
     return this.snapsService.findOne(id);
   }
 
