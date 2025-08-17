@@ -18,7 +18,7 @@ export class SnapSettings {
   new_snap_distance: number;
 
   @Prop({ type: Number, default: 1 })
-  snapDissapperanceTime: number;
+  snapDisappearTime: number;
 }
 
 export const SnapSettingsSchema = SchemaFactory.createForClass(SnapSettings);

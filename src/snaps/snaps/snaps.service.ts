@@ -10,6 +10,7 @@ import { SnapSettings } from '../settings/schemas/settings.schema';
 import {
   MAX_DISTANCE_TO_SEE,
   MIN_DISTANCE_TO_POST,
+  SNAP_DISAPPEAR_TIME,
 } from 'common/constants/settings';
 import { SettingsService } from '../settings/settings.service';
 
@@ -83,23 +84,37 @@ export class SnapsService {
     tags: Tags[],
     _userId?: string,
     canPost?: boolean, // to check if the user is trying to post snap in the same region
-    maxDistanceInMeters: number = this.configService.get('MAX_DISTANCE_NEAR') ||
-      MAX_DISTANCE_TO_SEE,
-    minPostDistance: number = this.configService.get(
-      'MIN_DISTANCE_SAME_USER',
-    ) || MIN_DISTANCE_TO_POST,
   ) {
     // first get the seeting of the user
     let user_settings: SnapSettings | null;
     user_settings = await this.settingsService.getUserSetting(_userId);
 
-    let distance = user_settings?.max_distance || maxDistanceInMeters;
+    let distance = user_settings?.max_distance || MAX_DISTANCE_TO_SEE;
 
-    if (canPost) distance = user_settings?.max_distance || minPostDistance;
+    if (canPost) distance = user_settings?.max_distance || MIN_DISTANCE_TO_POST;
+
+    const queryTime = new Date();
+
+    // multiplier in days
+    const days = user_settings?.snapDisappearTime || SNAP_DISAPPEAR_TIME;
+
+    // one day (or N days) before
+    const showBefore = new Date(
+      queryTime.getTime() - days * 24 * 60 * 60 * 1000,
+    );
+
+    // one day (or N days) after
+    const showAfter = new Date(
+      queryTime.getTime() + days * 24 * 60 * 60 * 1000,
+    );
+
+    console.log(showBefore, showAfter);
     return await this.snapModel
       .find({
         ...(tags && tags?.length > 0 && { tag: { $in: tags } }),
+
         ...(_userId && { _userId }),
+        createdAt: { $gte: showBefore, $lte: showAfter },
         location: {
           $near: {
             $geometry: {
