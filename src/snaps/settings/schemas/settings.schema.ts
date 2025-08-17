@@ -16,6 +16,9 @@ export class SnapSettings {
   // the minimum distance for sharing more than one post
   @Prop({ type: Number, default: 1000 })
   new_snap_distance: number;
+
+  @Prop({ type: Number, default: 1 })
+  snapDissapperanceTime: number;
 }
 
 export const SnapSettingsSchema = SchemaFactory.createForClass(SnapSettings);

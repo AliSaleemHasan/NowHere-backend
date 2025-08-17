@@ -42,8 +42,6 @@ export class SnapsService {
       location.coordinates,
       Object.values(Tags),
       id,
-      undefined,
-      MIN_DISTANCE_TO_POST,
       true,
     );
     if (alreadyHasPostedNear.length > 0)
@@ -69,16 +67,27 @@ export class SnapsService {
     return this.snapModel.find();
   }
 
+  /**
+   *
+   * @param location Location to find sanp near it [Long,Lat]
+   * @param tags Search Location Near based on tag or Array<Tags>
+   * @param _userId imporant internally to get user settings
+   * @param canPost To check if the user has already posted in the allowed regeion
+   * @param maxDistanceInMeters  Visibilty range of each user
+   * @param minPostDistance  Post range ability
+   * @returns a list of snaps if found
+   */
+
   async findNear(
     location: [number, number],
     tags: Tags[],
     _userId?: string,
+    canPost?: boolean, // to check if the user is trying to post snap in the same region
     maxDistanceInMeters: number = this.configService.get('MAX_DISTANCE_NEAR') ||
       MAX_DISTANCE_TO_SEE,
     minPostDistance: number = this.configService.get(
       'MIN_DISTANCE_SAME_USER',
     ) || MIN_DISTANCE_TO_POST,
-    canPost?: boolean, // to check if the user is trying to post snap in the same region
   ) {
     // first get the seeting of the user
     let user_settings: SnapSettings | null;

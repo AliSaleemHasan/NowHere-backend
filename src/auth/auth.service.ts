@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { SettingsService } from 'src/snaps/settings/settings.service';
 import { CreateUserDTO } from 'src/users/dto/create-user.dto';
 import { User } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
@@ -19,6 +20,7 @@ export class AuthService {
     private jwt: JwtService,
     private usersService: UsersService,
     private configService: ConfigService,
+    private snapsSettingsService: SettingsService,
   ) {}
   async validateUser(email: string, password: string): Promise<User> {
     // first getting the user from the data base
@@ -44,7 +46,12 @@ export class AuthService {
     createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
 
     try {
-      return await this.usersService.createUser(createUserDto);
+      let newUser = await this.usersService.createUser(createUserDto);
+
+      // create settings object for the user
+      await this.snapsSettingsService.getUserSetting(newUser._id);
+
+      return newUser;
     } catch (error) {
       this.logger.error('Signup error:', error);
       throw new BadRequestException('Email already exists');
