@@ -40,6 +40,7 @@ export class SnapsService {
 
     const alreadyHasPostedNear = await this.findNear(
       location.coordinates,
+      Object.values(Tags),
       id,
       undefined,
       MIN_DISTANCE_TO_POST,
@@ -70,6 +71,7 @@ export class SnapsService {
 
   async findNear(
     location: [number, number],
+    tags: Tags[],
     _userId?: string,
     maxDistanceInMeters: number = this.configService.get('MAX_DISTANCE_NEAR') ||
       MAX_DISTANCE_TO_SEE,
@@ -82,14 +84,12 @@ export class SnapsService {
     let user_settings: SnapSettings | null;
     user_settings = await this.settingsService.getUserSetting(_userId);
 
-    console.log(user_settings);
-
     let distance = user_settings?.max_distance || maxDistanceInMeters;
 
-    console.log(distance);
     if (canPost) distance = user_settings?.max_distance || minPostDistance;
     return await this.snapModel
       .find({
+        ...(tags && tags?.length > 0 && { tag: { $in: tags } }),
         ...(_userId && { _userId }),
         location: {
           $near: {
@@ -109,7 +109,6 @@ export class SnapsService {
   }
 
   findByTags(tags: Tags[] = [Tags.SOCIAL]) {
-    console.log(tags);
     return this.snapModel.find({ tag: { $in: tags } }).exec();
   }
 

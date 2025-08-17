@@ -4,7 +4,7 @@ import { HydratedDocument, Types } from 'mongoose';
 export type SnapDocument = HydratedDocument<Snap>;
 
 export enum Tags {
-  PROOMOTION = 'PROMOTION',
+  PROOMOTION = 'PROOMOTION',
   INTERESTING = 'INTERESTING',
   FINDINGS = 'FINDINGS',
   LOST = 'LOST',

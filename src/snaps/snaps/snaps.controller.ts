@@ -81,8 +81,14 @@ export class SnapsController {
 
   @Get('near/:lng/:lat')
   @FindNearSnapsDocs()
-  async findNear(@Param() location: FindLocationNear) {
-    return await this.snapsService.findNear([location.lng, location.lat]);
+  async findNear(
+    @Param() location: FindLocationNear,
+    @Query() query: FindSnapDTO,
+  ) {
+    return await this.snapsService.findNear(
+      [location.lng, location.lat],
+      query.tags,
+    );
   }
 
   //
