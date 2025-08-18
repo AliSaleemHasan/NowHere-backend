@@ -1,11 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { Roles, User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDTO } from './dto/create-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
   ) {}
@@ -15,6 +17,29 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
+  async seedAdmin() {
+    let email = process.env.ADMIN_EMAIL as string;
+    let password = process.env.ADMIN_PASSWORD as string;
+
+    const adminFound = await this.getUserByEmail(email);
+    if (adminFound) {
+      this.logger.log('Admin user already exists, skipping seeding.');
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const admin = await this.createUser({
+      bio: '',
+      email,
+      password: hashedPassword,
+      role: Roles.ADMIN,
+      first_name: 'admin',
+      last_name: 'admin',
+    });
+
+    this.logger.log('Admin user created successfuly');
+  }
   //   getUsers() just for admin (to be created when adding authorization)
 
   async getUserById(_id: string) {

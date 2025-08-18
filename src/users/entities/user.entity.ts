@@ -1,5 +1,10 @@
 import { IsEmail, IsStrongPassword } from 'class-validator';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+
+export enum Roles {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+}
 @Entity()
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -31,6 +36,6 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
-  // @Column({ default: 'user', enum: ['user', 'admin'] })
-  // role: string;
+  @Column({ type: 'enum', enum: Roles, default: Roles.USER })
+  role: string;
 }

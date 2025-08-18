@@ -4,6 +4,7 @@ import {
   IsString,
   IsStrongPassword,
 } from 'class-validator';
+import { Roles } from '../entities/user.entity';
 
 export class CreateUserDTO {
   @IsStrongPassword({
@@ -27,4 +28,6 @@ export class CreateUserDTO {
 
   @IsString()
   last_name: string;
+
+  role?: Roles.ADMIN | Roles.USER;
 }

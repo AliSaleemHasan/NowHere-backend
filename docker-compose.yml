@@ -24,7 +24,6 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
       - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
     volumes:
-      - ${PWD}/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
       - mongo-data:/data/db
 
   mongo-express:
@@ -41,8 +40,7 @@ services:
   auth-db:
     image: mysql:9.4.0
     restart: always
-    # volumes:
-    #   - sql_data:/var/lib/mysql
+
     ports:
       - 3307:3306
     environment:
