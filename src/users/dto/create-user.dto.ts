@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsEnum,
   IsOptional,
   IsString,
   IsStrongPassword,
@@ -29,5 +30,7 @@ export class CreateUserDTO {
   @IsString()
   last_name: string;
 
+  @IsOptional()
+  @IsEnum(Roles)
   role?: Roles.ADMIN | Roles.USER;
 }

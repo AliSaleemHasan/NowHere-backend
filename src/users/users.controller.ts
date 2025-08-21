@@ -1,19 +1,26 @@
 import {
   Body,
   Controller,
+  FileTypeValidator,
   Get,
+  MaxFileSizeValidator,
   Param,
-  Post,
+  ParseFilePipe,
+  Put,
+  UploadedFile,
   UseGuards,
-  ValidationPipe,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtGuard } from 'common/guards/jwt-guard';
-import { User } from './entities/user.entity';
+import { ApiTags } from '@nestjs/swagger';
 import { GetByEmailDocs } from './docs/get-by-email.doc';
 import { GetAllUsersDocs } from './docs/get-all-users.doc';
 import { GetByIdDocs } from './docs/get-by-id.doc';
+import { JwtGuard } from 'common/guards/jwt-guard';
+import { ReqUser } from 'common/decorators/user.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { AddUsersPhotoDocs } from './docs/add-user-image.doc';
 
 @ApiTags('users')
 @Controller('users')
@@ -37,5 +44,35 @@ export class UsersController {
   @GetAllUsersDocs()
   async getAllUsers() {
     return await this.usersService.getAllUsers();
+  }
+
+  @Put('image')
+  @AddUsersPhotoDocs()
+  @UseGuards(JwtGuard)
+  @UseInterceptors(
+    FileInterceptor('photo', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req: any, file, callback) => {
+          const fileName =
+            (req.user?._id || 'unkown') + file.originalname + Date.now;
+          callback(null, fileName);
+        },
+      }),
+    }),
+  )
+  async updateUserImage(
+    @ReqUser('_id') id: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          // new FileTypeValidator({ fileType: /(jpg|jpeg|png)$/ }),
+          // new MaxFileSizeValidator({ maxSize: 1024 * 1024 }), // 1MB
+        ],
+      }),
+    )
+    photo: Express.Multer.File,
+  ) {
+    return await this.usersService.setUserPhoto(photo.path, id);
   }
 }

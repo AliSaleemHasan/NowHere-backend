@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles, User } from './entities/user.entity';
 import { Repository } from 'typeorm';
@@ -57,5 +57,16 @@ export class UsersService {
 
   async getAllUsers() {
     return await this.userRepository.find();
+  }
+
+  async setUserPhoto(image: string, _id: string) {
+    const user = await this.userRepository.preload({ _id, image });
+    if (!user) throw new NotFoundException('User not found');
+
+    const updatedUser = await this.userRepository.save(user);
+
+    // remove sensitive field
+    const { password, ...safeUser } = updatedUser;
+    return safeUser;
   }
 }

@@ -38,4 +38,7 @@ export class User {
 
   @Column({ type: 'enum', enum: Roles, default: Roles.USER })
   role: string;
+
+  @Column({ nullable: true })
+  image: string;
 }
