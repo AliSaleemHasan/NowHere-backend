@@ -35,18 +35,7 @@ export class SnapsController {
   @CreateSnapDocs()
   @UsePipes(new ValidationPipe({ skipMissingProperties: true }))
   @UseGuards(JwtGuard)
-  @UseInterceptors(
-    FilesInterceptor('snaps', 4, {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, callback) => {
-          // you can generate a unique name here, e.g. timestamp + original ext
-          const name = file.originalname;
-          callback(null, name);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FilesInterceptor('snaps', 4, {}))
   create(
     @ReqUser('_id') id: string,
     @UploadedFiles() snaps: Array<Express.Multer.File>,

@@ -12,6 +12,8 @@ import { validate } from 'common/env-validation';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { SeedModule } from './seed/seed.module';
+import { StorageService } from './storage/storage.service';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -21,7 +23,7 @@ import { SeedModule } from './seed/seed.module';
       serveStaticOptions: { index: false },
     }),
     ConfigModule.forRoot({
-      validate,
+      // validate,
       isGlobal: true,
       load: [configuration],
     }),
@@ -51,8 +53,9 @@ import { SeedModule } from './seed/seed.module';
     AuthModule,
     SnapsModule,
     SeedModule,
+    StorageModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, StorageService],
 })
 export class AppModule {}

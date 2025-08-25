@@ -1,7 +1,7 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
-import { Snap, SnapDocument, Tags } from './schemas/snap.schema';
-import { FilterQuery, Model, Query } from 'mongoose';
+import { Snap, Tags } from './schemas/snap.schema';
+import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from '../getaway';
 import { handleMongoError } from 'common/utils/handle-mongoose-errors';
@@ -13,15 +13,16 @@ import {
   SNAP_DISAPPEAR_TIME,
 } from 'common/constants/settings';
 import { SettingsService } from '../settings/settings.service';
+import { StorageService } from 'src/storage/storage.service';
 
 @Injectable()
 export class SnapsService {
+  private logger: Logger = new Logger(SnapsService.name);
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
     private settingsService: SettingsService,
-
+    private storageServie: StorageService,
     private snapsGateaway: SnapsGetaway,
-    private configService: ConfigService,
   ) {}
 
   async create(
@@ -31,9 +32,16 @@ export class SnapsService {
   ) {
     // handle parising the data correctly
     createSnapDto._userId = id;
-    createSnapDto.snaps = snaps.map((snap) => snap.path);
 
-    // check if user has already posted a snap in the same area
+    try {
+      createSnapDto.snaps = await Promise.all(
+        snaps.map((snap) =>
+          this.storageServie.uploadFile(snap.buffer, snap.originalname, id),
+        ),
+      );
+    } catch (e) {
+      this.logger.error(e.message);
+    }
 
     let location = createSnapDto.location;
     if (typeof location === 'string') location = JSON.parse(location);
@@ -108,7 +116,6 @@ export class SnapsService {
       queryTime.getTime() + days * 24 * 60 * 60 * 1000,
     );
 
-    console.log(showBefore, showAfter);
     return await this.snapModel
       .find({
         ...(tags && tags?.length > 0 && { tag: { $in: tags } }),

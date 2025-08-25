@@ -10,6 +10,7 @@ import {
   SnapSettings,
   SnapSettingsSchema,
 } from './settings/schemas/settings.schema';
+import { StorageService } from 'src/storage/storage.service';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import {
     ]),
   ],
   controllers: [SnapsController, SettingsController],
-  providers: [SnapsService, SnapsGetaway, SettingsService, SettingsService],
+  providers: [SnapsService, SnapsGetaway, SettingsService, StorageService],
   exports: [SettingsService],
 })
 export class SnapsModule {}
