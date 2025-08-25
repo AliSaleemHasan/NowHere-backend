@@ -3,13 +3,28 @@ services:
     container_name: nest-dev
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./apps/backend/Dockerfile
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
     ports:
       - '3000:3000'
     command: npm run start:dev
+    depends_on:
+      - mongodb
+      - auth-db
+
+  auth:
+    container_name: nowhere-auth
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '50051:50051'
+    command: npm run start:auth:dev
     depends_on:
       - mongodb
       - auth-db
