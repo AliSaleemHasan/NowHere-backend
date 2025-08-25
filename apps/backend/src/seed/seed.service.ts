@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Model } from 'mongoose';
-import { Snap, Tags } from 'src/snaps/snaps/schemas/snap.schema';
-import { User } from 'src/users/entities/user.entity';
 import { Repository } from 'typeorm';
 import { readdirSync } from 'fs';
 import { join } from 'path';
+import { User } from '../users/entities/user.entity';
+import { Snap, Tags } from '../snaps/snaps/schemas/snap.schema';
 
 @Injectable()
 export class SeedService {

@@ -1,14 +1,6 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Req,
-  Get,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Controller, Post, Body, Req, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SigninDTO } from './dto/signin.dto';
-import { CreateUserDTO } from 'src/users/dto/create-user.dto';
 import { Request } from 'express';
 import { extractTokenFromHeader } from 'common/utils/extract-authorization-header';
 
@@ -16,6 +8,7 @@ import { LoginDocs } from './docs/login.doc';
 import { SignupDocs } from './docs/signup.doc';
 import { RefreshDocs } from './docs/refresh.doc';
 import { ValidateDocs } from './docs/validate.doc';
+import { CreateUserDTO } from '../users/dto/create-user.dto';
 
 @Controller('auth')
 export class AuthController {

@@ -13,7 +13,7 @@ import {
   SNAP_DISAPPEAR_TIME,
 } from 'common/constants/settings';
 import { SettingsService } from '../settings/settings.service';
-import { StorageService } from 'src/storage/storage.service';
+import { StorageService } from '../../storage/storage.service';
 
 @Injectable()
 export class SnapsService {

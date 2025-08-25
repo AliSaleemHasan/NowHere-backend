@@ -7,11 +7,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { SettingsService } from 'src/snaps/settings/settings.service';
-import { CreateUserDTO } from 'src/users/dto/create-user.dto';
-import { User } from 'src/users/entities/user.entity';
-import { UsersService } from 'src/users/users.service';
 import { JWTPayload } from 'types/jwt-payload.type';
+import { UsersService } from '../users/users.service';
+import { SettingsService } from '../snaps/settings/settings.service';
+import { User } from '../users/entities/user.entity';
+import { CreateUserDTO } from '../users/dto/create-user.dto';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name, { timestamp: true });

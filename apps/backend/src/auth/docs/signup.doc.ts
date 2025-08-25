@@ -1,6 +1,5 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiBody } from '@nestjs/swagger';
-import { CreateUserDTO } from 'src/users/dto/create-user.dto';
 
 export function SignupDocs() {
   return applyDecorators(

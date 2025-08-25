@@ -10,7 +10,7 @@ import {
   SnapSettings,
   SnapSettingsSchema,
 } from './settings/schemas/settings.schema';
-import { StorageService } from 'src/storage/storage.service';
+import { StorageService } from '../storage/storage.service';
 
 @Module({
   imports: [
