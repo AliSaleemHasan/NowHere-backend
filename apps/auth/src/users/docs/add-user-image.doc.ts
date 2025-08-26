@@ -3,7 +3,6 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 export const AddUsersPhotoDocs = () => {
   return applyDecorators(
-    ApiTags('Users'),
     ApiOperation({
       summary: 'Add user image',
       description:

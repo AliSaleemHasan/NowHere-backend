@@ -1,18 +1,16 @@
 import { Controller, Post, Body, Req, Get } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { SigninDTO } from './dto/signin.dto';
+import { AuthenticationService } from './authentication.service';
 import { Request } from 'express';
 import { extractTokenFromHeader } from 'common/utils/extract-authorization-header';
-
 import { LoginDocs } from './docs/login.doc';
+import { SigninDTO } from './dto/signin.dto';
 import { SignupDocs } from './docs/signup.doc';
-import { RefreshDocs } from './docs/refresh.doc';
-import { ValidateDocs } from './docs/validate.doc';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
+import { RefreshDocs } from './docs/refresh.doc';
 
 @Controller('auth')
-export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+export class AuthenticationController {
+  constructor(private readonly authService: AuthenticationService) {}
 
   @Post('login')
   @LoginDocs()
@@ -37,10 +35,10 @@ export class AuthController {
     return await this.authService.refreshToken(token);
   }
 
-  @Get('validate')
-  @ValidateDocs()
-  async validateToken(@Req() request: Request) {
-    const token = extractTokenFromHeader(request);
-    return await this.authService.validateToken(token);
-  }
+  // @Get('validate')
+  // @ValidateDocs()
+  // async validateToken(@Req() request: Request) {
+  //   const token = extractTokenFromHeader(request);
+  //   return await this.authService.validateToken(token);
+  // }
 }

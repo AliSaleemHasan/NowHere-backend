@@ -3,7 +3,6 @@ import { ApiAcceptedResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 export function GetSignURLDoc() {
   return applyDecorators(
-    ApiTags('storage'),
     ApiAcceptedResponse({
       type: 'string',
       description: 'the signed URL to access the requested object on s3',

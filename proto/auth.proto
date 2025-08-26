@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+
+package auth;
+
+
+service AuthService {
+    rpc validateUser(ValidateUserDto ) returns (User);
+    rpc validateToken(ValidateTokenDto) returns (User) ;
+
+}
+
+
+
+
+message User{
+  string _id = 1;
+  string password = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string bio = 6;
+  bool isActive = 7;
+  string role = 8;
+  string image = 9;
+
+}
+
+message ValidateUserDto{
+    string email= 1;
+    string password = 2;
+}
+
+
+message ValidateTokenDto{
+  string token=1;
+}

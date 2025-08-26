@@ -3,7 +3,6 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 export function RefreshDocs() {
   return applyDecorators(
-    ApiTags('Auth'),
     ApiOperation({
       summary: 'Refresh token',
       description: 'Uses refresh token to issue a new access token',

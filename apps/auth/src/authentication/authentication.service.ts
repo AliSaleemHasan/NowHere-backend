@@ -8,21 +8,23 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { JWTPayload } from 'types/jwt-payload.type';
+
 import { UsersService } from '../users/users.service';
-import { SettingsService } from '../snaps/settings/settings.service';
-import { User } from '../users/entities/user.entity';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
+import { User } from '../users/entities/user.entity';
 @Injectable()
-export class AuthService {
-  private readonly logger = new Logger(AuthService.name, { timestamp: true });
+export class AuthenticationService {
+  private readonly logger = new Logger(AuthenticationService.name, {
+    timestamp: true,
+  });
 
   constructor(
     private jwt: JwtService,
     private usersService: UsersService,
     private configService: ConfigService,
-    private snapsSettingsService: SettingsService,
   ) {}
-  async validateUser(email: string, password: string): Promise<User> {
+
+  async login(email: string, password: string) {
     // first getting the user from the data base
     const user = await this.usersService.getUserByEmail(email);
 
@@ -32,11 +34,7 @@ export class AuthService {
     if (!(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Wrong password');
     }
-    return user;
-  }
 
-  async login(email: string, password: string) {
-    const { password: _, ...user } = await this.validateUser(email, password);
     const tokens = await this.generateTokens(user, user._id);
     return { user, tokens };
   }
@@ -49,7 +47,7 @@ export class AuthService {
       let newUser = await this.usersService.createUser(createUserDto);
 
       // create settings object for the user
-      await this.snapsSettingsService.getUserSetting(newUser._id);
+      // await this.snapsSettingsService.getUserSetting(newUser._id);
 
       return newUser;
     } catch (error) {
@@ -90,26 +88,5 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
-  }
-
-  // a function to verify a jwt token and return it's paylod
-  async validateToken(token?: string): Promise<Omit<User, 'password'>> {
-    if (!token) throw new UnauthorizedException('User is not loggedin/found');
-    try {
-      const payload = await this.jwt.verifyAsync<JWTPayload>(token, {
-        secret: this.configService.get('ACCESS_SECRET'),
-      });
-
-      if (!payload.user) throw new Error('User is not found in the token');
-
-      const user = await this.usersService.getUserByEmail(payload.user.email);
-
-      if (!user)
-        throw new UnauthorizedException('User not found, please sign up');
-
-      return payload.user;
-    } catch (err: any) {
-      throw new UnauthorizedException(JSON.stringify(err.message));
-    }
   }
 }

@@ -9,10 +9,9 @@ services:
       - /usr/src/app/node_modules
     ports:
       - '3000:3000'
-    command: npm run start:dev
+    command: npm run start:backend:dev
     depends_on:
       - mongodb
-      - auth-db
 
   auth:
     container_name: nowhere-auth
@@ -26,7 +25,6 @@ services:
       - '50051:50051'
     command: npm run start:auth:dev
     depends_on:
-      - mongodb
       - auth-db
 
   mongodb:

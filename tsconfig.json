@@ -17,7 +17,14 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "paths": {}
+    "paths": {
+      "@app/proto": [
+        "libs/proto/src"
+      ],
+      "@app/proto/*": [
+        "libs/proto/src/*"
+      ]
+    }
   },
   "watchOptions": {
     "watchFile": "fixedPollingInterval"

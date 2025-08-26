@@ -15,7 +15,6 @@ import {
 import { SnapsService } from './snaps.service';
 import { Snap } from './schemas/snap.schema';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { JwtGuard } from 'common/guards/jwt-guard';
 import { CreateSnapDto } from './dto/create-snap.dto';
 import { ReqUser } from 'common/decorators/user.decorator';

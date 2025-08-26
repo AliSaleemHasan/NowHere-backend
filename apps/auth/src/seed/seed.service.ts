@@ -6,7 +6,10 @@ import { Repository } from 'typeorm';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import { User } from '../users/entities/user.entity';
-import { Snap, Tags } from '../snaps/snaps/schemas/snap.schema';
+import {
+  Snap,
+  Tags,
+} from '../../../backend/src/snaps/snaps/schemas/snap.schema';
 
 @Injectable()
 export class SeedService {

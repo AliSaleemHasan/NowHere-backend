@@ -1,13 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DataResponseInterceptor } from 'common/interceptors/data-response-interceptor';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { HttpExceptionFilter } from 'common/filters/http-exception-filter';
-import {
-  BadRequestException,
-  ConsoleLogger,
-  ValidationPipe,
-} from '@nestjs/common';
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { NowHereLogger } from 'common/loggers/nowhere-logger';
 import { setupSwagger } from 'common/config/setup-swagger';
@@ -19,7 +14,7 @@ async function bootstrap() {
     }),
   });
 
-  setupSwagger(app);
+  setupSwagger(app, { name: 'backend', port: 3000 });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new DataResponseInterceptor());
   app.useGlobalPipes(

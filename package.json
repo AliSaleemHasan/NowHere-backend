@@ -9,7 +9,8 @@
     "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start:backend:dev": "nest start backend --watch",
+    "start:backend": "nest start backend ",
     "start:auth": "nest start auth",
     "start:auth:dev": "nest start auth --watch",
     "start:debug": "nest start --debug --watch",
@@ -20,16 +21,20 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./apps/backend/test/jest-e2e.json"
+    "test:e2e": "jest --config ./apps/backend/test/jest-e2e.json",
+    "proto:gen": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./common --ts_proto_opt=nestJs=true,outputServices=grpc-js --ts_proto_opt=snakeToCamel=false  ./proto/**/*.proto -I ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.873.0",
     "@aws-sdk/s3-request-presigner": "^3.873.0",
+    "@grpc/grpc-js": "^1.13.4",
+    "@grpc/proto-loader": "^0.8.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/mapped-types": "*",
+    "@nestjs/microservices": "^11.1.6",
     "@nestjs/mongoose": "^11.0.3",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.6",
@@ -45,6 +50,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sqlite": "^5.1.1",
+    "ts-proto": "^2.7.7",
     "typeorm": "^0.3.25"
   },
   "devDependencies": {
@@ -93,7 +99,11 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "roots": [
-      "<rootDir>/apps/"
-    ]
+      "<rootDir>/apps/",
+      "<rootDir>/libs/"
+    ],
+    "moduleNameMapper": {
+      "^@app/proto(|/.*)$": "<rootDir>/libs/proto/src/$1"
+    }
   }
 }

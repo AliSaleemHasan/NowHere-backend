@@ -1,4 +1,4 @@
-import { Roles, User } from 'apps/backend/src/users/entities/user.entity';
+import { Roles, User } from 'apps/auth/src/users/entities/user.entity';
 
 export type JWTPayload = {
   sub: string;

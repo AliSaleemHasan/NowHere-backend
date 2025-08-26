@@ -4,19 +4,20 @@ import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SnapsModule } from './snaps/snaps.module';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
 import configuration from 'common/config/configuration';
-import { validate } from 'common/env-validation';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { SeedModule } from './seed/seed.module';
 import { StorageService } from './storage/storage.service';
 import { StorageModule } from './storage/storage.module';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AUTH_PACKAGE_NAME } from 'common/proto/auth/auth';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
+    JwtModule.register({
+      global: true,
+    }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', '..', 'uploads'),
       serveRoot: '/uploads/',
@@ -27,21 +28,17 @@ import { StorageModule } from './storage/storage.module';
       isGlobal: true,
       load: [configuration],
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('MYSQL_HOST'),
-        port: Number(configService.get('MYSQL_PORT')),
-        username: configService.get('MYSQL_USER'),
-        password: configService.get('MYSQL_PASS'),
-        database: configService.get('MYSQL_DATABASE'),
-        entities: [],
-        autoLoadEntities: true,
-        synchronize: true,
-      }),
-      inject: [ConfigService],
-    }),
+
+    ClientsModule.register([
+      {
+        name: 'AUTH_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: AUTH_PACKAGE_NAME,
+          protoPath: join(__dirname, '..', 'auth.proto'),
+        },
+      },
+    ]),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -49,10 +46,7 @@ import { StorageModule } from './storage/storage.module';
       }),
       inject: [ConfigService],
     }),
-    UsersModule,
-    AuthModule,
     SnapsModule,
-    SeedModule,
     StorageModule,
   ],
   controllers: [AppController],

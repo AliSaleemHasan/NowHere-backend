@@ -3,7 +3,6 @@ import { ApiOperation, ApiResponse, ApiTags, ApiBody } from '@nestjs/swagger';
 
 export function SignupDocs() {
   return applyDecorators(
-    ApiTags('Auth'),
     ApiOperation({
       summary: 'Register user',
       description:

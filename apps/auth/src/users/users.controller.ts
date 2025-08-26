@@ -1,9 +1,6 @@
 import {
-  Body,
   Controller,
-  FileTypeValidator,
   Get,
-  MaxFileSizeValidator,
   Param,
   ParseFilePipe,
   Put,
@@ -55,7 +52,7 @@ export class UsersController {
         destination: './uploads',
         filename: (req: any, file, callback) => {
           const fileName =
-            (req.user?._id || 'unkown') + file.originalname + Date.now;
+            (req.user?._id || 'unkown') + Date.now() + file.originalname;
           callback(null, fileName);
         },
       }),

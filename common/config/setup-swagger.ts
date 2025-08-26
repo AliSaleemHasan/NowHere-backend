@@ -1,12 +1,18 @@
 import { INestApplication } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
-export function setupSwagger(app: INestApplication) {
+export function setupSwagger(
+  app: INestApplication,
+  microservice: {
+    port: number;
+    name: 'auth' | 'backend';
+  },
+) {
   const config = new DocumentBuilder()
-    .setTitle('Nowhere API')
-    .setDescription('Now Here API documentation')
+    .setTitle(`Nowhere's ${microservice.name} API`)
+    .setDescription(`NowHere's ${microservice.name} API documentation`)
     .setVersion('1.0')
-    .addServer('http://localhost:3000')
+    .addServer(`http://localhost:${microservice.port}`)
     // .addBearerAuth()
     .build();
 

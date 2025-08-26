@@ -4,7 +4,6 @@ import { SigninDTO } from '../dto/signin.dto';
 
 export function LoginDocs() {
   return applyDecorators(
-    ApiTags('Auth'),
     ApiOperation({
       summary: 'Login user',
       description:

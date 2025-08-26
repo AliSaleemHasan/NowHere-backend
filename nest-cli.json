@@ -19,18 +19,22 @@
     "auth": {
       "type": "application",
       "root": "apps/auth",
-      "entryFile": "main",
-      "sourceRoot": "apps/auth/src",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
       "compilerOptions": {
+        "assets": ["proto/*.proto"],
+        "watchAssets": true,
         "tsConfigPath": "apps/auth/tsconfig.app.json"
       }
     },
     "backend": {
       "type": "application",
       "root": "apps/backend",
-      "entryFile": "main",
-      "sourceRoot": "apps/backend/src",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
       "compilerOptions": {
+        "assets": ["proto/*.proto"],
+        "watchAssets": true,
         "tsConfigPath": "apps/backend/tsconfig.app.json"
       }
     }
