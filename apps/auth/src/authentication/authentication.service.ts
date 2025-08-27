@@ -12,6 +12,7 @@ import { JWTPayload } from 'types/jwt-payload.type';
 import { UsersService } from '../users/users.service';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
 import { User } from '../users/entities/user.entity';
+import { GrpcService } from '../grpc/grpc.service';
 @Injectable()
 export class AuthenticationService {
   private readonly logger = new Logger(AuthenticationService.name, {
@@ -22,6 +23,7 @@ export class AuthenticationService {
     private jwt: JwtService,
     private usersService: UsersService,
     private configService: ConfigService,
+    private grpcService: GrpcService,
   ) {}
 
   async login(email: string, password: string) {
@@ -47,7 +49,7 @@ export class AuthenticationService {
       let newUser = await this.usersService.createUser(createUserDto);
 
       // create settings object for the user
-      // await this.snapsSettingsService.getUserSetting(newUser._id);
+      await this.grpcService.getUserSetting(newUser._id);
 
       return newUser;
     } catch (error) {

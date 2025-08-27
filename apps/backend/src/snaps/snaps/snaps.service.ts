@@ -1,29 +1,48 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
 import { Snap, Tags } from './schemas/snap.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from '../getaway';
 import { handleMongoError } from 'common/utils/handle-mongoose-errors';
-import { ConfigService } from '@nestjs/config';
-import { SnapSettings } from '../settings/schemas/settings.schema';
 import {
   MAX_DISTANCE_TO_SEE,
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
 } from 'common/constants/settings';
-import { SettingsService } from '../settings/settings.service';
 import { StorageService } from '../../storage/storage.service';
+import {
+  AUTH_PACKAGE_NAME,
+  AUTH_USERS_SERVICE_NAME,
+  AuthUsersClient,
+  Settings,
+} from 'common/proto/auth-user';
+import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class SnapsService {
+export class SnapsService implements OnModuleInit {
   private logger: Logger = new Logger(SnapsService.name);
+  private authUsersService: AuthUsersClient;
+
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
-    private settingsService: SettingsService,
+    @Inject(AUTH_PACKAGE_NAME) private client: ClientGrpc,
     private storageServie: StorageService,
     private snapsGateaway: SnapsGetaway,
   ) {}
+
+  onModuleInit() {
+    this.authUsersService = this.client.getService<AuthUsersClient>(
+      AUTH_USERS_SERVICE_NAME,
+    );
+  }
 
   async create(
     id: string,
@@ -94,12 +113,16 @@ export class SnapsService {
     canPost?: boolean, // to check if the user is trying to post snap in the same region
   ) {
     // first get the seeting of the user
-    let user_settings: SnapSettings | null;
-    user_settings = await this.settingsService.getUserSetting(_userId);
+    let user_settings: Settings | null = null;
+    if (_userId)
+      user_settings = await firstValueFrom(
+        this.authUsersService.getUserSetting({ id: _userId }),
+      );
 
     let distance = user_settings?.max_distance || MAX_DISTANCE_TO_SEE;
 
-    if (canPost) distance = user_settings?.max_distance || MIN_DISTANCE_TO_POST;
+    if (canPost)
+      distance = user_settings?.new_snap_distance || MIN_DISTANCE_TO_POST;
 
     const queryTime = new Date();
 

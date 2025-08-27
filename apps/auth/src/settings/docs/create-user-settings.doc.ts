@@ -6,7 +6,6 @@ import {
   ApiTags,
   ApiBody,
 } from '@nestjs/swagger';
-import { SnapSettings } from '../schemas/settings.schema';
 
 export function CreateUserSnapSettings() {
   return applyDecorators(
@@ -29,7 +28,6 @@ export function CreateUserSnapSettings() {
     }),
     ApiResponse({
       status: 201,
-      type: SnapSettings,
       description: 'Snap Setting  created successfully for User',
     }),
     ApiResponse({ status: 400, description: 'Validation error' }),

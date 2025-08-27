@@ -4,14 +4,24 @@ syntax = "proto3";
 package auth;
 
 
-service AuthService {
+service AuthUsers {
     rpc validateUser(ValidateUserDto ) returns (User);
     rpc validateToken(ValidateTokenDto) returns (User) ;
 
+    // user settings
+    rpc getUserSetting(GetUserSettingsDTO) returns (Settings);
 }
+message Settings{
+  string id =1;
+  User user =2;
+  int32 max_distance=3;
+  int32 new_snap_distance=4;
+  int32 snapDisappearTime=5;
 
-
-
+}
+message GetUserSettingsDTO {
+  string id=1;
+}
 
 message User{
   string _id = 1;

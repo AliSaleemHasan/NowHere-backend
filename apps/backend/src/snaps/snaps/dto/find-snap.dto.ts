@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional } from 'class-validator';
 import { Tags } from '../schemas/snap.schema';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -12,4 +12,8 @@ export class FindSnapDTO {
   @IsOptional()
   @IsEnum(Tags, { each: true, message: 'Each tag must be a valid Tags value' })
   tags: Tags[];
+
+  @IsOptional()
+  @IsNumber()
+  id: string;
 }

@@ -76,6 +76,7 @@ export class SnapsController {
     return await this.snapsService.findNear(
       [location.lng, location.lat],
       query.tags,
+      query.id,
     );
   }
 

@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v2.7.7
 //   protoc               v3.21.12
-// source: proto/auth/auth.proto
+// source: proto/auth-user.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
@@ -11,6 +11,18 @@ import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
 
 export const protobufPackage = "auth";
+
+export interface Settings {
+  id: string;
+  user: User | undefined;
+  max_distance: number;
+  new_snap_distance: number;
+  snapDisappearTime: number;
+}
+
+export interface GetUserSettingsDTO {
+  id: string;
+}
 
 export interface User {
   _id: string;
@@ -34,6 +46,124 @@ export interface ValidateTokenDto {
 }
 
 export const AUTH_PACKAGE_NAME = "auth";
+
+function createBaseSettings(): Settings {
+  return { id: "", user: undefined, max_distance: 0, new_snap_distance: 0, snapDisappearTime: 0 };
+}
+
+export const Settings: MessageFns<Settings> = {
+  encode(message: Settings, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    if (message.user !== undefined) {
+      User.encode(message.user, writer.uint32(18).fork()).join();
+    }
+    if (message.max_distance !== 0) {
+      writer.uint32(24).int32(message.max_distance);
+    }
+    if (message.new_snap_distance !== 0) {
+      writer.uint32(32).int32(message.new_snap_distance);
+    }
+    if (message.snapDisappearTime !== 0) {
+      writer.uint32(40).int32(message.snapDisappearTime);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Settings {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSettings();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.user = User.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.max_distance = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.new_snap_distance = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.snapDisappearTime = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseGetUserSettingsDTO(): GetUserSettingsDTO {
+  return { id: "" };
+}
+
+export const GetUserSettingsDTO: MessageFns<GetUserSettingsDTO> = {
+  encode(message: GetUserSettingsDTO, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserSettingsDTO {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseGetUserSettingsDTO();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.id = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
 
 function createBaseUser(): User {
   return {
@@ -255,39 +385,47 @@ export const ValidateTokenDto: MessageFns<ValidateTokenDto> = {
   },
 };
 
-export interface AuthServiceClient {
+export interface AuthUsersClient {
   validateUser(request: ValidateUserDto): Observable<User>;
 
   validateToken(request: ValidateTokenDto): Observable<User>;
+
+  /** user settings */
+
+  getUserSetting(request: GetUserSettingsDTO): Observable<Settings>;
 }
 
-export interface AuthServiceController {
+export interface AuthUsersController {
   validateUser(request: ValidateUserDto): Promise<User> | Observable<User> | User;
 
   validateToken(request: ValidateTokenDto): Promise<User> | Observable<User> | User;
+
+  /** user settings */
+
+  getUserSetting(request: GetUserSettingsDTO): Promise<Settings> | Observable<Settings> | Settings;
 }
 
-export function AuthServiceControllerMethods() {
+export function AuthUsersControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["validateUser", "validateToken"];
+    const grpcMethods: string[] = ["validateUser", "validateToken", "getUserSetting"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("AuthService", method)(constructor.prototype[method], method, descriptor);
+      GrpcMethod("AuthUsers", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("AuthService", method)(constructor.prototype[method], method, descriptor);
+      GrpcStreamMethod("AuthUsers", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const AUTH_SERVICE_NAME = "AuthService";
+export const AUTH_USERS_SERVICE_NAME = "AuthUsers";
 
-export type AuthServiceService = typeof AuthServiceService;
-export const AuthServiceService = {
+export type AuthUsersService = typeof AuthUsersService;
+export const AuthUsersService = {
   validateUser: {
-    path: "/auth.AuthService/validateUser",
+    path: "/auth.AuthUsers/validateUser",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ValidateUserDto): Buffer => Buffer.from(ValidateUserDto.encode(value).finish()),
@@ -296,7 +434,7 @@ export const AuthServiceService = {
     responseDeserialize: (value: Buffer): User => User.decode(value),
   },
   validateToken: {
-    path: "/auth.AuthService/validateToken",
+    path: "/auth.AuthUsers/validateToken",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ValidateTokenDto): Buffer => Buffer.from(ValidateTokenDto.encode(value).finish()),
@@ -304,11 +442,23 @@ export const AuthServiceService = {
     responseSerialize: (value: User): Buffer => Buffer.from(User.encode(value).finish()),
     responseDeserialize: (value: Buffer): User => User.decode(value),
   },
+  /** user settings */
+  getUserSetting: {
+    path: "/auth.AuthUsers/getUserSetting",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: GetUserSettingsDTO): Buffer => Buffer.from(GetUserSettingsDTO.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetUserSettingsDTO => GetUserSettingsDTO.decode(value),
+    responseSerialize: (value: Settings): Buffer => Buffer.from(Settings.encode(value).finish()),
+    responseDeserialize: (value: Buffer): Settings => Settings.decode(value),
+  },
 } as const;
 
-export interface AuthServiceServer extends UntypedServiceImplementation {
+export interface AuthUsersServer extends UntypedServiceImplementation {
   validateUser: handleUnaryCall<ValidateUserDto, User>;
   validateToken: handleUnaryCall<ValidateTokenDto, User>;
+  /** user settings */
+  getUserSetting: handleUnaryCall<GetUserSettingsDTO, Settings>;
 }
 
 export interface MessageFns<T> {

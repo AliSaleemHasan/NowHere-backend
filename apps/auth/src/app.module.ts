@@ -6,7 +6,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from 'common/config/configuration';
 import { AuthenticationModule } from './authentication/authentication.module';
 import { GrpcModule } from './grpc/grpc.module';
-import { SeedService } from './seed/seed.service';
 
 @Module({
   imports: [

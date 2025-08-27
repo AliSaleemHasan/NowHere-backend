@@ -2,12 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AuthModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { AUTH_PACKAGE_NAME } from 'common/proto/auth/auth';
 import { setupSwagger } from 'common/config/setup-swagger';
 import { HttpExceptionFilter } from 'common/filters/http-exception-filter';
 import { DataResponseInterceptor } from 'common/interceptors/data-response-interceptor';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
+import { AUTH_PACKAGE_NAME } from 'common/proto/auth-user';
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule);
@@ -16,10 +16,11 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: AUTH_PACKAGE_NAME,
-      protoPath: join(__dirname, '..', 'auth.proto'),
+      protoPath: join(__dirname, '..', 'auth-user.proto'),
+      url: 'nowhere-auth:50051',
     },
   });
-  setupSwagger(app, { port: 50051, name: 'auth' });
+  setupSwagger(app, { port: 3001, name: 'auth' });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new DataResponseInterceptor());
   app.useGlobalPipes(
@@ -37,6 +38,6 @@ async function bootstrap() {
   );
 
   await app.startAllMicroservices();
-  await app.listen(50051); // HTTP port
+  await app.listen(3001); // HTTP port
 }
 bootstrap();

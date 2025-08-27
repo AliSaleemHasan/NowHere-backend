@@ -22,7 +22,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./apps/backend/test/jest-e2e.json",
-    "proto:gen": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./common --ts_proto_opt=nestJs=true,outputServices=grpc-js --ts_proto_opt=snakeToCamel=false  ./proto/**/*.proto -I ."
+    "proto:gen": "protoc --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./common --ts_proto_opt=nestJs=true,outputServices=grpc-js --ts_proto_opt=snakeToCamel=false  ./proto/*.proto -I ."
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.873.0",

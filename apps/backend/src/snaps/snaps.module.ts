@@ -4,23 +4,27 @@ import { SnapsController } from './snaps/snaps.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
 import { SnapsGetaway } from './getaway';
-import { SettingsController } from './settings/settings.controller';
-import { SettingsService } from './settings/settings.service';
-import {
-  SnapSettings,
-  SnapSettingsSchema,
-} from './settings/schemas/settings.schema';
 import { StorageService } from '../storage/storage.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AUTH_PACKAGE_NAME } from 'common/proto/auth-user';
+import { join } from 'path';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: Snap.name, schema: SnapSchema },
-      { name: SnapSettings.name, schema: SnapSettingsSchema },
+    ClientsModule.register([
+      {
+        name: AUTH_PACKAGE_NAME,
+        transport: Transport.GRPC,
+        options: {
+          package: AUTH_PACKAGE_NAME,
+          protoPath: join(__dirname, '..', 'auth-user.proto'),
+          url: 'nowhere-auth:50051',
+        },
+      },
     ]),
+    MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],
-  controllers: [SnapsController, SettingsController],
-  providers: [SnapsService, SnapsGetaway, SettingsService, StorageService],
-  exports: [SettingsService],
+  controllers: [SnapsController],
+  providers: [SnapsService, SnapsGetaway, StorageService],
 })
 export class SnapsModule {}

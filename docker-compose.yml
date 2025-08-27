@@ -23,6 +23,7 @@ services:
       - /usr/src/app/node_modules
     ports:
       - '50051:50051'
+      - '3001:3001'
     command: npm run start:auth:dev
     depends_on:
       - auth-db
