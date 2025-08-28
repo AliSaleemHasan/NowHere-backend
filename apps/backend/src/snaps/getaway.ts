@@ -117,7 +117,7 @@ export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
   }
 
   // A user Posts a Snap
-  async handleNewSnap(body: CreateSnapDto) {
+  handleNewSnap(body: CreateSnapDto) {
     // first handle posting this snap to snaps Service
     try {
       const users = this.findNearbyUsers(

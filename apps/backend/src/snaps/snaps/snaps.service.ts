@@ -6,7 +6,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
-import { Snap, Tags } from './schemas/snap.schema';
+import { Snap, SnapStatus, Tags } from './schemas/snap.schema';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from '../getaway';
@@ -16,15 +16,14 @@ import {
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
 } from 'common/constants/settings';
-import { StorageService } from '../../storage/storage.service';
 import {
-  AUTH_PACKAGE_NAME,
   AUTH_USERS_SERVICE_NAME,
   AuthUsersClient,
   Settings,
 } from 'common/proto/auth-user';
-import { ClientGrpc } from '@nestjs/microservices';
+import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
+import { MICROSERVICES } from 'common/constants';
 
 @Injectable()
 export class SnapsService implements OnModuleInit {
@@ -33,8 +32,9 @@ export class SnapsService implements OnModuleInit {
 
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
-    @Inject(AUTH_PACKAGE_NAME) private client: ClientGrpc,
-    private storageServie: StorageService,
+    @Inject(MICROSERVICES.USERS.package) private client: ClientGrpc,
+    @Inject(MICROSERVICES.STORAGE.package) private redisClient: ClientProxy,
+
     private snapsGateaway: SnapsGetaway,
   ) {}
 
@@ -52,15 +52,9 @@ export class SnapsService implements OnModuleInit {
     // handle parising the data correctly
     createSnapDto._userId = id;
 
-    try {
-      createSnapDto.snaps = await Promise.all(
-        snaps.map((snap) =>
-          this.storageServie.uploadFile(snap.buffer, snap.originalname, id),
-        ),
-      );
-    } catch (e) {
-      this.logger.error(e.message);
-    }
+    //TODO handle storage
+
+    createSnapDto.snaps = [];
 
     let location = createSnapDto.location;
     if (typeof location === 'string') location = JSON.parse(location);
@@ -80,10 +74,21 @@ export class SnapsService implements OnModuleInit {
     try {
       // first save the data
 
-      const createdSnap = new this.snapModel(createSnapDto);
+      const createdSnap = new this.snapModel({
+        ...createSnapDto,
+        status: SnapStatus.PROCESSING,
+      });
+
       const created = await createdSnap.save();
 
-      await this.snapsGateaway.handleNewSnap(created);
+      this.redisClient.emit('upload-snap', {
+        files: snaps,
+        userId: id,
+        snapId: created.id,
+      });
+
+      this.snapsGateaway.handleNewSnap(created);
+
       return created;
     } catch (err) {
       handleMongoError(err);
@@ -158,6 +163,16 @@ export class SnapsService implements OnModuleInit {
       .exec();
   }
 
+  async updateSnapImages(id: string, images: string[]) {
+    return await this.snapModel.findOneAndUpdate(
+      { _id: id },
+      {
+        snaps: images,
+        status: SnapStatus.SUCCESS,
+      },
+      { new: true },
+    );
+  }
   findOne(id: string) {
     return this.snapModel.findById(id).exec();
   }
@@ -166,6 +181,9 @@ export class SnapsService implements OnModuleInit {
     return this.snapModel.find({ tag: { $in: tags } }).exec();
   }
 
+  deleteSnap(_id: string) {
+    return this.snapModel.deleteOne({ _id });
+  }
   deleteAll() {
     return this.snapModel.deleteMany({});
   }

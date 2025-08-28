@@ -11,10 +11,11 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ConfigService } from '@nestjs/config';
+import { readFileSync, unlink } from 'fs';
 
 @Injectable()
-export class StorageService {
-  private logger = new Logger(StorageService.name);
+export class AwsStorageService {
+  private logger = new Logger(AwsStorageService.name);
   private client: S3Client;
   private bucket: string;
 
@@ -66,5 +67,43 @@ export class StorageService {
   async getSignedUrlForFile(key: string, expiresIn = 3600) {
     const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
     return await getSignedUrl(this.client, command, { expiresIn });
+  }
+
+  /**
+   *
+   * @param files List of files saved in (tmp folder)
+   * @param keep
+   */
+  async saveLocalFiles(
+    files: Array<Express.Multer.File>,
+    userId: string,
+    keep?: boolean,
+  ) {
+    // files will be in memory
+
+    let notSaved: Array<Express.Multer.File> = [];
+
+    let keys: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const fileKey = await this.uploadFile(
+          await readFileSync(files[i].path + ' i'),
+          files[i].filename,
+          userId,
+        );
+
+        keys.push(fileKey);
+
+        if (!keep)
+          unlink(files[i].path, (err) => {
+            if (err) this.logger.error(err);
+          });
+      } catch (e) {
+        notSaved.push(files[i]);
+        this.logger.error('file not uploaded correctly: ', e.message);
+      }
+    }
+
+    return { notSaved, keys };
   }
 }

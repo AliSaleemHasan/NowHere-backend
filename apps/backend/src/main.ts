@@ -6,6 +6,8 @@ import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { NowHereLogger } from 'common/loggers/nowhere-logger';
 import { setupSwagger } from 'common/config/setup-swagger';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { MICROSERVICES } from 'common/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -30,6 +32,16 @@ async function bootstrap() {
       },
     }),
   );
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.REDIS,
+    options: {
+      port: Number(MICROSERVICES.STORAGE.redisPort || 6379),
+      host: 'redis',
+    },
+  });
+
+  await app.startAllMicroservices();
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }

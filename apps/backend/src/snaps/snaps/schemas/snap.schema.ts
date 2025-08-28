@@ -12,6 +12,13 @@ export enum Tags {
   SOCIAL = 'SOCIAL',
 }
 
+export enum SnapStatus {
+  UPLOADING = 'UPLOADING',
+  FAILED = 'FAILED',
+  SUCCESS = 'SUCCESS',
+  PROCESSING = 'PROCESSING',
+}
+
 export enum GeoPointType {
   Point = 'Point',
 }
@@ -49,6 +56,9 @@ export class Snap {
 
   @Prop({ type: String, enum: Tags, default: Tags.SOCIAL })
   tag: Tags;
+
+  @Prop({ type: String, enum: SnapStatus, default: SnapStatus.PROCESSING })
+  status: SnapStatus;
 }
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);

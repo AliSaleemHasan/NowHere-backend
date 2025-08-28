@@ -1,17 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SnapsModule } from './snaps/snaps.module';
 import configuration from 'common/config/configuration';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { StorageService } from './storage/storage.service';
-import { StorageModule } from './storage/storage.module';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { JwtModule } from '@nestjs/jwt';
-import { AUTH_PACKAGE_NAME } from 'common/proto/auth-user';
 
 @Module({
   imports: [
@@ -37,9 +31,8 @@ import { AUTH_PACKAGE_NAME } from 'common/proto/auth-user';
       inject: [ConfigService],
     }),
     SnapsModule,
-    StorageModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, StorageService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

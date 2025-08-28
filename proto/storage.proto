@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package STORAGE;
+
+
+
+service AwsStorage{
+    rpc getSignedUrlForFile(GetSignedURLDTO) returns (GetSignedURLReturn);
+
+}
+
+
+message GetSignedURLDTO{
+    string key =1;
+    int32 expiresIn = 2;
+}
+
+message GetSignedURLReturn{
+    string url =1;
+}
+
+

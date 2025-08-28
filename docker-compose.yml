@@ -28,6 +28,20 @@ services:
     depends_on:
       - auth-db
 
+  storage:
+    container_name: nowhere-storage
+    build:
+      context: .
+      dockerfile: ./apps/storage/Dockerfile
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - '3002:3002'
+      - '50052:50051'
+
+    command: npm run start:storage:dev
+
   mongodb:
     image: mongo
     restart: always
@@ -63,5 +77,13 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASS}
 
+  redis:
+    image: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
 volumes:
   mongo-data:
+  redis_data:

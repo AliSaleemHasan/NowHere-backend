@@ -4,27 +4,35 @@ import { SnapsController } from './snaps/snaps.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
 import { SnapsGetaway } from './getaway';
-import { StorageService } from '../storage/storage.service';
+import { AwsStorageService } from '../../../storage/src/aws-storage/aws-storage.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { AUTH_PACKAGE_NAME } from 'common/proto/auth-user';
 import { join } from 'path';
+import { MICROSERVICES } from 'common/constants';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
-        name: AUTH_PACKAGE_NAME,
+        name: MICROSERVICES.USERS.package,
         transport: Transport.GRPC,
         options: {
-          package: AUTH_PACKAGE_NAME,
+          package: MICROSERVICES.USERS.package,
           protoPath: join(__dirname, '..', 'auth-user.proto'),
-          url: 'nowhere-auth:50051',
+          url: `${MICROSERVICES.USERS.host}:${MICROSERVICES.USERS.grpcPort}`,
+        },
+      },
+      {
+        name: MICROSERVICES.STORAGE.package,
+        transport: Transport.REDIS,
+        options: {
+          port: Number(MICROSERVICES.STORAGE.redisPort),
+          host: 'redis',
         },
       },
     ]),
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],
   controllers: [SnapsController],
-  providers: [SnapsService, SnapsGetaway, StorageService],
+  providers: [SnapsService, SnapsGetaway, AwsStorageService],
 })
 export class SnapsModule {}

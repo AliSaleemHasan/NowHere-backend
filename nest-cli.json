@@ -37,6 +37,17 @@
         "watchAssets": true,
         "tsConfigPath": "apps/backend/tsconfig.app.json"
       }
+    },
+    "storage": {
+      "type": "application",
+      "root": "apps/storage",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "assets": ["proto/*.proto"],
+        "watchAssets": true,
+        "tsConfigPath": "apps/storage/tsconfig.app.json"
+      }
     }
   }
 }
