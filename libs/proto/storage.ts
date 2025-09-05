@@ -2,37 +2,28 @@
 // versions:
 //   protoc-gen-ts_proto  v2.7.7
 //   protoc               v3.21.12
-// source: src/storage.proto
+// source: storage.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import type { handleUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
-import { messageTypeRegistry } from "../typeRegistry";
-
-export const protobufPackage = "STORAGE";
 
 export interface GetSignedURLDTO {
-  $type: "STORAGE.GetSignedURLDTO";
   key: string;
   expiresIn: number;
 }
 
 export interface GetSignedURLReturn {
-  $type: "STORAGE.GetSignedURLReturn";
   url: string;
 }
 
-export const STORAGE_PACKAGE_NAME = "STORAGE";
-
 function createBaseGetSignedURLDTO(): GetSignedURLDTO {
-  return { $type: "STORAGE.GetSignedURLDTO", key: "", expiresIn: 0 };
+  return { key: "", expiresIn: 0 };
 }
 
-export const GetSignedURLDTO: MessageFns<GetSignedURLDTO, "STORAGE.GetSignedURLDTO"> = {
-  $type: "STORAGE.GetSignedURLDTO" as const,
-
+export const GetSignedURLDTO: MessageFns<GetSignedURLDTO> = {
   encode(message: GetSignedURLDTO, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.key !== "") {
       writer.uint32(10).string(message.key);
@@ -76,15 +67,11 @@ export const GetSignedURLDTO: MessageFns<GetSignedURLDTO, "STORAGE.GetSignedURLD
   },
 };
 
-messageTypeRegistry.set(GetSignedURLDTO.$type, GetSignedURLDTO);
-
 function createBaseGetSignedURLReturn(): GetSignedURLReturn {
-  return { $type: "STORAGE.GetSignedURLReturn", url: "" };
+  return { url: "" };
 }
 
-export const GetSignedURLReturn: MessageFns<GetSignedURLReturn, "STORAGE.GetSignedURLReturn"> = {
-  $type: "STORAGE.GetSignedURLReturn" as const,
-
+export const GetSignedURLReturn: MessageFns<GetSignedURLReturn> = {
   encode(message: GetSignedURLReturn, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.url !== "") {
       writer.uint32(10).string(message.url);
@@ -116,8 +103,6 @@ export const GetSignedURLReturn: MessageFns<GetSignedURLReturn, "STORAGE.GetSign
     return message;
   },
 };
-
-messageTypeRegistry.set(GetSignedURLReturn.$type, GetSignedURLReturn);
 
 export interface AwsStorageClient {
   getSignedUrlForFile(request: GetSignedURLDTO): Observable<GetSignedURLReturn>;
@@ -163,8 +148,7 @@ export interface AwsStorageServer extends UntypedServiceImplementation {
   getSignedUrlForFile: handleUnaryCall<GetSignedURLDTO, GetSignedURLReturn>;
 }
 
-export interface MessageFns<T, V extends string> {
-  readonly $type: V;
+interface MessageFns<T> {
   encode(message: T, writer?: BinaryWriter): BinaryWriter;
   decode(input: BinaryReader | Uint8Array, length?: number): T;
 }

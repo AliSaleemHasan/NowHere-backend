@@ -4,7 +4,7 @@
   "main": "index.js",
   "private": true,
   "scripts": {
-    "proto:gen": "protoc  --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./generated --ts_proto_opt=nestJs=true,outputServices=grpc-js,snakeToCamel=false,outputTypeRegistry=true,useCommonTypes=true ./src/*.proto -I . && tsc -p tsconfig.lib.json && node ./dist/generate-entry-file.js"
+    "proto:gen": "protoc  --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./ --ts_proto_opt=nestJs=true,outputServices=grpc-js,snakeToCamel=false,exportCommonSymbols=false *.proto -I . && tsc -p tsconfig.lib.json && node ./dist/generate-entry-file.js"
   },
   "dependencies": {
     "ts-proto": "^2.7.7"

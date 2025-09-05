@@ -4,7 +4,6 @@
   "private": true,
   "description": "Common library for Nowhere's Microservices",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.lib.json"
   },

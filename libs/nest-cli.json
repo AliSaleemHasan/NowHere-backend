@@ -4,7 +4,7 @@
       "type": "library",
       "root": "libs/proto",
       "entryFile": "index",
-      "sourceRoot": "libs/proto/src",
+      "sourceRoot": "libs/proto",
       "compilerOptions": {
         "tsConfigPath": "libs/proto/tsconfig.lib.json"
       }

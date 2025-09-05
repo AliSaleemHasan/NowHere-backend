@@ -1,8 +1,8 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-
+import { User } from 'proto';
 interface AuthenticatedRequest extends Request {
-  user: any;
+  user: User;
 }
 export const ReqUser = createParamDecorator(
   (data: string, ctx: ExecutionContext) => {

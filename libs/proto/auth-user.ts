@@ -2,19 +2,15 @@
 // versions:
 //   protoc-gen-ts_proto  v2.7.7
 //   protoc               v3.21.12
-// source: src/auth-user.proto
+// source: auth-user.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import type { handleUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
-import { messageTypeRegistry } from "../typeRegistry";
-
-export const protobufPackage = "auth";
 
 export interface Settings {
-  $type: "auth.Settings";
   id: string;
   user: User | undefined;
   max_distance: number;
@@ -23,12 +19,10 @@ export interface Settings {
 }
 
 export interface GetUserSettingsDTO {
-  $type: "auth.GetUserSettingsDTO";
   id: string;
 }
 
 export interface User {
-  $type: "auth.User";
   _id: string;
   password: string;
   email: string;
@@ -41,32 +35,19 @@ export interface User {
 }
 
 export interface ValidateUserDto {
-  $type: "auth.ValidateUserDto";
   email: string;
   password: string;
 }
 
 export interface ValidateTokenDto {
-  $type: "auth.ValidateTokenDto";
   token: string;
 }
 
-export const AUTH_PACKAGE_NAME = "auth";
-
 function createBaseSettings(): Settings {
-  return {
-    $type: "auth.Settings",
-    id: "",
-    user: undefined,
-    max_distance: 0,
-    new_snap_distance: 0,
-    snapDisappearTime: 0,
-  };
+  return { id: "", user: undefined, max_distance: 0, new_snap_distance: 0, snapDisappearTime: 0 };
 }
 
-export const Settings: MessageFns<Settings, "auth.Settings"> = {
-  $type: "auth.Settings" as const,
-
+export const Settings: MessageFns<Settings> = {
   encode(message: Settings, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
@@ -143,15 +124,11 @@ export const Settings: MessageFns<Settings, "auth.Settings"> = {
   },
 };
 
-messageTypeRegistry.set(Settings.$type, Settings);
-
 function createBaseGetUserSettingsDTO(): GetUserSettingsDTO {
-  return { $type: "auth.GetUserSettingsDTO", id: "" };
+  return { id: "" };
 }
 
-export const GetUserSettingsDTO: MessageFns<GetUserSettingsDTO, "auth.GetUserSettingsDTO"> = {
-  $type: "auth.GetUserSettingsDTO" as const,
-
+export const GetUserSettingsDTO: MessageFns<GetUserSettingsDTO> = {
   encode(message: GetUserSettingsDTO, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
@@ -184,11 +161,8 @@ export const GetUserSettingsDTO: MessageFns<GetUserSettingsDTO, "auth.GetUserSet
   },
 };
 
-messageTypeRegistry.set(GetUserSettingsDTO.$type, GetUserSettingsDTO);
-
 function createBaseUser(): User {
   return {
-    $type: "auth.User",
     _id: "",
     password: "",
     email: "",
@@ -201,9 +175,7 @@ function createBaseUser(): User {
   };
 }
 
-export const User: MessageFns<User, "auth.User"> = {
-  $type: "auth.User" as const,
-
+export const User: MessageFns<User> = {
   encode(message: User, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message._id !== "") {
       writer.uint32(10).string(message._id);
@@ -324,15 +296,11 @@ export const User: MessageFns<User, "auth.User"> = {
   },
 };
 
-messageTypeRegistry.set(User.$type, User);
-
 function createBaseValidateUserDto(): ValidateUserDto {
-  return { $type: "auth.ValidateUserDto", email: "", password: "" };
+  return { email: "", password: "" };
 }
 
-export const ValidateUserDto: MessageFns<ValidateUserDto, "auth.ValidateUserDto"> = {
-  $type: "auth.ValidateUserDto" as const,
-
+export const ValidateUserDto: MessageFns<ValidateUserDto> = {
   encode(message: ValidateUserDto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.email !== "") {
       writer.uint32(10).string(message.email);
@@ -376,15 +344,11 @@ export const ValidateUserDto: MessageFns<ValidateUserDto, "auth.ValidateUserDto"
   },
 };
 
-messageTypeRegistry.set(ValidateUserDto.$type, ValidateUserDto);
-
 function createBaseValidateTokenDto(): ValidateTokenDto {
-  return { $type: "auth.ValidateTokenDto", token: "" };
+  return { token: "" };
 }
 
-export const ValidateTokenDto: MessageFns<ValidateTokenDto, "auth.ValidateTokenDto"> = {
-  $type: "auth.ValidateTokenDto" as const,
-
+export const ValidateTokenDto: MessageFns<ValidateTokenDto> = {
   encode(message: ValidateTokenDto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.token !== "") {
       writer.uint32(10).string(message.token);
@@ -416,8 +380,6 @@ export const ValidateTokenDto: MessageFns<ValidateTokenDto, "auth.ValidateTokenD
     return message;
   },
 };
-
-messageTypeRegistry.set(ValidateTokenDto.$type, ValidateTokenDto);
 
 export interface AuthUsersClient {
   validateUser(request: ValidateUserDto): Observable<User>;
@@ -495,8 +457,7 @@ export interface AuthUsersServer extends UntypedServiceImplementation {
   getUserSetting: handleUnaryCall<GetUserSettingsDTO, Settings>;
 }
 
-export interface MessageFns<T, V extends string> {
-  readonly $type: V;
+interface MessageFns<T> {
   encode(message: T, writer?: BinaryWriter): BinaryWriter;
   decode(input: BinaryReader | Uint8Array, length?: number): T;
 }
