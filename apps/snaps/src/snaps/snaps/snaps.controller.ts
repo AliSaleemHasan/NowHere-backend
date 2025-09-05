@@ -17,9 +17,8 @@ import {
 import { SnapsService } from './snaps.service';
 import { Snap } from './schemas/snap.schema';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { JwtGuard } from 'common/guards/jwt-guard';
+import { JwtGuard, ReqUser } from 'nowhere-common';
 import { CreateSnapDto } from './dto/create-snap.dto';
-import { ReqUser } from 'common/decorators/user.decorator';
 import { FindLocationNear } from './dto/find-location-near.dto';
 import { CreateSnapDocs } from './docs/create-snap.doc';
 import { FindAllSnapsDocs } from './docs/find-all-snaps.doc';
@@ -34,6 +33,7 @@ import {
   RedisContext,
 } from '@nestjs/microservices';
 import { diskStorage } from 'multer';
+import { DeleteResult } from 'mongoose';
 
 @Controller('snaps')
 export class SnapsController {
@@ -111,7 +111,7 @@ export class SnapsController {
 
   @Delete()
   @DeleteAllSnapsDocs()
-  deleteAll() {
+  deleteAll(): Promise<DeleteResult> {
     return this.snapsService.deleteAll();
   }
 

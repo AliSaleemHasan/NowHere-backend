@@ -6,17 +6,14 @@ import { JwtService } from '@nestjs/jwt';
 import { JWTPayload } from 'types/jwt-payload.type';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  Settings as ProtoSettingsType,
-  ValidateUserDto,
-} from 'common/proto/auth-user';
+import { Settings as ProtoSettingsType, ValidateUserDto } from 'proto';
 import { User } from '../users/entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
 import {
   MAX_DISTANCE_TO_SEE,
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
-} from 'common/constants/settings';
+} from 'nowhere-common';
 
 @Injectable()
 export class GrpcService {

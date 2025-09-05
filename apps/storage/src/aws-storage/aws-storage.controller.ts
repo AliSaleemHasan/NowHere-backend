@@ -1,8 +1,5 @@
 import { Controller, Get, Inject, Logger, UseGuards } from '@nestjs/common';
 import { AwsStorageService } from './aws-storage.service';
-import { JwtGuard } from 'common/guards/jwt-guard';
-import { RoleGuard } from 'common/guards/role-guard';
-import { UserRoles } from 'common/decorators/roles.decorator';
 import { GetAllFilesDoc } from './docs/get-all-files.doc';
 import {
   ClientProxy,
@@ -12,9 +9,8 @@ import {
   Payload,
   RedisContext,
 } from '@nestjs/microservices';
-import { AWS_STORAGE_SERVICE_NAME } from 'common/proto/storage';
-import { MICROSERVICES } from 'common/constants';
-
+import { MICROSERVICES, JwtGuard, RoleGuard, UserRoles } from 'nowhere-common';
+import { AWS_STORAGE_SERVICE_NAME } from 'proto';
 @Controller('storage')
 export class AwsStorageController {
   private logger: Logger = new Logger(AwsStorageController.name);

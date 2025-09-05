@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { StorageModule } from './storage.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { MICROSERVICES } from 'common/constants';
+import { MICROSERVICES } from 'nowhere-common';
 import { join } from 'path';
 
 async function bootstrap() {

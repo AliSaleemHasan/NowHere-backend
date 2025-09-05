@@ -7,23 +7,19 @@ import {
 } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
 import { Snap, SnapStatus, Tags } from './schemas/snap.schema';
-import { Model } from 'mongoose';
+import { DeleteResult, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from '../getaway';
-import { handleMongoError } from 'common/utils/handle-mongoose-errors';
 import {
   MAX_DISTANCE_TO_SEE,
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
-} from 'common/constants/settings';
-import {
-  AUTH_USERS_SERVICE_NAME,
-  AuthUsersClient,
-  Settings,
-} from 'common/proto/auth-user';
+  handleMongoError,
+  MICROSERVICES,
+} from 'nowhere-common';
+import { AUTH_USERS_SERVICE_NAME, AuthUsersClient, Settings } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { MICROSERVICES } from 'common/constants';
 
 @Injectable()
 export class SnapsService implements OnModuleInit {
@@ -181,10 +177,10 @@ export class SnapsService implements OnModuleInit {
     return this.snapModel.find({ tag: { $in: tags } }).exec();
   }
 
-  deleteSnap(_id: string) {
+  deleteSnap(_id: string): Promise<DeleteResult> {
     return this.snapModel.deleteOne({ _id });
   }
-  deleteAll() {
+  deleteAll(): Promise<DeleteResult> {
     return this.snapModel.deleteMany({});
   }
 }

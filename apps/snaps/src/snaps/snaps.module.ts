@@ -7,20 +7,18 @@ import { SnapsGetaway } from './getaway';
 import { AwsStorageService } from '../../../storage/src/aws-storage/aws-storage.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { MICROSERVICES } from 'common/constants';
+import { MICROSERVICES } from 'nowhere-common';
+import { authProtoOptions } from '@app/proto/proto-options';
+import { ClientOptions } from '@grpc/grpc-js';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
-        name: MICROSERVICES.USERS.package,
-        transport: Transport.GRPC,
-        options: {
-          package: MICROSERVICES.USERS.package,
-          protoPath: join(__dirname, '..', 'auth-user.proto'),
-          url: `${MICROSERVICES.USERS.host}:${MICROSERVICES.USERS.grpcPort}`,
-        },
+        name: 'auth',
+        ...(authProtoOptions as ClientOptions),
       },
+
       {
         name: MICROSERVICES.STORAGE.package,
         transport: Transport.REDIS,

@@ -1,13 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { DataResponseInterceptor } from 'common/interceptors/data-response-interceptor';
-import { HttpExceptionFilter } from 'common/filters/http-exception-filter';
+import {
+  DataResponseInterceptor,
+  HttpExceptionFilter,
+  NowHereLogger,
+  setupSwagger,
+  MICROSERVICES,
+} from 'nowhere-common';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
-import { NowHereLogger } from 'common/loggers/nowhere-logger';
-import { setupSwagger } from 'common/config/setup-swagger';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { MICROSERVICES } from 'common/constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

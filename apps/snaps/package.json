@@ -1,0 +1,26 @@
+{
+  "name": "snaps",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node -r tsconfig-paths/register src/main.ts",
+    "start:prod": "node dist/main.js",
+    "build": "tsc -p tsconfig.app.json",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./apps/backend/test/jest-e2e.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.873.0",
+    "@aws-sdk/s3-request-presigner": "^3.873.0",
+    "mongoose": "^8.16.4",
+    "nowhere-common": "workspace:*",
+    "proto": "^1.0.19",
+    "socket.io": "^4.8.1"
+  },
+  "author": "Ali Hasan",
+  "license": "ISC",
+  "packageManager": "pnpm@10.15.1"
+}

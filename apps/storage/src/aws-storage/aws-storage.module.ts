@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AwsStorageService } from './aws-storage.service';
 import { AwsStorageController } from './aws-storage.controller';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { MICROSERVICES } from 'common/constants';
+import { MICROSERVICES } from 'nowhere-common';
 
 @Module({
   imports: [
