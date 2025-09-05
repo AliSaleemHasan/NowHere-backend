@@ -22,7 +22,9 @@
       "entryFile": "src/main",
       "sourceRoot": "./",
       "compilerOptions": {
-        "assets": ["proto/*.proto"],
+        "assets": [
+          "proto/*.proto"
+        ],
         "watchAssets": true,
         "tsConfigPath": "apps/auth/tsconfig.app.json"
       }
@@ -33,9 +35,20 @@
       "entryFile": "src/main",
       "sourceRoot": "./",
       "compilerOptions": {
-        "assets": ["proto/*.proto"],
+        "assets": [
+          "proto/*.proto"
+        ],
         "watchAssets": true,
         "tsConfigPath": "apps/backend/tsconfig.app.json"
+      }
+    },
+    "nowhere-common": {
+      "type": "library",
+      "root": "libs/nowhere-common",
+      "entryFile": "index",
+      "sourceRoot": "libs/nowhere-common/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/nowhere-common/tsconfig.lib.json"
       }
     },
     "storage": {
@@ -44,7 +57,9 @@
       "entryFile": "src/main",
       "sourceRoot": "./",
       "compilerOptions": {
-        "assets": ["proto/*.proto"],
+        "assets": [
+          "proto/*.proto"
+        ],
         "watchAssets": true,
         "tsConfigPath": "apps/storage/tsconfig.app.json"
       }

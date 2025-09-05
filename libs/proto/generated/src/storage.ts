@@ -2,32 +2,37 @@
 // versions:
 //   protoc-gen-ts_proto  v2.7.7
 //   protoc               v3.21.12
-// source: proto/storage.proto
+// source: src/storage.proto
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 import type { handleUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { messageTypeRegistry } from "../typeRegistry";
 
-export const protobufPackage = "storage";
+export const protobufPackage = "STORAGE";
 
 export interface GetSignedURLDTO {
+  $type: "STORAGE.GetSignedURLDTO";
   key: string;
   expiresIn: number;
 }
 
 export interface GetSignedURLReturn {
+  $type: "STORAGE.GetSignedURLReturn";
   url: string;
 }
 
-export const STORAGE_PACKAGE_NAME = "storage";
+export const STORAGE_PACKAGE_NAME = "STORAGE";
 
 function createBaseGetSignedURLDTO(): GetSignedURLDTO {
-  return { key: "", expiresIn: 0 };
+  return { $type: "STORAGE.GetSignedURLDTO", key: "", expiresIn: 0 };
 }
 
-export const GetSignedURLDTO: MessageFns<GetSignedURLDTO> = {
+export const GetSignedURLDTO: MessageFns<GetSignedURLDTO, "STORAGE.GetSignedURLDTO"> = {
+  $type: "STORAGE.GetSignedURLDTO" as const,
+
   encode(message: GetSignedURLDTO, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.key !== "") {
       writer.uint32(10).string(message.key);
@@ -71,11 +76,15 @@ export const GetSignedURLDTO: MessageFns<GetSignedURLDTO> = {
   },
 };
 
+messageTypeRegistry.set(GetSignedURLDTO.$type, GetSignedURLDTO);
+
 function createBaseGetSignedURLReturn(): GetSignedURLReturn {
-  return { url: "" };
+  return { $type: "STORAGE.GetSignedURLReturn", url: "" };
 }
 
-export const GetSignedURLReturn: MessageFns<GetSignedURLReturn> = {
+export const GetSignedURLReturn: MessageFns<GetSignedURLReturn, "STORAGE.GetSignedURLReturn"> = {
+  $type: "STORAGE.GetSignedURLReturn" as const,
+
   encode(message: GetSignedURLReturn, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.url !== "") {
       writer.uint32(10).string(message.url);
@@ -108,6 +117,8 @@ export const GetSignedURLReturn: MessageFns<GetSignedURLReturn> = {
   },
 };
 
+messageTypeRegistry.set(GetSignedURLReturn.$type, GetSignedURLReturn);
+
 export interface AwsStorageClient {
   getSignedUrlForFile(request: GetSignedURLDTO): Observable<GetSignedURLReturn>;
 }
@@ -138,7 +149,7 @@ export const AWS_STORAGE_SERVICE_NAME = "AwsStorage";
 export type AwsStorageService = typeof AwsStorageService;
 export const AwsStorageService = {
   getSignedUrlForFile: {
-    path: "/storage.AwsStorage/getSignedUrlForFile",
+    path: "/STORAGE.AwsStorage/getSignedUrlForFile",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetSignedURLDTO): Buffer => Buffer.from(GetSignedURLDTO.encode(value).finish()),
@@ -152,7 +163,8 @@ export interface AwsStorageServer extends UntypedServiceImplementation {
   getSignedUrlForFile: handleUnaryCall<GetSignedURLDTO, GetSignedURLReturn>;
 }
 
-export interface MessageFns<T> {
+export interface MessageFns<T, V extends string> {
+  readonly $type: V;
   encode(message: T, writer?: BinaryWriter): BinaryWriter;
   decode(input: BinaryReader | Uint8Array, length?: number): T;
 }

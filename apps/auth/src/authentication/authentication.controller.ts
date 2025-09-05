@@ -1,12 +1,12 @@
 import { Controller, Post, Body, Req, Get } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { Request } from 'express';
-import { extractTokenFromHeader } from 'common/utils/extract-authorization-header';
 import { LoginDocs } from './docs/login.doc';
 import { SigninDTO } from './dto/signin.dto';
 import { SignupDocs } from './docs/signup.doc';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
 import { RefreshDocs } from './docs/refresh.doc';
+import { extractTokenFromHeader } from 'libs/nowhere-common/utils';
 
 @Controller('auth')
 export class AuthenticationController {

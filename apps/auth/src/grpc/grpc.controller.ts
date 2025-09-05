@@ -9,7 +9,7 @@ import {
   User,
   ValidateTokenDto,
   ValidateUserDto,
-} from 'common/proto/auth-user';
+} from 'libs/nowhere-common/proto/auth-user';
 
 @Controller()
 export class GrpcController implements AuthUsersController {

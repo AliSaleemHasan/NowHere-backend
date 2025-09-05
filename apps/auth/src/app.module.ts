@@ -3,9 +3,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import configuration from 'common/config/configuration';
 import { AuthenticationModule } from './authentication/authentication.module';
 import { GrpcModule } from './grpc/grpc.module';
+import configuration from 'libs/nowhere-common/config/configuration';
 
 @Module({
   imports: [
