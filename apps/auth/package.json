@@ -19,6 +19,7 @@
     "mysql2": "^3.14.2",
     "nowhere-common": "workspace:*",
     "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "typeorm": "^0.3.25"
   },
   "author": "Ali Hasan",
