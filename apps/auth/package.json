@@ -1,11 +1,11 @@
 {
   "name": "auth",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/apps/auth/src/index.js",
   "private": true,
   "scripts": {
     "start": "ts-node -r tsconfig-paths/register src/main.ts",
-    "start:prod": "node dist/main.js",
+    "start:prod": "node dist/apps/auth/src/main.js",
     "build": "tsc -p tsconfig.app.json",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@nestjs/jwt": "^11.0.0",
     "bcrypt": "^6.0.0",
+    "multer": "^2.0.2",
     "mysql2": "^3.14.2",
     "nowhere-common": "workspace:*",
     "proto": "workspace:*",

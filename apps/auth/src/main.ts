@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AuthModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 import {
   setupSwagger,
   HttpExceptionFilter,
@@ -9,7 +8,7 @@ import {
 } from 'nowhere-common';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
-import { authProtoOptions } from '@app/proto/proto-options';
+import { authProtoOptions } from 'proto';
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule);

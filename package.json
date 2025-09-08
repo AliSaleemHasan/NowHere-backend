@@ -89,7 +89,8 @@
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
-      "^@app/nowhere-common(|/.*)$": "<rootDir>/libs/nowhere-common/src/$1"
+      "^@app/nowhere-common(|/.*)$": "<rootDir>/libs/nowhere-common/src/$1",
+      "^@app/test(|/.*)$": "<rootDir>/libs/test/src/$1"
     }
   }
 }

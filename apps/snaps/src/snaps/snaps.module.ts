@@ -6,9 +6,8 @@ import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
 import { SnapsGetaway } from './getaway';
 import { AwsStorageService } from '../../../storage/src/aws-storage/aws-storage.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 import { MICROSERVICES } from 'nowhere-common';
-import { authProtoOptions } from '@app/proto/proto-options';
+import { authProtoOptions } from 'proto';
 import { ClientOptions } from '@grpc/grpc-js';
 
 @Module({

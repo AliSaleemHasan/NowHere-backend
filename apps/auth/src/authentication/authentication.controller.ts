@@ -6,7 +6,7 @@ import { SigninDTO } from './dto/signin.dto';
 import { SignupDocs } from './docs/signup.doc';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
 import { RefreshDocs } from './docs/refresh.doc';
-import { extractTokenFromHeader } from 'libs/nowhere-common/utils';
+import { extractTokenFromHeader } from 'nowhere-common';
 
 @Controller('auth')
 export class AuthenticationController {

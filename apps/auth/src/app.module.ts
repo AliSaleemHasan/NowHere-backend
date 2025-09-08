@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthenticationModule } from './authentication/authentication.module';
 import { GrpcModule } from './grpc/grpc.module';
-import { configuration } from 'libs/nowhere-common/config/configuration';
+import { configuration } from 'nowhere-common';
 
 @Module({
   imports: [

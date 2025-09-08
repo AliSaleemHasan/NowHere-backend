@@ -1,10 +1,10 @@
 {
   "name": "snaps",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/apps/snaps/src/main.js",
   "scripts": {
     "start": "ts-node -r tsconfig-paths/register src/main.ts",
-    "start:prod": "node dist/main.js",
+    "start:prod": "node dist/apps/snaps/src/main.js",
     "build": "tsc -p tsconfig.app.json",
     "test": "jest",
     "test:watch": "jest --watch",

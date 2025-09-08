@@ -1,4 +1,3 @@
-import { ClientOptions } from '@grpc/grpc-js';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 

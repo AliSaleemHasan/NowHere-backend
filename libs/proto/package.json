@@ -1,10 +1,15 @@
 {
   "name": "proto",
   "version": "1.0.0",
-  "main": "index.js",
   "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "proto:gen": "protoc  --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./ --ts_proto_opt=nestJs=true,outputServices=grpc-js,snakeToCamel=false,exportCommonSymbols=false *.proto -I . && tsc -p tsconfig.lib.json && node ./dist/generate-entry-file.js"
+    "proto:compile": "protoc --plugin=$(pnpm dlx which protoc-gen-ts_proto) --ts_proto_out=./ --ts_proto_opt=nestJs=true,outputServices=grpc-js,snakeToCamel=false,exportCommonSymbols=false *.proto -I .",
+    "proto:build": "tsc -p tsconfig.lib.json",
+    "proto:entry": "tsc scripts/generate-entry-file.ts && node scripts/generate-entry-file.js",
+    "proto:gen": "pnpm proto:compile && pnpm proto:build && pnpm proto:entry",
+    "build": "pnpm proto:gen && rm -rf dist && tsc -p tsconfig.lib.json"
   },
   "dependencies": {
     "ts-proto": "^2.7.7"
