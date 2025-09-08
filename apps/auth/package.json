@@ -18,9 +18,10 @@
     "bcrypt": "^6.0.0",
     "mysql2": "^3.14.2",
     "nowhere-common": "workspace:*",
+    "proto": "workspace:*",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
-    "typeorm": "^0.3.25"
+    "typeorm": "^0.3.26"
   },
   "author": "Ali Hasan",
   "license": "ISC",

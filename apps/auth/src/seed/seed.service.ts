@@ -6,16 +6,12 @@ import { Repository } from 'typeorm';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import { User } from '../users/entities/user.entity';
-import {
-  Snap,
-  Tags,
-} from '../../../backend/src/snaps/snaps/schemas/snap.schema';
 
 @Injectable()
 export class SeedService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
-    @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
+    //  / @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
   ) {}
 
   /**
@@ -156,26 +152,28 @@ export class SeedService {
       join(__dirname, '..', '..', '..', 'uploads'),
     );
 
-    for (let i = 0; i < locations.length; i++) {
-      let current_user = users[i % users.length];
-      if (!current_user._id) continue;
-      let newSnap = await this.SnapsModel.create({
-        _userId: current_user._id,
-        description: `This is a small description for snap posted by a user with name ${current_user.first_name} ${current_user.last_name} and email ${current_user.email}`,
-        snaps: new Array(Math.floor(Math.random() * 4) || 1)
-          .fill(null)
-          .map((_, index) => `uploads/${uploadedSnaps[index]}`),
-        location: {
-          type: 'Point',
-          coordinates: locations[i],
-        },
-        tag: Tags[
-          Object.keys(Tags)[
-            Math.floor(Math.random() * Object.keys(Tags).length)
-          ]
-        ],
-      });
-      newSnap.save();
-    }
+    console.log('test');
+    //   for (let i = 0; i < locations.length; i++) {
+    //     let current_user = users[i % users.length];
+    //     if (!current_user._id) continue;
+    //     let newSnap = await this.SnapsModel.create({
+    //       _userId: current_user._id,
+    //       description: `This is a small description for snap posted by a user with name ${current_user.first_name} ${current_user.last_name} and email ${current_user.email}`,
+    //       snaps: new Array(Math.floor(Math.random() * 4) || 1)
+    //         .fill(null)
+    //         .map((_, index) => `uploads/${uploadedSnaps[index]}`),
+    //       location: {
+    //         type: 'Point',
+    //         coordinates: locations[i],
+    //       },
+    //       tag: Tags[
+    //         Object.keys(Tags)[
+    //           Math.floor(Math.random() * Object.keys(Tags).length)
+    //         ]
+    //       ],
+    //     });
+    //     newSnap.save();
+    //   }
+    // }
   }
 }

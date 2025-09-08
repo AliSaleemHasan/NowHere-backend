@@ -9,11 +9,7 @@ import { Repository } from 'typeorm';
 import { Settings as ProtoSettingsType, ValidateUserDto } from 'proto';
 import { User } from '../users/entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
-import {
-  MAX_DISTANCE_TO_SEE,
-  MIN_DISTANCE_TO_POST,
-  SNAP_DISAPPEAR_TIME,
-} from 'nowhere-common';
+
 
 @Injectable()
 export class GrpcService {

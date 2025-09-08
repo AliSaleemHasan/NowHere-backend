@@ -168,6 +168,9 @@ importers:
       nowhere-common:
         specifier: workspace:*
         version: link:../../libs/nowhere-common
+      proto:
+        specifier: workspace:*
+        version: link:../../libs/proto
       sqlite:
         specifier: ^5.1.1
         version: 5.1.1
@@ -175,7 +178,7 @@ importers:
         specifier: ^5.1.7
         version: 5.1.7
       typeorm:
-        specifier: ^0.3.25
+        specifier: ^0.3.26
         version: 0.3.26(ioredis@5.7.0)(mongodb@6.18.0(socks@2.8.7))(mysql2@3.14.4)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.1)(typescript@5.9.2))
 
   apps/snaps:

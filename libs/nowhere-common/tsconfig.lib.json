@@ -1,8 +1,6 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2023",
-    "module": "commonjs",
-    "declaration": true,
     "outDir": "dist",
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
@@ -12,12 +10,10 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "emitDecoratorMetadata": true,
-    "rootDir": ".",
-    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["**/*"],
+  "include": ["**/*", "*"],
   "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
 }

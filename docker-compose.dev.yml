@@ -1,0 +1,89 @@
+services:
+  backend:
+    container_name: nest-dev
+    build:
+      context: .
+      dockerfile: ./apps/snaps/Dockerfile
+    volumes:
+      - ./apps/snaps:/usr/src/app/apps/snaps
+      - /usr/src/app/node_modules
+    ports:
+      - '3000:3000'
+    command: pnpm --filter snaps start
+    depends_on:
+      - mongodb
+
+  auth:
+    container_name: nowhere-auth
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    volumes:
+      - ./apps/auth:/usr/src/app/apps/auth
+      - /usr/src/app/node_modules
+    ports:
+      - '50051:50051'
+      - '3001:3001'
+    command: pnpm --filter auth start
+    depends_on:
+      - auth-db
+
+  storage:
+    container_name: nowhere-storage
+    build:
+      context: .
+      dockerfile: ./apps/storage/Dockerfile
+    volumes:
+      - ./apps/storage:/usr/src/app/apps/storage
+      - /usr/src/app/node_modules
+    ports:
+      - '3002:3002'
+      - '50052:50051'
+
+    command: pnpm --filter storage start
+
+  mongodb:
+    image: mongo
+    restart: always
+    ports:
+      - ${MONGO_PORT}:${MONGO_PORT}
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - ${MONGO_EXPRESS_PORT}:${MONGO_EXPRESS_PORT}
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USER}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASS}
+      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@mongodb:${MONGO_PORT}/
+      - ME_CONFIG_BASICAUTH=false
+
+  auth-db:
+    image: mysql:9.4.0
+    restart: always
+
+    ports:
+      - 3307:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASS}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASS}
+
+  redis:
+    image: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongo-data:
+  redis_data:
