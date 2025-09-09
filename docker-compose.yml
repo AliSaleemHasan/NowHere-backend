@@ -1,46 +1,46 @@
 services:
-  backend:
-    container_name: nest-dev
-    build:
-      context: .
-      dockerfile: ./apps/backend/Dockerfile
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-    ports:
-      - '3000:3000'
-    command: npm run start:backend:dev
-    depends_on:
-      - mongodb
+  # backend:
+  #   container_name: nest-dev
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/backend/Dockerfile
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - /usr/src/app/node_modules
+  #   ports:
+  #     - '3000:3000'
+  #   command: npm run start:backend:dev
+  #   depends_on:
+  #     - mongodb
 
-  auth:
-    container_name: nowhere-auth
-    build:
-      context: .
-      dockerfile: ./apps/auth/Dockerfile
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-    ports:
-      - '50051:50051'
-      - '3001:3001'
-    command: npm run start:auth:dev
-    depends_on:
-      - auth-db
+  # auth:
+  #   container_name: nowhere-auth
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/auth/Dockerfile
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - /usr/src/app/node_modules
+  #   ports:
+  #     - '50051:50051'
+  #     - '3001:3001'
+  #   command: npm run start:auth:dev
+  #   depends_on:
+  #     - auth-db
 
-  storage:
-    container_name: nowhere-storage
-    build:
-      context: .
-      dockerfile: ./apps/storage/Dockerfile
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-    ports:
-      - '3002:3002'
-      - '50052:50051'
+  # storage:
+  #   container_name: nowhere-storage
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/storage/Dockerfile
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - /usr/src/app/node_modules
+  #   ports:
+  #     - '3002:3002'
+  #     - '50052:50051'
 
-    command: npm run start:storage:dev
+  #   command: npm run start:storage:dev
 
   mongodb:
     image: mongo

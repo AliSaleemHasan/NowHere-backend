@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { JWTPayload } from 'types/jwt-payload.type';
+// import { JWTPayload } from 'types/jwt-payload.type';
 
 import { UsersService } from '../users/users.service';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
@@ -64,7 +64,7 @@ export class AuthenticationService {
 
     // validate the recieved refresh token
     try {
-      const payload = await this.jwt.verifyAsync<JWTPayload>(token, {
+      const payload = await this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       });
       const newTokens = await this.generateTokens(payload.user, payload.sub);

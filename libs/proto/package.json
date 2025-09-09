@@ -9,7 +9,8 @@
     "proto:build": "tsc -p tsconfig.lib.json",
     "proto:entry": "tsc scripts/generate-entry-file.ts && node scripts/generate-entry-file.js",
     "proto:gen": "pnpm proto:compile && pnpm proto:build && pnpm proto:entry",
-    "build": "pnpm proto:gen && rm -rf dist && tsc -p tsconfig.lib.json"
+    "proto:copy": "cp *.proto dist",
+    "build": "pnpm proto:gen && rm -rf dist && tsc -p tsconfig.lib.json && pnpm proto:copy"
   },
   "dependencies": {
     "ts-proto": "^2.7.7"

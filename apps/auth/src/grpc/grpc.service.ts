@@ -3,13 +3,12 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { JWTPayload } from 'types/jwt-payload.type';
+// import { JWTPayload } from 'types/jwt-payload.type';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Settings as ProtoSettingsType, ValidateUserDto } from 'proto';
 import { User } from '../users/entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
-
 
 @Injectable()
 export class GrpcService {
@@ -38,7 +37,7 @@ export class GrpcService {
   async validateToken(token?: string): Promise<User> {
     if (!token) throw new UnauthorizedException('User is not loggedin/found');
     try {
-      const payload = await this.jwt.verifyAsync<JWTPayload>(token, {
+      const payload = await this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get('ACCESS_SECRET'),
       });
 

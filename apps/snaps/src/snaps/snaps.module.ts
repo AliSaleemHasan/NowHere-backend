@@ -4,7 +4,6 @@ import { SnapsController } from './snaps/snaps.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
 import { SnapsGetaway } from './getaway';
-import { AwsStorageService } from '../../../storage/src/aws-storage/aws-storage.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MICROSERVICES } from 'nowhere-common';
 import { authProtoOptions } from 'proto';
@@ -30,6 +29,6 @@ import { ClientOptions } from '@grpc/grpc-js';
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],
   controllers: [SnapsController],
-  providers: [SnapsService, SnapsGetaway, AwsStorageService],
+  providers: [SnapsService, SnapsGetaway],
 })
 export class SnapsModule {}

@@ -4,9 +4,12 @@ services:
     build:
       context: .
       dockerfile: ./apps/snaps/Dockerfile
+      target: dev
+    environment:
+      - NODE_ENV=development
     volumes:
       - ./apps/snaps:/usr/src/app/apps/snaps
-      - /usr/src/app/node_modules
+      - ./libs:/usr/src/app/libs
     ports:
       - '3000:3000'
     command: pnpm --filter snaps start
@@ -15,32 +18,36 @@ services:
 
   auth:
     container_name: nowhere-auth
-    build:
-      context: .
-      dockerfile: ./apps/auth/Dockerfile
+    build: 
+     context: .
+     dockerfile: ./apps/auth/Dockerfile
+     target: dev
+    environment:
+      - NODE_ENV=development
     volumes:
       - ./apps/auth:/usr/src/app/apps/auth
-      - /usr/src/app/node_modules
-    ports:
-      - '50051:50051'
-      - '3001:3001'
+      - ./libs:/usr/src/app/libs
     command: pnpm --filter auth start
+    ports:
+      - "3001:3001"
     depends_on:
       - auth-db
 
   storage:
     container_name: nowhere-storage
+    
     build:
       context: .
       dockerfile: ./apps/storage/Dockerfile
+      target: dev
     volumes:
       - ./apps/storage:/usr/src/app/apps/storage
-      - /usr/src/app/node_modules
+      - ./libs:/usr/src/app/libs
+    command: pnpm --filter storage start:dev
     ports:
       - '3002:3002'
       - '50052:50051'
 
-    command: pnpm --filter storage start
 
   mongodb:
     image: mongo
