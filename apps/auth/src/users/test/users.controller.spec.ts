@@ -2,6 +2,9 @@
 import { Test } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { UsersController } from '../users.controller';
+import { JwtGuard, MockJwtGuard } from 'nowhere-common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 
 describe('UsersController (unit)', () => {
   let controller: UsersController;
@@ -19,8 +22,13 @@ describe('UsersController (unit)', () => {
             getAllUsers: jest.fn(),
           },
         },
+        { provide: JwtService, useValue: {} },
+        { provide: ConfigService, useValue: {} },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtGuard)
+      .useClass(MockJwtGuard)
+      .compile();
 
     controller = module.get(UsersController);
     service = module.get(UsersService);

@@ -3,8 +3,11 @@ import { UsersController } from '../users.controller';
 import { UsersService } from '../users.service';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
-import { seedUserTestData } from './test-utils/seed-users';
 import { Repository } from 'typeorm';
+import { JwtGuard, MockJwtGuard } from 'nowhere-common';
+import { seedUserTestData } from './seedUserTestData';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 describe('UserController (integration)', () => {
   let controller: UsersController;
@@ -22,8 +25,15 @@ describe('UserController (integration)', () => {
         }),
         TypeOrmModule.forFeature([User]),
       ],
-      providers: [UsersService],
-    }).compile();
+      providers: [
+        UsersService,
+        { provide: JwtService, useValue: {} },
+        { provide: ConfigService, useValue: {} },
+      ],
+    })
+      .overrideGuard(JwtGuard)
+      .useClass(MockJwtGuard)
+      .compile();
 
     controller = module.get<UsersController>(UsersController);
 
@@ -33,8 +43,8 @@ describe('UserController (integration)', () => {
 
   describe('GetByEmail', () => {
     it('Should return the user when found', async () => {
-      const user = await controller.getByEmail('test1@test.com');
-      expect(user?.email).toBe('test1@test.com');
+      const user = await controller.getByEmail('Jacob@test.com');
+      expect(user?.email).toBe('Jacob@test.com');
     });
 
     it('Should return null when not found ', async () => {
@@ -44,9 +54,9 @@ describe('UserController (integration)', () => {
   });
 
   describe('getAllUsers', () => {
-    it('Should get a list of 20 users with right emails ', async () => {
+    it('Should get a list of 3 users with right emails ', async () => {
       const users = await controller.getAllUsers();
-      expect(users).toHaveLength(20);
+      expect(users).toHaveLength(3);
 
       users.forEach((user) => {
         expect(user.email).toBe(`${user.first_name}@test.com`);
