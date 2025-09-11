@@ -5,9 +5,9 @@ import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
 import { JwtGuard, MockJwtGuard } from 'nowhere-common';
-import { seedUserTestData } from './seedUserTestData';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { seedUserTestData } from '../../common/test-utils/seedUserTestData';
 
 describe('UserController (integration)', () => {
   let controller: UsersController;
