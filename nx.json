@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "test:cov": {
+      "outputs": ["{projectRoot}/coverage"],
+      "cache": true
+    },
+    "proto:build": {
+      "outputs": ["{projectRoot}/lib/proto"],
+      "cache": true
+    },
+
+    "test:watch": {
+      "cache": true
+    },
+    "test:debug": {
+      "cache": true
+    },
+    "test:e2e": {
+      "cache": true
+    }
+  },
+  "defaultBase": "master",
+  "plugins": [
+    {
+      "plugin": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "lint"
+      }
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "jest:test"
+      }
+    }
+  ],
+  "nxCloudId": "68c2d2de00ebb55905c2bc0d"
+}

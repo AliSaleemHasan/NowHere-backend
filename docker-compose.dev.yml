@@ -12,30 +12,30 @@ services:
       - ./libs:/usr/src/app/libs
     ports:
       - '3000:3000'
-    command: pnpm --filter snaps start
+    command: pnpm nx start snaps
     depends_on:
       - mongodb
 
   auth:
     container_name: nowhere-auth
-    build: 
-     context: .
-     dockerfile: ./apps/auth/Dockerfile
-     target: dev
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: dev
     environment:
       - NODE_ENV=development
     volumes:
       - ./apps/auth:/usr/src/app/apps/auth
       - ./libs:/usr/src/app/libs
-    command: pnpm --filter auth start
+    command: pnpm nx start auth
     ports:
-      - "3001:3001"
+      - '3001:3001'
     depends_on:
       - auth-db
 
   storage:
     container_name: nowhere-storage
-    
+
     build:
       context: .
       dockerfile: ./apps/storage/Dockerfile
@@ -43,11 +43,10 @@ services:
     volumes:
       - ./apps/storage:/usr/src/app/apps/storage
       - ./libs:/usr/src/app/libs
-    command: pnpm --filter storage start:dev
+    command: pnpm nx start storage
     ports:
       - '3002:3002'
       - '50052:50051'
-
 
   mongodb:
     image: mongo

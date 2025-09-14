@@ -6,11 +6,11 @@
     "start": "ts-node-dev -r tsconfig-paths/register --respawn src/main.ts",
     "start:prod": "node dist/apps/snaps/src/main.js",
     "build": "tsc -p tsconfig.app.json",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
+    "test": "nx jest:test",
+    "test:watch": "nx jest:test --watch",
+    "test:cov": "nx jest:test --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./apps/backend/test/jest-e2e.json"
+    "test:e2e": "nx jest:test --config ./apps/backend/test/jest-e2e.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.873.0",

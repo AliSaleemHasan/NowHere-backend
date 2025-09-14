@@ -30,7 +30,7 @@ WORKDIR /usr/src/apps/storage
 EXPOSE 3001
 
 # Use ts-node for live dev
-CMD ["pnpm", "start:dev"]
+CMD ["pnpm", "nx","start:dev"]
 
 # =======================
 # Build Stage (for production)
