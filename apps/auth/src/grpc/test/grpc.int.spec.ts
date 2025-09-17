@@ -14,11 +14,11 @@ import { GrpcService } from '../grpc.service';
 // 👇 Use fake data helpers
 const makeUser = (overrides?: Partial<User>): User =>
   ({
-    _id: 'u1',
+    Id: 'u1',
     email: 'jacob@test.com',
     password: 'hashedpass',
-    first_name: 'Jacob',
-    last_name: 'test',
+    firstName: 'Jacob',
+    lastName: 'test',
     ...overrides,
   }) as User;
 
@@ -127,13 +127,13 @@ describe('GrpcModule (integration)', () => {
       // pre-create settings
       await settingsRepo.save(
         settingsRepo.create({
-          user: { _id: 'u1' } as any,
-          max_distance: 100000,
+          user: { Id: 'u1' } as any,
+          maxDistance: 100000,
         }),
       );
 
       const res = await controller.getUserSetting({ id: 'u1' });
-      expect(res).toMatchObject({ max_distance: 100000 });
+      expect(res).toMatchObject({ maxDistance: 100000 });
 
       // still only 1 settings in db
       expect(await settingsRepo.find()).toHaveLength(1);

@@ -6,6 +6,7 @@ import { configuration } from 'nowhere-common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { JwtModule } from '@nestjs/jwt';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { JwtModule } from '@nestjs/jwt';
       inject: [ConfigService],
     }),
     SnapsModule,
+    SeedModule,
   ],
   controllers: [],
   providers: [],

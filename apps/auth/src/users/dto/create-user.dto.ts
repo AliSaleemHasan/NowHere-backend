@@ -25,10 +25,10 @@ export class CreateUserDTO {
   email: string;
 
   @IsString()
-  first_name: string;
+  firstName: string;
 
   @IsString()
-  last_name: string;
+  lastName: string;
 
   @IsOptional()
   @IsEnum(Roles)

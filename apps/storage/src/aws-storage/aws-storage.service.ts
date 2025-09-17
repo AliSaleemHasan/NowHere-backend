@@ -23,7 +23,7 @@ export class AwsStorageService {
     this.bucket = this.config.getOrThrow('AWS_BUCKET');
 
     const creds: any = {
-      accessKeyId: this.config.getOrThrow('AWS_ACCESS_KEY_ID'),
+      accessKeyId: this.config.getOrThrow('AWS_ACCESS_KEYId'),
       secretAccessKey: this.config.getOrThrow('AWS_SECRET_ACCESS_KEY'),
     };
     // const sessionToken = this.config.get('AWS_SESSION_TOKEN');

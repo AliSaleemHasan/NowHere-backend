@@ -58,7 +58,7 @@ describe('AuthenticationService', () => {
   // ------------------- LOGIN -------------------
   describe('login', () => {
     it('should return user and tokens on successful login', async () => {
-      const user = { _id: 'u1', email: 'test@test.com', password: 'hashed' };
+      const user = { Id: 'u1', email: 'test@test.com', password: 'hashed' };
       mockUsersService.getUserByEmail.mockResolvedValue(user);
       jest
         .spyOn(service, 'generateTokens')
@@ -80,7 +80,7 @@ describe('AuthenticationService', () => {
     });
 
     it('should throw UnauthorizedException if password is wrong', async () => {
-      const user = { _id: 'u1', email: 'test@test.com', password: 'hashed' };
+      const user = { Id: 'u1', email: 'test@test.com', password: 'hashed' };
       mockUsersService.getUserByEmail.mockResolvedValue(user);
       await expect(service.login('test@test.com', 'wrong')).rejects.toThrow(
         UnauthorizedException,
@@ -92,7 +92,7 @@ describe('AuthenticationService', () => {
   describe('signup', () => {
     it('should create user and settings successfully', async () => {
       const createUserDto = { email: 'test@test.com', password: 'plain' };
-      const newUser = { _id: 'u1', ...createUserDto };
+      const newUser = { Id: 'u1', ...createUserDto };
       mockUsersService.createUser.mockResolvedValue(newUser);
       mockGrpcService.getUserSetting.mockResolvedValue({});
 
@@ -115,7 +115,7 @@ describe('AuthenticationService', () => {
   // ------------------- REFRESH TOKEN -------------------
   describe('refreshToken', () => {
     it('should return new tokens if token is valid', async () => {
-      const payload = { user: { _id: 'u1', email: 'a@b.com' }, sub: 'u1' };
+      const payload = { user: { Id: 'u1', email: 'a@b.com' }, sub: 'u1' };
       mockJwtService.verifyAsync.mockResolvedValue(payload);
       jest
         .spyOn(service, 'generateTokens')

@@ -1,6 +1,5 @@
 syntax = "proto3";
 
-
 package auth;
 
 
@@ -10,12 +9,41 @@ service AuthUsers {
 
     // user settings
     rpc getUserSetting(GetUserSettingsDTO) returns (Settings);
+    rpc createUser(CreateUserDTO) returns (User);
+    rpc getAllUsers (Empty) returns (Users);
+
+
 }
+
+
+
+message Users {
+  repeated User users=1;
+}
+message Empty{
+  
+}
+
+enum UserRole{
+  ADMIN =0;
+  USER = 1;
+}
+
+message CreateUserDTO{
+  string password =1 ;
+  string email = 2 ;
+  string bio = 3;
+  string firstName = 4; 
+  string lastName = 5;
+  UserRole role=6;
+}
+
+
 message Settings{
   string id =1;
   User user =2;
-  int32 max_distance=3;
-  int32 new_snap_distance=4;
+  int32 maxDistance=3;
+  int32 newSnapDistance=4;
   int32 snapDisappearTime=5;
 
 }
@@ -24,11 +52,11 @@ message GetUserSettingsDTO {
 }
 
 message User{
-  string _id = 1;
+  string Id = 1;
   string password = 2;
   string email = 3;
-  string first_name = 4;
-  string last_name = 5;
+  string firstName = 4;
+  string lastName = 5;
   string bio = 6;
   bool isActive = 7;
   string role = 8;

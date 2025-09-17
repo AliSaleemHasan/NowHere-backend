@@ -1,18 +1,28 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Model } from 'mongoose';
-import { Repository } from 'typeorm';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { readdirSync } from 'fs';
 import { join } from 'path';
-import { User } from '../users/entities/user.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Snap, Tags } from '../snaps/snaps/schemas/snap.schema';
+import { Model } from 'mongoose';
+import { MICROSERVICES } from 'nowhere-common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { AUTH_USERS_SERVICE_NAME, AuthUsersClient, UserRole } from 'proto';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class SeedService {
+export class SeedService implements OnModuleInit {
+  private readonly logger: Logger = new Logger(SeedService.name);
+  authUsersService: AuthUsersClient;
   constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
-    //  / @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
+    @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
+    @Inject(MICROSERVICES.USERS.package) private client: ClientGrpc,
   ) {}
+
+  onModuleInit() {
+    this.authUsersService = this.client.getService<AuthUsersClient>(
+      AUTH_USERS_SERVICE_NAME,
+    );
+  }
 
   /**
    *
@@ -127,23 +137,28 @@ export class SeedService {
     // first create users
     let user_names = this.generateNames();
 
-    for (let i = 0; i < user_names.length; i++) {
+    for (let i = 0; i < 1; i++) {
       let name = user_names[i];
       try {
-        let createdUser = this.userRepository.create({
-          bio: `Hey There I am ${name} Welcome to my NowHere profile Page`,
-          email: `${name.split(' ').join('_')}@test.com`,
-          password: 'Qqqqq1!',
-          first_name: name.split(' ')[0].toUpperCase(),
-          last_name: name.split(' ')[1].toUpperCase(),
-        });
-        await this.userRepository.save(createdUser);
+        // adding new user
+        await firstValueFrom(
+          await this.authUsersService.createUser({
+            bio: `Hey There I am ${name} Welcome to my NowHere profile Page`,
+            email: `${name.split(' ').join('_')}@test.com`,
+            password: 'Qqqqq1!',
+            firstName: name.split(' ')[0],
+            lastName: name.split(' ')[1],
+            role: UserRole.USER,
+          }),
+        );
       } catch (e) {
-        console.log(`Error seeding user ${name}`);
+        // this.logger.error(`Error seeding user ${name} , `);
       }
     }
 
-    const users = await this.userRepository.find();
+    // get users from users service (after inserting)
+    let users = (await firstValueFrom(this.authUsersService.getAllUsers({})))
+      .users;
 
     // now creating snaps for each user
     let locations = this.generateLocations();
@@ -152,28 +167,35 @@ export class SeedService {
       join(__dirname, '..', '..', '..', 'uploads'),
     );
 
-    console.log('test');
-    //   for (let i = 0; i < locations.length; i++) {
-    //     let current_user = users[i % users.length];
-    //     if (!current_user._id) continue;
-    //     let newSnap = await this.SnapsModel.create({
-    //       _userId: current_user._id,
-    //       description: `This is a small description for snap posted by a user with name ${current_user.first_name} ${current_user.last_name} and email ${current_user.email}`,
-    //       snaps: new Array(Math.floor(Math.random() * 4) || 1)
-    //         .fill(null)
-    //         .map((_, index) => `uploads/${uploadedSnaps[index]}`),
-    //       location: {
-    //         type: 'Point',
-    //         coordinates: locations[i],
-    //       },
-    //       tag: Tags[
-    //         Object.keys(Tags)[
-    //           Math.floor(Math.random() * Object.keys(Tags).length)
-    //         ]
-    //       ],
-    //     });
-    //     newSnap.save();
-    //   }
-    // }
+    let new_snaps: Snap[] = [];
+    for (let i = 0; i < locations.length; i++) {
+      try {
+        let current_user = users[i % users.length];
+        if (!current_user.Id) {
+          continue;
+        }
+        let newSnap = await this.SnapsModel.create({
+          _userId: current_user.Id,
+          description: `This is a small description for snap posted by a user with name ${current_user.firstName} ${current_user.lastName} and email ${current_user.email}`,
+          snaps: new Array(Math.floor(Math.random() * 4) || 1)
+            .fill(null)
+            .map((_, index) => `uploads/${uploadedSnaps[index]}`),
+          location: {
+            type: 'Point',
+            coordinates: locations[i],
+          },
+          tag: Tags[
+            Object.keys(Tags)[
+              Math.floor(Math.random() * Object.keys(Tags).length)
+            ]
+          ],
+        });
+        newSnap.save();
+        new_snaps.push(newSnap);
+      } catch (e) {
+        this.logger.error(e.message);
+      }
+    }
+    return new_snaps;
   }
 }

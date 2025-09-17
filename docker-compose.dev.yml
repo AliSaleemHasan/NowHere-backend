@@ -8,8 +8,11 @@ services:
     environment:
       - NODE_ENV=development
     volumes:
-      - ./apps/snaps:/usr/src/app/apps/snaps
-      - ./libs:/usr/src/app/libs
+      - ./apps/snaps:/usr/src/apps/snaps
+      - ./libs:/usr/src/libs
+      - ./uploads:/usr/src/apps/uploads
+      - /usr/src/node_modules
+
     ports:
       - '3000:3000'
     command: pnpm nx start snaps
@@ -25,8 +28,9 @@ services:
     environment:
       - NODE_ENV=development
     volumes:
-      - ./apps/auth:/usr/src/app/apps/auth
-      - ./libs:/usr/src/app/libs
+      - ./apps/auth:/usr/src/apps/auth
+      - ./libs:/usr/src/libs
+      - /usr/src/node_modules
     command: pnpm nx start auth
     ports:
       - '3001:3001'
@@ -41,8 +45,9 @@ services:
       dockerfile: ./apps/storage/Dockerfile
       target: dev
     volumes:
-      - ./apps/storage:/usr/src/app/apps/storage
-      - ./libs:/usr/src/app/libs
+      - ./apps/storage:/usr/src/apps/storage
+      - ./libs:/usr/src/libs
+      - /usr/src/node_modules
     command: pnpm nx start storage
     ports:
       - '3002:3002'

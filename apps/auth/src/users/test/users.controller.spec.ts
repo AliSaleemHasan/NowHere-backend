@@ -36,24 +36,24 @@ describe('UsersController (unit)', () => {
 
   it('getByEmail returns service result', async () => {
     service.getUserByEmail.mockResolvedValue({
-      _id: 'u1',
+      Id: 'u1',
       email: 'a@a.com',
     } as any);
     const res = await controller.getByEmail('a@a.com');
     expect(service.getUserByEmail).toHaveBeenCalledWith('a@a.com');
-    expect(res).toEqual({ _id: 'u1', email: 'a@a.com' });
+    expect(res).toEqual({ Id: 'u1', email: 'a@a.com' });
   });
 
   it('getUserById returns service result', async () => {
-    service.getUserById.mockResolvedValue({ _id: 'u1' } as any);
+    service.getUserById.mockResolvedValue({ Id: 'u1' } as any);
     const res = await controller.getUserById('u1');
     expect(service.getUserById).toHaveBeenCalledWith('u1');
-    expect(res).toEqual({ _id: 'u1' });
+    expect(res).toEqual({ Id: 'u1' });
   });
 
   it('getAllUsers returns service result', async () => {
-    service.getAllUsers.mockResolvedValue([{ _id: 'u1' }] as any);
+    service.getAllUsers.mockResolvedValue([{ Id: 'u1' }] as any);
     const res = await controller.getAllUsers();
-    expect(res).toEqual([{ _id: 'u1' }]);
+    expect(res).toEqual([{ Id: 'u1' }]);
   });
 });

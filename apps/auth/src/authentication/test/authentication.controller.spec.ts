@@ -37,7 +37,7 @@ describe('AuthenticationController (Unit)', () => {
 
   it('login should forward user info to service and return user', async () => {
     const signInDTO = { email: 'jacob@test.com', password: 'test' };
-    const user = { ...signInDTO, first_name: 'jacob', last_name: 'test' };
+    const user = { ...signInDTO, firstName: 'jacob', lastName: 'test' };
 
     (service.login as jest.Mock).mockResolvedValue(user);
 
@@ -50,8 +50,8 @@ describe('AuthenticationController (Unit)', () => {
 
   it('signup should forward new user info to service and return new user', async () => {
     const createUserDto = {
-      first_name: 'test',
-      last_name: 'test',
+      firstName: 'test',
+      lastName: 'test',
       email: 'test@test.com',
       password: 'pass',
       bio: '',

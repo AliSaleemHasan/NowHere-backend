@@ -17,18 +17,18 @@ export function SignupDocs() {
             type: 'object',
             properties: {
               email: { type: 'string', example: 't@t.com' },
-              first_name: { type: 'string', example: 'test_firstname' },
-              last_name: { type: 'string', example: 'test_lastname' },
+              firstName: { type: 'string', example: 'test_firstname' },
+              lastName: { type: 'string', example: 'test_lastname' },
               password: { type: 'string', example: 'Qqqqqq1!' },
             },
-            required: ['email', 'first_name', 'last_name', 'password'],
+            required: ['email', 'firstName', 'lastName', 'password'],
           },
         },
         example: {
           user: {
             email: 't@t.com',
-            first_name: 'test_firstname',
-            last_name: 'test_lastname',
+            firstName: 'test_firstname',
+            lastName: 'test_lastname',
             password: 'Qqqqqq1!',
           },
         },

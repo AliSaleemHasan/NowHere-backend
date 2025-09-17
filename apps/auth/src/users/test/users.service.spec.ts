@@ -33,11 +33,11 @@ describe('UsersService (unit)', () => {
     const dto = {
       email: 'a@a.com',
       password: 'Qqqqqq1!',
-      first_name: 'A',
-      last_name: 'B',
+      firstName: 'A',
+      lastName: 'B',
       bio: null,
     } as any;
-    const entity = { _id: 'uuid', ...dto } as User;
+    const entity = { Id: 'uuid', ...dto } as User;
 
     repo.create.mockReturnValue(entity);
     repo.save.mockResolvedValue(entity);
@@ -50,23 +50,23 @@ describe('UsersService (unit)', () => {
 
   it('getUserById returns user without password', async () => {
     const user = {
-      _id: 'u1',
+      Id: 'u1',
       email: 'a@a.com',
       password: 'secret',
-      first_name: 'A',
-      last_name: 'B',
+      firstName: 'A',
+      lastName: 'B',
       bio: '',
       isActive: false,
     } as User;
     repo.findOne.mockResolvedValue(user);
 
     const result = await service.getUserById('u1');
-    expect(repo.findOne).toHaveBeenCalledWith({ where: { _id: 'u1' } });
+    expect(repo.findOne).toHaveBeenCalledWith({ where: { Id: 'u1' } });
     expect(result).toEqual({
-      _id: 'u1',
+      Id: 'u1',
       email: 'a@a.com',
-      first_name: 'A',
-      last_name: 'B',
+      firstName: 'A',
+      lastName: 'B',
       bio: '',
       isActive: false, // if absent in mock
     });
@@ -80,10 +80,10 @@ describe('UsersService (unit)', () => {
   });
 
   it('getUserByEmail returns user or null', async () => {
-    repo.findOne.mockResolvedValueOnce({ _id: 'u1' } as any);
+    repo.findOne.mockResolvedValueOnce({ Id: 'u1' } as any);
     const found = await service.getUserByEmail('a@a.com');
     expect(repo.findOne).toHaveBeenCalledWith({ where: { email: 'a@a.com' } });
-    expect(found).toEqual({ _id: 'u1' });
+    expect(found).toEqual({ Id: 'u1' });
 
     repo.findOne.mockResolvedValueOnce(null);
     const notFound = await service.getUserByEmail('b@b.com');
@@ -91,8 +91,8 @@ describe('UsersService (unit)', () => {
   });
 
   it('getAllUsers returns array', async () => {
-    repo.find.mockResolvedValue([{ _id: 'u1' }] as any);
+    repo.find.mockResolvedValue([{ Id: 'u1' }] as any);
     const all = await service.getAllUsers();
-    expect(all).toEqual([{ _id: 'u1' }]);
+    expect(all).toEqual([{ Id: 'u1' }]);
   });
 });

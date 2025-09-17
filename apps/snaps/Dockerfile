@@ -19,18 +19,21 @@ RUN pnpm fetch -r
 FROM base AS dev
 WORKDIR /usr/src
 
-# Copy sources for development
-COPY apps/snaps ./apps/snaps
-COPY libs ./libs
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json jest.config.base.js ./
+
+# # Copy sources for development
+# COPY apps/snaps ./apps/snaps
+# COPY libs ./libs
 
 # Install all dependencies including dev for ts-node
-RUN pnpm install --filter snaps -r
+RUN pnpm install --filter snaps --workspace-root
+
 
 WORKDIR /usr/src/apps/snaps
 EXPOSE 3001
 
 # Use ts-node for live dev
-CMD ["pnpm", "nx","start:dev"]
+CMD ["pnpm", "nx","start"]
 
 # =======================
 # Build Stage (for production)

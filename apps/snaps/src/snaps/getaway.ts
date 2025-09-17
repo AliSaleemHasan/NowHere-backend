@@ -43,7 +43,7 @@ export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
 
   //   try {
   //     const user = await this.authService.validateToken(token);
-  //     client.data.userId = user._id;
+  //     client.data.userId = user.Id;
   //   } catch (err) {
   //     console.log(err);
   //     client.disconnect(true); // if not logged in the connection will be refused

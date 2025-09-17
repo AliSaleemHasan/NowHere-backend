@@ -160,14 +160,14 @@ describe('Grpc Service (Unit)', () => {
 
   describe('getUserSetting', () => {
     it('should return settings without user when present', async () => {
-      const mock = { user: { _id: 'u' }, theme: 'dark' } as any;
+      const mock = { user: { Id: 'u' }, theme: 'dark' } as any;
       (settingsRepo.findOne as jest.Mock).mockResolvedValue(mock);
 
       const res = await service.getUserSetting('u');
 
       expect(res).toEqual({ theme: 'dark' });
       expect(settingsRepo.findOne).toHaveBeenCalledWith({
-        where: { user: { _id: 'u' } },
+        where: { user: { Id: 'u' } },
         relations: { user: true },
       });
     });
@@ -188,7 +188,7 @@ describe('Grpc Service (Unit)', () => {
   describe('createUserSettings', () => {
     it('should create and save settings for a user', async () => {
       const userId = 'u1';
-      const user = { _id: userId, email: 'x' } as any;
+      const user = { Id: userId, email: 'x' } as any;
       (usersService.getUserById as jest.Mock).mockResolvedValue(user);
       const created = { user } as any;
       (settingsRepo.create as jest.Mock).mockReturnValue(created);

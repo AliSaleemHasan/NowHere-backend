@@ -8,8 +8,8 @@ export const seedUserTestData = async (repo: Repository<User>) => {
     let temp = repo.create({
       bio: 'test',
       email: `${userName}@test.com`,
-      first_name: userName,
-      last_name: userName,
+      firstName: userName,
+      lastName: userName,
       password: 'test',
       role: 'USER',
     });

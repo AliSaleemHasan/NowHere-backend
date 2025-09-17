@@ -6,9 +6,15 @@ import { JwtService } from '@nestjs/jwt';
 // import { JWTPayload } from 'types/jwt-payload.type';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Settings as ProtoSettingsType, ValidateUserDto } from 'proto';
 import { User } from '../users/entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
+import { mapProtoToEntityDto, mapUserToProto } from './mappers/user-mappers';
+import { mapSettingstoProto } from './mappers/settings-mapper';
+import {
+  CreateUserDTO,
+  ValidateUserDto,
+  Settings as ProtoSettingsType,
+} from 'proto';
 
 @Injectable()
 export class GrpcService {
@@ -20,6 +26,17 @@ export class GrpcService {
     private settingsRepository: Repository<Settings>,
   ) {}
 
+  async getAllUsers() {
+    return await this.usersService.getAllUsers();
+  }
+
+  async createUser(createUserDto: CreateUserDTO) {
+    try {
+      return this.usersService.createUser(mapProtoToEntityDto(createUserDto));
+    } catch (e) {
+      return {};
+    }
+  }
   async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
     // first getting the user from the data base
     const user = await this.usersService.getUserByEmail(validateUserDto.email);
@@ -56,7 +73,7 @@ export class GrpcService {
 
   async getUserSetting(id: string) {
     const userSettings = await this.settingsRepository.findOne({
-      where: { user: { _id: id } },
+      where: { user: { Id: id } },
       relations: { user: true },
     });
 
@@ -70,13 +87,14 @@ export class GrpcService {
     // create user settings
   }
 
-  async createUserSettings(userId: string): Promise<ProtoSettingsType> {
+  async createUserSettings(userId: string): Promise<ProtoSettingsType | null> {
     const user = await this.usersService.getUserById(userId);
 
+    if (user === 'User not found!') return null;
     const settings = this.settingsRepository.create({
-      user: user as ProtoSettingsType['user'],
+      user: mapUserToProto(user),
     });
 
-    return await this.settingsRepository.save(settings);
+    return mapSettingstoProto(await this.settingsRepository.save(settings));
   }
 }

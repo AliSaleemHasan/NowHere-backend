@@ -51,14 +51,14 @@ export class UsersController {
         destination: './uploads',
         filename: (req: any, file, callback) => {
           const fileName =
-            (req.user?._id || 'unkown') + Date.now() + file.originalname;
+            (req.user?.Id || 'unkown') + Date.now() + file.originalname;
           callback(null, fileName);
         },
       }),
     }),
   )
   async updateUserImage(
-    @ReqUser('_id') id: string,
+    @ReqUser('Id') id: string,
     @UploadedFile(
       new ParseFilePipe({
         validators: [

@@ -77,14 +77,14 @@ export class SnapsController {
         destination: './tmp',
         filename: (req: any, file, cb) => {
           const fileName =
-            (req.user?._id || 'unkown') + Date.now() + file.originalname;
+            (req.user?.Id || 'unkown') + Date.now() + file.originalname;
           cb(null, fileName);
         },
       }),
     }),
   )
   create(
-    @ReqUser('_id') id: string,
+    @ReqUser('Id') id: string,
     @UploadedFiles() snaps: Array<Express.Multer.File>,
     @Body() createSnapDto: CreateSnapDto,
   ) {
@@ -94,7 +94,7 @@ export class SnapsController {
   @Get()
   @FindAllSnapsDocs()
   async findAll(): Promise<Snap[]> {
-    return this.snapsService.findAll();
+    return await this.snapsService.findAll();
   }
 
   @Get('tags')
@@ -105,7 +105,6 @@ export class SnapsController {
   @Get(':id')
   @FindOneSnapDocs()
   findOne(@Param('id') id: string) {
-    console.log(id);
     return this.snapsService.findOne(id);
   }
 

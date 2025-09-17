@@ -34,16 +34,16 @@ export class UsersService {
       email,
       password: hashedPassword,
       role: Roles.ADMIN,
-      first_name: 'admin',
-      last_name: 'admin',
+      firstName: 'admin',
+      lastName: 'admin',
     });
 
     this.logger.log('Admin user created successfuly');
   }
   //   getUsers() just for admin (to be created when adding authorization)
 
-  async getUserById(_id: string) {
-    const user = await this.userRepository.findOne({ where: { _id } });
+  async getUserById(Id: string) {
+    const user = await this.userRepository.findOne({ where: { Id } });
     if (!user) return 'User not found!';
     const { password, ...rest } = user;
     return rest;
@@ -59,8 +59,8 @@ export class UsersService {
     return await this.userRepository.find();
   }
 
-  async setUserPhoto(image: string, _id: string) {
-    const user = await this.userRepository.preload({ _id, image });
+  async setUserPhoto(image: string, Id: string) {
+    const user = await this.userRepository.preload({ Id, image });
     if (!user) throw new NotFoundException('User not found');
 
     const updatedUser = await this.userRepository.save(user);

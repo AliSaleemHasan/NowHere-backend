@@ -7,6 +7,6 @@ export class SeedController {
 
   @Get('')
   async seed() {
-    await this.seedService.seed();
+    return await this.seedService.seed();
   }
 }

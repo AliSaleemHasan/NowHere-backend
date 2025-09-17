@@ -37,7 +37,7 @@ export class AuthenticationService {
       throw new UnauthorizedException('Wrong password');
     }
 
-    const tokens = await this.generateTokens(user, user._id);
+    const tokens = await this.generateTokens(user, user.Id);
     return { user, tokens };
   }
 
@@ -49,7 +49,7 @@ export class AuthenticationService {
       let newUser = await this.usersService.createUser(createUserDto);
 
       // create settings object for the user
-      await this.grpcService.getUserSetting(newUser._id);
+      await this.grpcService.getUserSetting(newUser.Id);
 
       return newUser;
     } catch (error) {
@@ -76,8 +76,8 @@ export class AuthenticationService {
     }
   }
 
-  async generateTokens(user: Partial<User>, _id: string) {
-    const payload = { sub: _id, user };
+  async generateTokens(user: Partial<User>, Id: string) {
+    const payload = { sub: Id, user };
 
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('ACCESS_SECRET'),

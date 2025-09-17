@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "proto:compile": "protoc --plugin=$(pnpm dlx which protoc-gen-ts_proto) --ts_proto_out=./ --ts_proto_opt=nestJs=true,outputServices=grpc-js,snakeToCamel=false,exportCommonSymbols=false *.proto -I .",
+    "proto:compile": "protoc --plugin=$(pnpm dlx which protoc-gen-ts_proto) --ts_proto_out=./ --ts_proto_opt=nestJs=true,outputServices=grpc-js,exportCommonSymbols=false *.proto -I .",
     "proto:build": "tsc -p tsconfig.lib.json",
     "proto:entry": "tsc scripts/generate-entry-file.ts && node scripts/generate-entry-file.js",
     "proto:gen": "pnpm proto:compile && pnpm proto:build && pnpm proto:entry",

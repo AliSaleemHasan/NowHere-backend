@@ -21,11 +21,11 @@ export class Settings {
 
   // now for the distination to show the snaps in meters
   @Column({ type: 'integer', default: 10000 })
-  max_distance: number;
+  maxDistance: number;
 
   // the minimum distance for sharing more than one post
   @Column({ type: 'integer', default: 1000 })
-  new_snap_distance: number;
+  newSnapDistance: number;
 
   @Column({ type: 'integer', default: 1 })
   snapDisappearTime: number;

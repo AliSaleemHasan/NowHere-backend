@@ -59,7 +59,7 @@ describe('UserController (integration)', () => {
       expect(users).toHaveLength(3);
 
       users.forEach((user) => {
-        expect(user.email).toBe(`${user.first_name}@test.com`);
+        expect(user.email).toBe(`${user.firstName}@test.com`);
       });
     });
   });

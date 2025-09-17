@@ -11,7 +11,7 @@ import { DeleteResult, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGetaway } from '../getaway';
 import {
-  MAX_DISTANCE_TO_SEE,
+  maxDistance_TO_SEE,
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
   handleMongoError,
@@ -38,6 +38,8 @@ export class SnapsService implements OnModuleInit {
     this.authUsersService = this.client.getService<AuthUsersClient>(
       AUTH_USERS_SERVICE_NAME,
     );
+
+    console.log(Object.keys(this.authUsersService));
   }
 
   async create(
@@ -120,10 +122,10 @@ export class SnapsService implements OnModuleInit {
         this.authUsersService.getUserSetting({ id: _userId }),
       );
 
-    let distance = user_settings?.max_distance || MAX_DISTANCE_TO_SEE;
+    let distance = user_settings?.maxDistance || maxDistance_TO_SEE;
 
     if (canPost)
-      distance = user_settings?.new_snap_distance || MIN_DISTANCE_TO_POST;
+      distance = user_settings?.newSnapDistance || MIN_DISTANCE_TO_POST;
 
     const queryTime = new Date();
 
@@ -161,7 +163,7 @@ export class SnapsService implements OnModuleInit {
 
   async updateSnapImages(id: string, images: string[]) {
     return await this.snapModel.findOneAndUpdate(
-      { _id: id },
+      { Id: id },
       {
         snaps: images,
         status: SnapStatus.SUCCESS,
@@ -177,8 +179,8 @@ export class SnapsService implements OnModuleInit {
     return this.snapModel.find({ tag: { $in: tags } }).exec();
   }
 
-  deleteSnap(_id: string): Promise<DeleteResult> {
-    return this.snapModel.deleteOne({ _id });
+  deleteSnap(Id: string): Promise<DeleteResult> {
+    return this.snapModel.deleteOne({ Id });
   }
   deleteAll(): Promise<DeleteResult> {
     return this.snapModel.deleteMany({});
