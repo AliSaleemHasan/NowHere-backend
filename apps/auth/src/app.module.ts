@@ -5,15 +5,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthenticationModule } from './authentication/authentication.module';
 import { GrpcModule } from './grpc/grpc.module';
-import { configuration } from 'nowhere-common';
-
+import * as path from 'path';
 @Module({
   imports: [
     GrpcModule,
     ConfigModule.forRoot({
       // validate,
       isGlobal: true,
-      load: [configuration],
+      envFilePath: [path.resolve(process.cwd(), '.env')],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
