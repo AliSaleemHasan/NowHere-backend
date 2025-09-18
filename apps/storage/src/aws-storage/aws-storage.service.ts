@@ -23,7 +23,7 @@ export class AwsStorageService {
     this.bucket = this.config.getOrThrow('AWS_BUCKET');
 
     const creds: any = {
-      accessKeyId: this.config.getOrThrow('AWS_ACCESS_KEYId'),
+      accessKeyId: this.config.getOrThrow('AWS_ACCESS_KEY_ID'),
       secretAccessKey: this.config.getOrThrow('AWS_SECRET_ACCESS_KEY'),
     };
     // const sessionToken = this.config.get('AWS_SESSION_TOKEN');
@@ -38,6 +38,7 @@ export class AwsStorageService {
   async uploadFile(file: Buffer, fileName: string, userID: string) {
     const today = new Date().toISOString().split('T')[0]; // safer format
     const key = `${today}/${userID}/${fileName}`;
+    console.log(key);
     this.logger.log(`Uploading ${key} to S3...`);
 
     try {
@@ -84,6 +85,8 @@ export class AwsStorageService {
     let notSaved: Array<Express.Multer.File> = [];
 
     let keys: string[] = [];
+
+    console.log(files);
     for (let i = 0; i < files.length; i++) {
       try {
         const fileKey = await this.uploadFile(

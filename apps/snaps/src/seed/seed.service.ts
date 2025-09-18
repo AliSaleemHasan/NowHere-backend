@@ -137,7 +137,7 @@ export class SeedService implements OnModuleInit {
     // first create users
     let user_names = this.generateNames();
 
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < user_names.length; i++) {
       let name = user_names[i];
       try {
         // adding new user

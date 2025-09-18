@@ -74,7 +74,7 @@ export class SnapsController {
   @UseInterceptors(
     FilesInterceptor('snaps', 4, {
       storage: diskStorage({
-        destination: './tmp',
+        destination: '/tmp',
         filename: (req: any, file, cb) => {
           const fileName =
             (req.user?.Id || 'unkown') + Date.now() + file.originalname;
@@ -93,8 +93,8 @@ export class SnapsController {
 
   @Get()
   @FindAllSnapsDocs()
-  async findAll(): Promise<Snap[]> {
-    return await this.snapsService.findAll();
+  findAll(): Promise<Snap[]> {
+    return this.snapsService.findAll();
   }
 
   @Get('tags')

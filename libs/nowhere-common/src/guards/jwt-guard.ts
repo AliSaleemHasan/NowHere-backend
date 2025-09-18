@@ -20,6 +20,7 @@ export class JwtGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
     if (!token) throw new UnauthorizedException('No token was provided!');
 
+    console.log(this.configService.get<string>('ACCESS_SECRET'));
     try {
       const payload = await this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get<string>('ACCESS_SECRET'),

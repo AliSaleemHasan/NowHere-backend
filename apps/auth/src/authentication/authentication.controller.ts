@@ -34,11 +34,4 @@ export class AuthenticationController {
     const token = extractTokenFromHeader(request);
     return await this.authService.refreshToken(token);
   }
-
-  // @Get('validate')
-  // @ValidateDocs()
-  // async validateToken(@Req() request: Request) {
-  //   const token = extractTokenFromHeader(request);
-  //   return await this.authService.validateToken(token);
-  // }
 }

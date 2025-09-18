@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles, User } from './entities/user.entity';
 import { Repository } from 'typeorm';
@@ -21,7 +26,14 @@ export class UsersService {
     let email = process.env.ADMIN_EMAIL as string;
     let password = process.env.ADMIN_PASSWORD as string;
 
-    const adminFound = await this.getUserByEmail(email);
+    let adminFound;
+
+    try {
+      adminFound = await this.getUserByEmail(email);
+    } catch (e) {
+      console.log(e.message);
+    }
+
     if (adminFound) {
       this.logger.log('Admin user already exists, skipping seeding.');
       return;
@@ -50,9 +62,13 @@ export class UsersService {
   }
 
   async getUserByEmail(email: string) {
-    return await this.userRepository.findOne({
-      where: { email },
-    });
+    try {
+      return await this.userRepository.findOneOrFail({
+        where: { email },
+      });
+    } catch (e) {
+      throw new NotFoundException('No user found with this email!');
+    }
   }
 
   async getAllUsers() {

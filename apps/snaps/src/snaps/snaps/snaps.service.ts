@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   Logger,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
@@ -19,7 +20,7 @@ import {
 } from 'nowhere-common';
 import { AUTH_USERS_SERVICE_NAME, AuthUsersClient, Settings } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, NotFoundError } from 'rxjs';
 
 @Injectable()
 export class SnapsService implements OnModuleInit {
@@ -38,8 +39,6 @@ export class SnapsService implements OnModuleInit {
     this.authUsersService = this.client.getService<AuthUsersClient>(
       AUTH_USERS_SERVICE_NAME,
     );
-
-    console.log(Object.keys(this.authUsersService));
   }
 
   async create(
@@ -171,8 +170,14 @@ export class SnapsService implements OnModuleInit {
       { new: true },
     );
   }
-  findOne(id: string) {
-    return this.snapModel.findById(id).exec();
+  async findOne(id: string) {
+    try {
+      let snap = await this.snapModel.findById(id).exec();
+      if (!snap) throw new NotFoundException('Snap not found for id: ' + id);
+      return snap;
+    } catch (e) {
+      throw new NotFoundException('Snap not found ' + e.message);
+    }
   }
 
   findByTags(tags: Tags[] = [Tags.SOCIAL]) {
@@ -180,7 +185,7 @@ export class SnapsService implements OnModuleInit {
   }
 
   deleteSnap(Id: string): Promise<DeleteResult> {
-    return this.snapModel.deleteOne({ Id });
+    return this.snapModel.deleteOne({ _id: Id });
   }
   deleteAll(): Promise<DeleteResult> {
     return this.snapModel.deleteMany({});

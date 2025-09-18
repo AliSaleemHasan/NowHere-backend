@@ -9,3 +9,12 @@ export const authProtoOptions: MicroserviceOptions = {
     url: 'nowhere-auth:50051',
   },
 };
+
+export const storageProtoOptions: MicroserviceOptions = {
+  transport: Transport.GRPC,
+  options: {
+    package: 'STORAGE',
+    protoPath: join(__dirname, 'storage.proto'),
+    url: 'nowhere-storage:50051',
+  },
+};
