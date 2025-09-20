@@ -59,6 +59,7 @@ export class AwsStorageController {
 
       this.redisClient.emit('snap-uploaded', {
         snapId: data.snapId,
+        filesNames: data.files.map((file) => file.filename),
         error: errorMessage,
       });
       //TODO: handle errors in better way
@@ -67,6 +68,7 @@ export class AwsStorageController {
 
     this.redisClient.emit('snap-uploaded', {
       snapId: data.snapId,
+      filesNames: data.files.map((file) => file.filename),
       keys: keys,
     });
 

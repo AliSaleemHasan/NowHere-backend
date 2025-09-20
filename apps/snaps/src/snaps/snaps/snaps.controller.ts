@@ -35,6 +35,7 @@ import {
 import { diskStorage } from 'multer';
 import { DeleteResult } from 'mongoose';
 import { join } from 'path';
+import { emptyFolder } from 'nowhere-common/utils/emptyFolder';
 
 @Controller('snaps')
 export class SnapsController {
@@ -45,8 +46,17 @@ export class SnapsController {
   //TODO: handle data types
   @MessagePattern('snap-uploaded')
   async saveUploadedSnaps(
-    @Payload() data: { snapId: string; keys: string[]; error: string },
+    @Payload()
+    data: {
+      snapId: string;
+      keys: string[];
+      error: string;
+      filesNames: string[];
+    },
   ) {
+    // first and formost, snaps are deleted even if error happens (no need to save more data into the server);
+    await emptyFolder(join(__dirname, '..', '..', '..', 'tmp'));
+
     if (data.error) {
       this.logger.log('Error uploading files!', data.error);
       await this.snapsService.deleteSnap(data.snapId);
