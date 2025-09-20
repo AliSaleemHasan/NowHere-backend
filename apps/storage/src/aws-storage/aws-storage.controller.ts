@@ -1,16 +1,22 @@
-import { Controller, Get, Inject, Logger, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Inject,
+  Logger,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { AwsStorageService } from './aws-storage.service';
 import { GetAllFilesDoc } from './docs/get-all-files.doc';
 import {
   ClientProxy,
   Ctx,
-  GrpcMethod,
   MessagePattern,
   Payload,
   RedisContext,
 } from '@nestjs/microservices';
 import { MICROSERVICES, JwtGuard, RoleGuard, UserRoles } from 'nowhere-common';
-import { AWS_STORAGE_SERVICE_NAME } from 'proto';
 @Controller('storage')
 export class AwsStorageController {
   private logger: Logger = new Logger(AwsStorageController.name);
@@ -27,11 +33,8 @@ export class AwsStorageController {
     return await this.storageService.listFiles();
   }
 
-  @UserRoles(['USER'])
-  @UseGuards(JwtGuard, RoleGuard)
-  @GrpcMethod(AWS_STORAGE_SERVICE_NAME, 'getSignedUrlForFile')
-  async getSignedURL(key: string) {
-    console.log(key);
+  @Get('signed')
+  async getSignedURL(@Query('key') key: string) {
     return await this.storageService.getSignedUrlForFile(key);
   }
 

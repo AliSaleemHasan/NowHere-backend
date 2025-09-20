@@ -65,7 +65,11 @@ export class AwsStorageService {
   }
 
   async getSignedUrlForFile(key: string, expiresIn = 3600) {
-    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ResponseContentDisposition: 'inline',
+    });
     return await getSignedUrl(this.client, command, { expiresIn });
   }
 
@@ -96,7 +100,6 @@ export class AwsStorageService {
         );
 
         if (!file.ok) {
-          console.log(file);
           notSaved.push(files[i]);
           continue;
         }
