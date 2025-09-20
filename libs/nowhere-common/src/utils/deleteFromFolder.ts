@@ -1,12 +1,12 @@
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
-export async function emptyFolder(directoryPath: string): Promise<void> {
-  console.log(directoryPath);
+export async function deleteFromFolder(
+  directoryPath: string,
+  fNames: string[],
+): Promise<void> {
   try {
-    const files = await fs.readdir(directoryPath);
-
-    for (const file of files) {
+    for (const file of fNames) {
       const filePath = join(directoryPath, file);
       const stats = await fs.lstat(filePath);
 
