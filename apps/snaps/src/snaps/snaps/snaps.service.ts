@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -21,6 +22,9 @@ import {
 import { AUTH_USERS_SERVICE_NAME, AuthUsersClient, Settings } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, NotFoundError } from 'rxjs';
+import { deleteFromFolder } from 'nowhere-common/utils/deleteFromFolder';
+import { join } from 'path';
+import { SnapUploadedDto } from './dto/snap-uploaded-dto';
 
 @Injectable()
 export class SnapsService implements OnModuleInit {
@@ -41,6 +45,30 @@ export class SnapsService implements OnModuleInit {
     );
   }
 
+  async handleCreateSnap(data: SnapUploadedDto) {
+    // first and formost, snaps are deleted even if error happens (no need to save more data into the server);
+    await deleteFromFolder(
+      join(__dirname, '..', '..', '..', 'tmp'),
+      data.filesNames,
+    );
+
+    if (data.error) {
+      this.logger.log('Error uploading files!', data.error);
+      await this.deleteSnap(data.snapId);
+
+      throw new BadRequestException(data.error);
+    }
+    this.logger.log(
+      ` snap with idupdated  ${data.snapId} and keys are ${JSON.stringify(data.keys)} `,
+    );
+
+    let updateStatus = await this.updateSnapImages(data.snapId, data.keys);
+
+    this.logger.log(
+      'Snap service added the uploaded keys with upload status: ',
+      JSON.stringify(updateStatus),
+    );
+  }
   async create(
     id: string,
     snaps: Array<Express.Multer.File>,

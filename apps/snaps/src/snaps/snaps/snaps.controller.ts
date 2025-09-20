@@ -36,6 +36,7 @@ import { diskStorage } from 'multer';
 import { DeleteResult } from 'mongoose';
 import { join } from 'path';
 import { deleteFromFolder } from 'nowhere-common/utils/deleteFromFolder';
+import { SnapUploadedDto } from './dto/snap-uploaded-dto';
 
 @Controller('snaps')
 export class SnapsController {
@@ -47,38 +48,9 @@ export class SnapsController {
   @MessagePattern('snap-uploaded')
   async saveUploadedSnaps(
     @Payload()
-    data: {
-      snapId: string;
-      keys: string[];
-      error: string;
-      filesNames: string[];
-    },
+    data: SnapUploadedDto,
   ) {
-    // first and formost, snaps are deleted even if error happens (no need to save more data into the server);
-    await deleteFromFolder(
-      join(__dirname, '..', '..', '..', 'tmp'),
-      data.filesNames,
-    );
-
-    if (data.error) {
-      this.logger.log('Error uploading files!', data.error);
-      await this.snapsService.deleteSnap(data.snapId);
-
-      throw new BadRequestException(data.error);
-    }
-    this.logger.log(
-      ` snap with idupdated  ${data.snapId} and keys are ${JSON.stringify(data.keys)} `,
-    );
-
-    let updateStatus = await this.snapsService.updateSnapImages(
-      data.snapId,
-      data.keys,
-    );
-
-    this.logger.log(
-      'Snap service added the uploaded keys with upload status: ',
-      JSON.stringify(updateStatus),
-    );
+    await this.snapsService.handleCreateSnap(data);
   }
 
   @Post()
