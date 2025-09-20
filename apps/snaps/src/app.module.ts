@@ -14,8 +14,8 @@ import * as path from 'path';
       global: true,
     }),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'uploads'),
-      serveRoot: '/uploads/',
+      rootPath: join(__dirname, '..', 'tmp'),
+      serveRoot: `/${process.env.STATIC_TMP_FILES}/`,
       serveStaticOptions: { index: false },
     }),
     ConfigModule.forRoot({

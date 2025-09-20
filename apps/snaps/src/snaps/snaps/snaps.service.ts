@@ -162,7 +162,7 @@ export class SnapsService implements OnModuleInit {
 
   async updateSnapImages(id: string, images: string[]) {
     return await this.snapModel.findOneAndUpdate(
-      { Id: id },
+      { _id: id },
       {
         snaps: images,
         status: SnapStatus.SUCCESS,

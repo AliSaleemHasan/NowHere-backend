@@ -34,6 +34,7 @@ import {
 } from '@nestjs/microservices';
 import { diskStorage } from 'multer';
 import { DeleteResult } from 'mongoose';
+import { join } from 'path';
 
 @Controller('snaps')
 export class SnapsController {
@@ -53,7 +54,7 @@ export class SnapsController {
       throw new BadRequestException(data.error);
     }
     this.logger.log(
-      `Snaps service recieved that snaps already updated for snap with id ${data.snapId} and keys are ${JSON.stringify(data.keys)} `,
+      ` snap with idupdated  ${data.snapId} and keys are ${JSON.stringify(data.keys)} `,
     );
 
     let updateStatus = await this.snapsService.updateSnapImages(
@@ -74,7 +75,7 @@ export class SnapsController {
   @UseInterceptors(
     FilesInterceptor('snaps', 4, {
       storage: diskStorage({
-        destination: '/tmp',
+        destination: join(__dirname, '..', '..', '..', 'tmp'),
         filename: (req: any, file, cb) => {
           const fileName =
             (req.user?.Id || 'unkown') + Date.now() + file.originalname;

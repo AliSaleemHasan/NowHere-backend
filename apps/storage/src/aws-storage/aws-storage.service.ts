@@ -38,7 +38,6 @@ export class AwsStorageService {
   async uploadFile(file: Buffer, fileName: string, userID: string) {
     const today = new Date().toISOString().split('T')[0]; // safer format
     const key = `${today}/${userID}/${fileName}`;
-    console.log(key);
     this.logger.log(`Uploading ${key} to S3...`);
 
     try {
@@ -86,21 +85,29 @@ export class AwsStorageService {
 
     let keys: string[] = [];
 
-    console.log(files);
     for (let i = 0; i < files.length; i++) {
       try {
+        let pathSeparator = files[i].path.split('/');
+        let fileName = pathSeparator[pathSeparator.length - 1];
+
+        // first get the file
+        let file = await fetch(
+          `${process.env.SNAPS_URL}/${process.env.STATIC_TMP_FILES}/${fileName}`,
+        );
+
+        if (!file.ok) {
+          console.log(file);
+          notSaved.push(files[i]);
+          continue;
+        }
+
         const fileKey = await this.uploadFile(
-          await readFileSync(files[i].path + ' i'),
+          Buffer.from(await file.arrayBuffer()),
           files[i].filename,
           userId,
         );
 
         keys.push(fileKey);
-
-        if (!keep)
-          unlink(files[i].path, (err) => {
-            if (err) this.logger.error(err);
-          });
       } catch (e) {
         notSaved.push(files[i]);
         this.logger.error('file not uploaded correctly: ', e.message);
