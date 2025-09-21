@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   InternalServerErrorException,
+  Inject,
 } from '@nestjs/common';
 import {
   GetObjectCommand,
@@ -11,15 +12,22 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { ConfigService } from '@nestjs/config';
-import { readFileSync, unlink } from 'fs';
+import { MICROSERVICES } from 'nowhere-common';
+import { ClientProxy } from '@nestjs/microservices';
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 
+// define redis client
 @Injectable()
 export class AwsStorageService {
   private logger = new Logger(AwsStorageService.name);
   private client: S3Client;
   private bucket: string;
 
-  constructor(private config: ConfigService) {
+  constructor(
+    private config: ConfigService,
+    @Inject(MICROSERVICES.STORAGE.package) private redisClient: ClientProxy,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {
     this.bucket = this.config.getOrThrow('AWS_BUCKET');
 
     const creds: any = {
@@ -65,12 +73,23 @@ export class AwsStorageService {
   }
 
   async getSignedUrlForFile(key: string, expiresIn = 3600) {
+    // first check if file is in cahce
+    let signedURL = await this.cacheManager.get(key);
+    if (signedURL) return signedURL;
+
     const command = new GetObjectCommand({
       Bucket: this.bucket,
       Key: key,
       ResponseContentDisposition: 'inline',
     });
-    return await getSignedUrl(this.client, command, { expiresIn });
+    signedURL = await getSignedUrl(this.client, command, { expiresIn });
+    await this.cacheManager.set(
+      key,
+      signedURL,
+      Number(process.env.CACHE_TTL) || 86340,
+    );
+
+    return signedURL;
   }
 
   /**
