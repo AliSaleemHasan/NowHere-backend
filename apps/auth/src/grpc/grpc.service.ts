@@ -3,13 +3,8 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-// import { JWTPayload } from 'types/jwt-payload.type';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
-import { Settings } from '../settings/entities/settings.entity';
 import { mapProtoToEntityDto, mapUserToProto } from './mappers/user-mappers';
-import { mapSettingstoProto } from './mappers/settings-mapper';
 import {
   CreateUserDTO,
   ValidateUserDto,
@@ -22,8 +17,6 @@ export class GrpcService {
     private usersService: UsersService,
     private configService: ConfigService,
     private jwt: JwtService,
-    @InjectRepository(Settings)
-    private settingsRepository: Repository<Settings>,
   ) {}
 
   async getAllUsers() {
@@ -70,31 +63,11 @@ export class GrpcService {
       throw new UnauthorizedException(JSON.stringify(err.message));
     }
   }
-
   async getUserSetting(id: string) {
-    const userSettings = await this.settingsRepository.findOne({
-      where: { user: { Id: id } },
-      relations: { user: true },
-    });
-
-    if (userSettings) {
-      let { user, ...settings } = userSettings;
-      return { ...settings };
-    }
-
-    return this.createUserSettings(id);
-
-    // create user settings
+    return await this.usersService.getUserSetting(id);
   }
 
   async createUserSettings(userId: string): Promise<ProtoSettingsType | null> {
-    const user = await this.usersService.getUserById(userId);
-
-    if (user === 'User not found!') return null;
-    const settings = this.settingsRepository.create({
-      user: mapUserToProto(user),
-    });
-
-    return mapSettingstoProto(await this.settingsRepository.save(settings));
+    return await this.usersService.createUserSettings(userId);
   }
 }

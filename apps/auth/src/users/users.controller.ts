@@ -23,12 +23,6 @@ import { AddUsersPhotoDocs } from './docs/add-user-image.doc';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Get(':email')
-  @GetByEmailDocs()
-  async getByEmail(@Param('email') email: string) {
-    return await this.usersService.getUserByEmail(email);
-  }
-
   @Get('id/:id')
   @GetByIdDocs()
   async getUserById(@Param('id') id: string) {
@@ -70,5 +64,17 @@ export class UsersController {
     photo: Express.Multer.File,
   ) {
     return await this.usersService.setUserPhoto(photo.path, id);
+  }
+
+  @Get('settings')
+  @UseGuards(JwtGuard)
+  getUserSettings(@ReqUser('Id') id: string) {
+    return this.usersService.getUserSetting(id);
+  }
+
+  @Get(':email')
+  @GetByEmailDocs()
+  async getByEmail(@Param('email') email: string) {
+    return await this.usersService.getUserByEmail(email);
   }
 }

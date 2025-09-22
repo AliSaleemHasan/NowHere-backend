@@ -31,7 +31,7 @@ export class SeedService implements OnModuleInit {
    */
   generateLocations = () => {
     const regions = {
-      hungary: [19.040235, 47.497913], // Budapest
+      hungary: [17.650397, 47.687457], // Budapest
       netherlands: [4.904138, 52.367573], // Amsterdam
       syria: [36.2765, 33.5138], // Damascus
       italy: [12.496366, 41.902782], // Rome

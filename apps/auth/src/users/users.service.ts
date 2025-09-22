@@ -1,20 +1,19 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles, User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDTO } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
+import { Settings } from '../settings/entities/settings.entity';
+import { mapUserToProto } from '../grpc/mappers/user-mappers';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(Settings)
+    private settingsRepository: Repository<Settings>,
   ) {}
 
   async createUser(createUserDto: CreateUserDTO) {
@@ -84,5 +83,32 @@ export class UsersService {
     // remove sensitive field
     const { password, ...safeUser } = updatedUser;
     return safeUser;
+  }
+
+  async getUserSetting(id: string) {
+    const userSettings = await this.settingsRepository.findOne({
+      where: { user: { Id: id } },
+      relations: { user: true },
+    });
+
+    if (userSettings) {
+      let { user, ...settings } = userSettings;
+      return { ...settings };
+    }
+
+    return this.createUserSettings(id);
+
+    // create user settings
+  }
+
+  async createUserSettings(userId: string) {
+    const user = await this.getUserById(userId);
+
+    if (user === 'User not found!') return null;
+    const settings = this.settingsRepository.create({
+      user,
+    });
+
+    return await this.settingsRepository.save(settings);
   }
 }
