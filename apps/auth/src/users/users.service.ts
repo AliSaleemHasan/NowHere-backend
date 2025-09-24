@@ -84,7 +84,7 @@ export class UsersService implements OnModuleInit {
     );
 
     const { password, ...rest } = user;
-    return { user: rest, userImage };
+    return { user: rest, userImage: userImage.signed };
   }
 
   async getUserByEmail(email: string) {
@@ -113,6 +113,17 @@ export class UsersService implements OnModuleInit {
     if (!imageKey.key)
       throw new BadRequestException('Error loading Image to AWS s3');
 
+    // now get the signedURL
+    // NOTE: yes this takes too much time, however the user will not change profile image every day!
+    // so it is ok if it takes some time..
+
+    let signedURL = await firstValueFrom(
+      this.storageService.getSignedUrl(imageKey),
+    );
+
+    if (!signedURL)
+      throw new BadRequestException('Error Getting image signedURL..');
+
     const user = await this.userRepository.preload({
       Id: userId,
       image: imageKey.key,
@@ -123,7 +134,7 @@ export class UsersService implements OnModuleInit {
 
     // remove sensitive field
     const { password, ...safeUser } = updatedUser;
-    return safeUser;
+    return { user: safeUser, userImage: signedURL.signed };
   }
 
   async getUserSetting(id: string) {

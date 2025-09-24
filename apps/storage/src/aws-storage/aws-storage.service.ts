@@ -65,6 +65,7 @@ export class AwsStorageService {
       Bucket: this.bucket,
       Key: key,
       ResponseContentDisposition: 'inline',
+      ResponseContentType: 'image/png',
     });
     signedURL = await getSignedUrl(this.client, command, { expiresIn });
     await this.cacheManager.set(
