@@ -5,13 +5,10 @@
 // source: auth-user.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from '@bufbuild/protobuf/wire';
-import type {
-  handleUnaryCall,
-  UntypedServiceImplementation,
-} from '@grpc/grpc-js';
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
+import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import type { handleUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
 export enum UserRole {
   ADMIN = 0,
@@ -23,7 +20,8 @@ export interface Users {
   users: User[];
 }
 
-export interface Empty {}
+export interface Empty {
+}
 
 export interface CreateUserDTO {
   password: string;
@@ -72,10 +70,7 @@ function createBaseUsers(): Users {
 }
 
 export const Users: MessageFns<Users> = {
-  encode(
-    message: Users,
-    writer: BinaryWriter = new BinaryWriter(),
-  ): BinaryWriter {
+  encode(message: Users, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     for (const v of message.users) {
       User.encode(v!, writer.uint32(10).fork()).join();
     }
@@ -83,8 +78,7 @@ export const Users: MessageFns<Users> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): Users {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseUsers();
     while (reader.pos < end) {
@@ -118,8 +112,7 @@ export const Empty: MessageFns<Empty> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): Empty {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseEmpty();
     while (reader.pos < end) {
@@ -136,34 +129,24 @@ export const Empty: MessageFns<Empty> = {
 };
 
 function createBaseCreateUserDTO(): CreateUserDTO {
-  return {
-    password: '',
-    email: '',
-    bio: '',
-    firstName: '',
-    lastName: '',
-    role: 0,
-  };
+  return { password: "", email: "", bio: "", firstName: "", lastName: "", role: 0 };
 }
 
 export const CreateUserDTO: MessageFns<CreateUserDTO> = {
-  encode(
-    message: CreateUserDTO,
-    writer: BinaryWriter = new BinaryWriter(),
-  ): BinaryWriter {
-    if (message.password !== '') {
+  encode(message: CreateUserDTO, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.password !== "") {
       writer.uint32(10).string(message.password);
     }
-    if (message.email !== '') {
+    if (message.email !== "") {
       writer.uint32(18).string(message.email);
     }
-    if (message.bio !== '') {
+    if (message.bio !== "") {
       writer.uint32(26).string(message.bio);
     }
-    if (message.firstName !== '') {
+    if (message.firstName !== "") {
       writer.uint32(34).string(message.firstName);
     }
-    if (message.lastName !== '') {
+    if (message.lastName !== "") {
       writer.uint32(42).string(message.lastName);
     }
     if (message.role !== 0) {
@@ -173,8 +156,7 @@ export const CreateUserDTO: MessageFns<CreateUserDTO> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): CreateUserDTO {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseCreateUserDTO();
     while (reader.pos < end) {
@@ -239,21 +221,12 @@ export const CreateUserDTO: MessageFns<CreateUserDTO> = {
 };
 
 function createBaseSettings(): Settings {
-  return {
-    id: '',
-    user: undefined,
-    maxDistance: 0,
-    newSnapDistance: 0,
-    snapDisappearTime: 0,
-  };
+  return { id: "", user: undefined, maxDistance: 0, newSnapDistance: 0, snapDisappearTime: 0 };
 }
 
 export const Settings: MessageFns<Settings> = {
-  encode(
-    message: Settings,
-    writer: BinaryWriter = new BinaryWriter(),
-  ): BinaryWriter {
-    if (message.id !== '') {
+  encode(message: Settings, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
     if (message.user !== undefined) {
@@ -272,8 +245,7 @@ export const Settings: MessageFns<Settings> = {
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): Settings {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseSettings();
     while (reader.pos < end) {
@@ -330,26 +302,19 @@ export const Settings: MessageFns<Settings> = {
 };
 
 function createBaseGetUserSettingsDTO(): GetUserSettingsDTO {
-  return { id: '' };
+  return { id: "" };
 }
 
 export const GetUserSettingsDTO: MessageFns<GetUserSettingsDTO> = {
-  encode(
-    message: GetUserSettingsDTO,
-    writer: BinaryWriter = new BinaryWriter(),
-  ): BinaryWriter {
-    if (message.id !== '') {
+  encode(message: GetUserSettingsDTO, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
     return writer;
   },
 
-  decode(
-    input: BinaryReader | Uint8Array,
-    length?: number,
-  ): GetUserSettingsDTO {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+  decode(input: BinaryReader | Uint8Array, length?: number): GetUserSettingsDTO {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseGetUserSettingsDTO();
     while (reader.pos < end) {
@@ -375,56 +340,52 @@ export const GetUserSettingsDTO: MessageFns<GetUserSettingsDTO> = {
 
 function createBaseUser(): User {
   return {
-    Id: '',
-    password: '',
-    email: '',
-    firstName: '',
-    lastName: '',
-    bio: '',
+    Id: "",
+    password: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    bio: "",
     isActive: false,
-    role: '',
-    image: '',
+    role: "",
+    image: "",
   };
 }
 
 export const User: MessageFns<User> = {
-  encode(
-    message: User,
-    writer: BinaryWriter = new BinaryWriter(),
-  ): BinaryWriter {
-    if (message.Id !== '') {
+  encode(message: User, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.Id !== "") {
       writer.uint32(10).string(message.Id);
     }
-    if (message.password !== '') {
+    if (message.password !== "") {
       writer.uint32(18).string(message.password);
     }
-    if (message.email !== '') {
+    if (message.email !== "") {
       writer.uint32(26).string(message.email);
     }
-    if (message.firstName !== '') {
+    if (message.firstName !== "") {
       writer.uint32(34).string(message.firstName);
     }
-    if (message.lastName !== '') {
+    if (message.lastName !== "") {
       writer.uint32(42).string(message.lastName);
     }
-    if (message.bio !== '') {
+    if (message.bio !== "") {
       writer.uint32(50).string(message.bio);
     }
     if (message.isActive !== false) {
       writer.uint32(56).bool(message.isActive);
     }
-    if (message.role !== '') {
+    if (message.role !== "") {
       writer.uint32(66).string(message.role);
     }
-    if (message.image !== '') {
+    if (message.image !== "") {
       writer.uint32(74).string(message.image);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): User {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseUser();
     while (reader.pos < end) {
@@ -513,26 +474,22 @@ export const User: MessageFns<User> = {
 };
 
 function createBaseValidateUserDto(): ValidateUserDto {
-  return { email: '', password: '' };
+  return { email: "", password: "" };
 }
 
 export const ValidateUserDto: MessageFns<ValidateUserDto> = {
-  encode(
-    message: ValidateUserDto,
-    writer: BinaryWriter = new BinaryWriter(),
-  ): BinaryWriter {
-    if (message.email !== '') {
+  encode(message: ValidateUserDto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
       writer.uint32(10).string(message.email);
     }
-    if (message.password !== '') {
+    if (message.password !== "") {
       writer.uint32(18).string(message.password);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): ValidateUserDto {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseValidateUserDto();
     while (reader.pos < end) {
@@ -565,23 +522,19 @@ export const ValidateUserDto: MessageFns<ValidateUserDto> = {
 };
 
 function createBaseValidateTokenDto(): ValidateTokenDto {
-  return { token: '' };
+  return { token: "" };
 }
 
 export const ValidateTokenDto: MessageFns<ValidateTokenDto> = {
-  encode(
-    message: ValidateTokenDto,
-    writer: BinaryWriter = new BinaryWriter(),
-  ): BinaryWriter {
-    if (message.token !== '') {
+  encode(message: ValidateTokenDto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
       writer.uint32(10).string(message.token);
     }
     return writer;
   },
 
   decode(input: BinaryReader | Uint8Array, length?: number): ValidateTokenDto {
-    const reader =
-      input instanceof BinaryReader ? input : new BinaryReader(input);
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     const end = length === undefined ? reader.len : reader.pos + length;
     const message = createBaseValidateTokenDto();
     while (reader.pos < end) {
@@ -620,19 +573,13 @@ export interface AuthUsersClient {
 }
 
 export interface AuthUsersController {
-  validateUser(
-    request: ValidateUserDto,
-  ): Promise<User> | Observable<User> | User;
+  validateUser(request: ValidateUserDto): Promise<User> | Observable<User> | User;
 
-  validateToken(
-    request: ValidateTokenDto,
-  ): Promise<User> | Observable<User> | User;
+  validateToken(request: ValidateTokenDto): Promise<User> | Observable<User> | User;
 
   /** user settings */
 
-  getUserSetting(
-    request: GetUserSettingsDTO,
-  ): Promise<Settings> | Observable<Settings> | Settings;
+  getUserSetting(request: GetUserSettingsDTO): Promise<Settings> | Observable<Settings> | Settings;
 
   createUser(request: CreateUserDTO): Promise<User> | Observable<User> | User;
 
@@ -641,101 +588,67 @@ export interface AuthUsersController {
 
 export function AuthUsersControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = [
-      'validateUser',
-      'validateToken',
-      'getUserSetting',
-      'createUser',
-      'getAllUsers',
-    ];
+    const grpcMethods: string[] = ["validateUser", "validateToken", "getUserSetting", "createUser", "getAllUsers"];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcMethod('AuthUsers', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("AuthUsers", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(
-        constructor.prototype,
-        method,
-      );
-      GrpcStreamMethod('AuthUsers', method)(
-        constructor.prototype[method],
-        method,
-        descriptor,
-      );
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("AuthUsers", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const AUTH_USERS_SERVICE_NAME = 'AuthUsers';
+export const AUTH_USERS_SERVICE_NAME = "AuthUsers";
 
 export type AuthUsersService = typeof AuthUsersService;
 export const AuthUsersService = {
   validateUser: {
-    path: '/auth.AuthUsers/validateUser',
+    path: "/auth.AuthUsers/validateUser",
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: ValidateUserDto): Buffer =>
-      Buffer.from(ValidateUserDto.encode(value).finish()),
-    requestDeserialize: (value: Buffer): ValidateUserDto =>
-      ValidateUserDto.decode(value),
-    responseSerialize: (value: User): Buffer =>
-      Buffer.from(User.encode(value).finish()),
+    requestSerialize: (value: ValidateUserDto): Buffer => Buffer.from(ValidateUserDto.encode(value).finish()),
+    requestDeserialize: (value: Buffer): ValidateUserDto => ValidateUserDto.decode(value),
+    responseSerialize: (value: User): Buffer => Buffer.from(User.encode(value).finish()),
     responseDeserialize: (value: Buffer): User => User.decode(value),
   },
   validateToken: {
-    path: '/auth.AuthUsers/validateToken',
+    path: "/auth.AuthUsers/validateToken",
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: ValidateTokenDto): Buffer =>
-      Buffer.from(ValidateTokenDto.encode(value).finish()),
-    requestDeserialize: (value: Buffer): ValidateTokenDto =>
-      ValidateTokenDto.decode(value),
-    responseSerialize: (value: User): Buffer =>
-      Buffer.from(User.encode(value).finish()),
+    requestSerialize: (value: ValidateTokenDto): Buffer => Buffer.from(ValidateTokenDto.encode(value).finish()),
+    requestDeserialize: (value: Buffer): ValidateTokenDto => ValidateTokenDto.decode(value),
+    responseSerialize: (value: User): Buffer => Buffer.from(User.encode(value).finish()),
     responseDeserialize: (value: Buffer): User => User.decode(value),
   },
   /** user settings */
   getUserSetting: {
-    path: '/auth.AuthUsers/getUserSetting',
+    path: "/auth.AuthUsers/getUserSetting",
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: GetUserSettingsDTO): Buffer =>
-      Buffer.from(GetUserSettingsDTO.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetUserSettingsDTO =>
-      GetUserSettingsDTO.decode(value),
-    responseSerialize: (value: Settings): Buffer =>
-      Buffer.from(Settings.encode(value).finish()),
+    requestSerialize: (value: GetUserSettingsDTO): Buffer => Buffer.from(GetUserSettingsDTO.encode(value).finish()),
+    requestDeserialize: (value: Buffer): GetUserSettingsDTO => GetUserSettingsDTO.decode(value),
+    responseSerialize: (value: Settings): Buffer => Buffer.from(Settings.encode(value).finish()),
     responseDeserialize: (value: Buffer): Settings => Settings.decode(value),
   },
   createUser: {
-    path: '/auth.AuthUsers/createUser',
+    path: "/auth.AuthUsers/createUser",
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: CreateUserDTO): Buffer =>
-      Buffer.from(CreateUserDTO.encode(value).finish()),
-    requestDeserialize: (value: Buffer): CreateUserDTO =>
-      CreateUserDTO.decode(value),
-    responseSerialize: (value: User): Buffer =>
-      Buffer.from(User.encode(value).finish()),
+    requestSerialize: (value: CreateUserDTO): Buffer => Buffer.from(CreateUserDTO.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CreateUserDTO => CreateUserDTO.decode(value),
+    responseSerialize: (value: User): Buffer => Buffer.from(User.encode(value).finish()),
     responseDeserialize: (value: Buffer): User => User.decode(value),
   },
   getAllUsers: {
-    path: '/auth.AuthUsers/getAllUsers',
+    path: "/auth.AuthUsers/getAllUsers",
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: Empty): Buffer =>
-      Buffer.from(Empty.encode(value).finish()),
+    requestSerialize: (value: Empty): Buffer => Buffer.from(Empty.encode(value).finish()),
     requestDeserialize: (value: Buffer): Empty => Empty.decode(value),
-    responseSerialize: (value: Users): Buffer =>
-      Buffer.from(Users.encode(value).finish()),
+    responseSerialize: (value: Users): Buffer => Buffer.from(Users.encode(value).finish()),
     responseDeserialize: (value: Buffer): Users => Users.decode(value),
   },
 } as const;

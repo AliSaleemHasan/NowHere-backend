@@ -11,10 +11,8 @@ import {
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { ConfigService } from '@nestjs/config';
-import { MICROSERVICES } from 'nowhere-common';
-import { ClientProxy } from '@nestjs/microservices';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { S3Provider } from '../s3ObjectProvider/s3-object.provider';
 
 // define redis client
 @Injectable()
@@ -24,28 +22,14 @@ export class AwsStorageService {
   private bucket: string;
 
   constructor(
-    private config: ConfigService,
-    @Inject(MICROSERVICES.STORAGE.package) private redisClient: ClientProxy,
+    private readonly awsService: S3Provider,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {
-    this.bucket = this.config.getOrThrow('AWS_BUCKET');
-
-    const creds: any = {
-      accessKeyId: this.config.getOrThrow('AWS_ACCESS_KEY_ID'),
-      secretAccessKey: this.config.getOrThrow('AWS_SECRET_ACCESS_KEY'),
-    };
-    // const sessionToken = this.config.get('AWS_SESSION_TOKEN');
-    // if (sessionToken) creds.sessionToken = sessionToken;
-
-    this.client = new S3Client({
-      region: this.config.getOrThrow('AWS_REGION'),
-      credentials: creds,
-    });
+    this.client = this.awsService.getClient();
+    this.bucket = this.awsService.getBucket();
   }
 
-  async uploadFile(file: Buffer, fileName: string, userID: string) {
-    const today = new Date().toISOString().split('T')[0]; // safer format
-    const key = `${today}/${userID}/${fileName}`;
+  async uploadFile(file: Buffer, key: string) {
     this.logger.log(`Uploading ${key} to S3...`);
 
     try {
@@ -110,9 +94,7 @@ export class AwsStorageService {
 
     for (let i = 0; i < files.length; i++) {
       try {
-        let pathSeparator = files[i].path.split('/');
-        let fileName = pathSeparator[pathSeparator.length - 1];
-
+        let fileName = files[i].filename;
         // first get the file
         let file = await fetch(
           `${process.env.SNAPS_URL}/${process.env.STATIC_TMP_FILES}/${fileName}`,
@@ -123,10 +105,12 @@ export class AwsStorageService {
           continue;
         }
 
+        const today = new Date().toISOString().split('T')[0]; // safer format
+        const key = `${today}/${userId}/${fileName}`;
+
         const fileKey = await this.uploadFile(
           Buffer.from(await file.arrayBuffer()),
-          files[i].filename,
-          userId,
+          key,
         );
 
         keys.push(fileKey);

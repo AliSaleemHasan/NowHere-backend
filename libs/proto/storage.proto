@@ -2,21 +2,38 @@ syntax = "proto3";
 
 package STORAGE;
 
-
-
-service AwsStorage{
-    rpc getSignedUrlForFile(GetSignedURLDTO) returns (GetSignedURLReturn);
-
+service AwsStorage {
+  rpc uploadPhoto (UploadImageDto) returns (Key);
+  rpc getSignedURL (Key) returns (SignedURL);
+  rpc getSignedURLs (Keys) returns (SignedURLs);
 }
 
-
-message GetSignedURLDTO{
-    string key =1;
-    int32 expiresIn = 2;
+message SignedURL {
+  string signed = 1;
 }
 
-message GetSignedURLReturn{
-    string url =1;
+message SignedURLs {
+  repeated string urls = 1;
 }
 
+message Keys {
+  repeated string keys = 1;
+}
 
+message Key {
+  string key = 1;
+}
+
+message UploadImageDto {
+  bytes image = 1;
+  string user_id = 2;
+}
+
+message GetSignedURLDTO {
+  string key = 1;
+  int32 expiresIn = 2;
+}
+
+message GetSignedURLReturn {
+  string url = 1;
+}

@@ -3,10 +3,12 @@ import { AwsStorageModule } from './aws-storage/aws-storage.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import * as path from 'path';
+import { AwsGrpcModule } from './aws-grpc/aws-grpc.module';
 
 @Module({
   imports: [
     AwsStorageModule,
+    AwsGrpcModule,
 
     ConfigModule.forRoot({
       isGlobal: true,

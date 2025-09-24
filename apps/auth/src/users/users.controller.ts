@@ -39,18 +39,7 @@ export class UsersController {
   @Put('image')
   @AddUsersPhotoDocs()
   @UseGuards(JwtGuard)
-  @UseInterceptors(
-    FileInterceptor('photo', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req: any, file, callback) => {
-          const fileName =
-            (req.user?.Id || 'unkown') + Date.now() + file.originalname;
-          callback(null, fileName);
-        },
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('photo', {}))
   async updateUserImage(
     @ReqUser('Id') id: string,
     @UploadedFile(
@@ -63,7 +52,7 @@ export class UsersController {
     )
     photo: Express.Multer.File,
   ) {
-    return await this.usersService.setUserPhoto(photo.path, id);
+    return await this.usersService.setUserPhoto(photo.buffer, id);
   }
 
   @Get('settings')

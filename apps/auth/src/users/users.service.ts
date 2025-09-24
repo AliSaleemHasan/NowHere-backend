@@ -1,20 +1,40 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles, User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDTO } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Settings } from '../settings/entities/settings.entity';
-import { mapUserToProto } from '../grpc/mappers/user-mappers';
+import { MICROSERVICES } from 'nowhere-common';
+import { ClientGrpc } from '@nestjs/microservices';
+import { AWS_STORAGE_SERVICE_NAME, AwsStorageClient } from 'proto';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
-export class UsersService {
+export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
+
+  private storageService: AwsStorageClient;
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @Inject(MICROSERVICES.STORAGE.package)
+    private storageClient: ClientGrpc,
     @InjectRepository(Settings)
     private settingsRepository: Repository<Settings>,
   ) {}
+
+  onModuleInit() {
+    this.storageService = this.storageClient.getService<AwsStorageClient>(
+      AWS_STORAGE_SERVICE_NAME,
+    );
+  }
 
   async createUser(createUserDto: CreateUserDTO) {
     const user = this.userRepository.create(createUserDto);
@@ -54,10 +74,17 @@ export class UsersService {
   //   getUsers() just for admin (to be created when adding authorization)
 
   async getUserById(Id: string) {
+    // each time get user is performed, aws call must be done to get the image
+
     const user = await this.userRepository.findOne({ where: { Id } });
-    if (!user) return 'User not found!';
+
+    if (!user) throw new NotFoundException('User not found!');
+    let userImage = await firstValueFrom(
+      this.storageService.getSignedUrl({ key: user.image }),
+    );
+
     const { password, ...rest } = user;
-    return rest;
+    return { user: rest, userImage };
   }
 
   async getUserByEmail(email: string) {
@@ -74,8 +101,22 @@ export class UsersService {
     return await this.userRepository.find();
   }
 
-  async setUserPhoto(image: string, Id: string) {
-    const user = await this.userRepository.preload({ Id, image });
+  async setUserPhoto(imageFile: Buffer, userId: string) {
+    // first try to upload it to the s3 bucket
+    let imageKey = await firstValueFrom(
+      await this.storageService.uploadPhoto({
+        image: imageFile,
+        userId,
+      }),
+    );
+
+    if (!imageKey.key)
+      throw new BadRequestException('Error loading Image to AWS s3');
+
+    const user = await this.userRepository.preload({
+      Id: userId,
+      image: imageKey.key,
+    });
     if (!user) throw new NotFoundException('User not found');
 
     const updatedUser = await this.userRepository.save(user);
@@ -102,9 +143,8 @@ export class UsersService {
   }
 
   async createUserSettings(userId: string) {
-    const user = await this.getUserById(userId);
+    const { user, userImage } = await this.getUserById(userId);
 
-    if (user === 'User not found!') return null;
     const settings = this.settingsRepository.create({
       user,
     });

@@ -6,9 +6,11 @@ import { MICROSERVICES } from 'nowhere-common';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { S3Module } from '../s3ObjectProvider/s3-object.module';
 
 @Module({
   imports: [
+    S3Module,
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

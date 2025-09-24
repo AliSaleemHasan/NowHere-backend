@@ -4,9 +4,17 @@ import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
+import { ClientsModule } from '@nestjs/microservices';
+import { storageProtoOptions } from 'proto';
+import { ClientOptions } from '@grpc/grpc-js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Settings])],
+  imports: [
+    ClientsModule.register([
+      { name: 'STORAGE', ...(storageProtoOptions as ClientOptions) },
+    ]),
+    TypeOrmModule.forFeature([User, Settings]),
+  ],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],
