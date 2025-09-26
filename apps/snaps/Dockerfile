@@ -30,7 +30,7 @@ RUN pnpm install --filter snaps --workspace-root
 
 
 WORKDIR /usr/src/apps/snaps
-EXPOSE 3001
+EXPOSE 3000
 
 # Use ts-node for live dev
 CMD ["pnpm", "nx","start"]

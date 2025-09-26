@@ -6,7 +6,7 @@ import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
 import { SnapsGetaway } from './getaway';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MICROSERVICES } from 'nowhere-common';
-import { authProtoOptions } from 'proto';
+import { authProtoOptions, storageProtoOptions } from 'proto';
 import { ClientOptions } from '@grpc/grpc-js';
 
 @Module({
@@ -16,12 +16,16 @@ import { ClientOptions } from '@grpc/grpc-js';
         name: 'auth',
         ...(authProtoOptions as ClientOptions),
       },
+      {
+        name: 'STORAGE',
+        ...(storageProtoOptions as ClientOptions),
+      },
 
       {
-        name: MICROSERVICES.STORAGE.package,
+        name: MICROSERVICES.STORAGE.redis?.package || 'STORAGE_REDIS',
         transport: Transport.REDIS,
         options: {
-          port: Number(MICROSERVICES.STORAGE.redisPort),
+          port: Number(MICROSERVICES.STORAGE.redis?.redisPort) || 6379,
           host: 'redis',
         },
       },

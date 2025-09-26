@@ -22,7 +22,8 @@ export class AwsStorageController {
   private logger: Logger = new Logger(AwsStorageController.name);
   constructor(
     private storageService: AwsStorageService,
-    @Inject(MICROSERVICES.STORAGE.package) private redisClient: ClientProxy,
+    @Inject(MICROSERVICES.STORAGE.redis?.package || 'STORAGE_REDIS')
+    private redisClient: ClientProxy,
   ) {}
 
   @Get('/')

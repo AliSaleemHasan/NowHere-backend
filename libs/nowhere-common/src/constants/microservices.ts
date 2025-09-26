@@ -9,7 +9,10 @@ export const MICROSERVICES: {
     package: (typeof MICROSERVICES_PACKAGES)[K];
     host: string;
     grpcPort?: string;
-    redisPort?: string;
+    redis?: {
+      package: string;
+      redisPort?: string;
+    };
   };
 } = {
   USERS: {
@@ -24,7 +27,10 @@ export const MICROSERVICES: {
   STORAGE: {
     package: MICROSERVICES_PACKAGES.STORAGE,
     grpcPort: '50052',
-    redisPort: '6379',
+    redis: {
+      package: MICROSERVICES_PACKAGES.STORAGE + '_REDIS',
+      redisPort: '6379',
+    },
     host: 'nowhere-storage',
   },
 };

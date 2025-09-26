@@ -24,15 +24,17 @@ export class AwsGrpcController implements AwsStorageController {
     };
   }
 
-  @GrpcMethod(AWS_STORAGE_SERVICE_NAME, 'getSignedUrl')
+  @GrpcMethod(AWS_STORAGE_SERVICE_NAME, 'getSignedURL')
   async getSignedUrl(request: Key): Promise<SignedURL> {
     return {
-      signed: (await this.awsGrpcService.getSignedURL(request.key)) as string,
+      signed: (await this.awsGrpcService.getSignedUrl(request.key)) as string,
     };
   }
+
+  @GrpcMethod(AWS_STORAGE_SERVICE_NAME, 'getSignedURLs')
   async getSignedUrLs(request: Keys): Promise<SignedURLs> {
     return {
-      urls: await this.awsGrpcService.getSignedURLS(request.keys),
+      urls: await this.awsGrpcService.getSignedUrLs(request.keys),
     };
   }
 }

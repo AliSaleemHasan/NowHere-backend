@@ -25,7 +25,7 @@ export class AwsGrpcService {
   }
 
   // get one photo
-  async getSignedURL(key: string) {
+  async getSignedUrl(key: string) {
     try {
       return await this.storageService.getSignedUrlForFile(key);
     } catch (e) {
@@ -34,10 +34,10 @@ export class AwsGrpcService {
   }
   // get multiple photos
 
-  async getSignedURLS(keys: string[]) {
+  async getSignedUrLs(keys: string[]) {
     let outputs: string[] = [];
     for (const key of keys) {
-      outputs.push((await this.getSignedURL(key)) as string);
+      outputs.push((await this.getSignedUrl(key)) as string);
     }
 
     return outputs;

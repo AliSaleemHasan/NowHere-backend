@@ -21,11 +21,11 @@ import { S3Module } from '../s3ObjectProvider/s3-object.module';
     }),
     ClientsModule.register([
       {
-        name: MICROSERVICES.STORAGE.package,
+        name: MICROSERVICES.STORAGE.redis?.package || 'STORAGE_REDIS',
         transport: Transport.REDIS,
         options: {
           host: 'redis',
-          port: Number(MICROSERVICES.STORAGE.redisPort || 6379),
+          port: Number(MICROSERVICES.STORAGE.redis?.redisPort) || 6379,
         },
       },
     ]),

@@ -19,9 +19,15 @@ import {
   handleMongoError,
   MICROSERVICES,
 } from 'nowhere-common';
-import { AUTH_USERS_SERVICE_NAME, AuthUsersClient, Settings } from 'proto';
+import {
+  AUTH_USERS_SERVICE_NAME,
+  AuthUsersClient,
+  AWS_STORAGE_SERVICE_NAME,
+  AwsStorageClient,
+  Settings,
+} from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom, NotFoundError } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { deleteFromFolder } from 'nowhere-common/utils/deleteFromFolder';
 import { join } from 'path';
 import { SnapUploadedDto } from './dto/snap-uploaded-dto';
@@ -30,12 +36,15 @@ import { SnapUploadedDto } from './dto/snap-uploaded-dto';
 export class SnapsService implements OnModuleInit {
   private logger: Logger = new Logger(SnapsService.name);
   private authUsersService: AuthUsersClient;
+  private storageService: AwsStorageClient;
 
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
     @Inject(MICROSERVICES.USERS.package) private client: ClientGrpc,
-    @Inject(MICROSERVICES.STORAGE.package) private redisClient: ClientProxy,
-
+    @Inject(MICROSERVICES.STORAGE.redis?.package || 'STORAGE_REDIS')
+    private redisClient: ClientProxy,
+    @Inject(MICROSERVICES.STORAGE.package)
+    private storageClient: ClientGrpc,
     private snapsGateaway: SnapsGetaway,
   ) {}
 
@@ -43,6 +52,12 @@ export class SnapsService implements OnModuleInit {
     this.authUsersService = this.client.getService<AuthUsersClient>(
       AUTH_USERS_SERVICE_NAME,
     );
+
+    this.storageService = this.storageClient.getService<AwsStorageClient>(
+      AWS_STORAGE_SERVICE_NAME,
+    );
+
+    console.log(Object.keys(this.storageService));
   }
 
   async handleCreateSnap(data: SnapUploadedDto) {
@@ -202,7 +217,13 @@ export class SnapsService implements OnModuleInit {
     try {
       let snap = await this.snapModel.findById(id).exec();
       if (!snap) throw new NotFoundException('Snap not found for id: ' + id);
-      return snap;
+
+      // now return snap with images Data
+      let imageKeys = await firstValueFrom(
+        this.storageService.getSignedUrLs({ keys: snap.snaps }),
+      );
+
+      return { snap, imageKeys: imageKeys.urls };
     } catch (e) {
       throw new NotFoundException('Snap not found ' + e.message);
     }
