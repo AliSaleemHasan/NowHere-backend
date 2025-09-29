@@ -89,9 +89,10 @@ export class SnapsController {
   }
 
   @Get(':id')
+  @UseGuards(JwtGuard)
   @FindOneSnapDocs()
-  findOne(@Param('id') id: string) {
-    return this.snapsService.findOne(id);
+  findOne(@ReqUser('Id') Id: string, @Param('id') id: string) {
+    return this.snapsService.findOne(id, Id);
   }
 
   @Delete()

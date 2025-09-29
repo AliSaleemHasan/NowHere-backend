@@ -8,14 +8,20 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Roles, User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { CreateUserDTO } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Settings } from '../settings/entities/settings.entity';
 import { MICROSERVICES } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { AWS_STORAGE_SERVICE_NAME, AwsStorageClient } from 'proto';
+import {
+  AWS_STORAGE_SERVICE_NAME,
+  AwsStorageClient,
+  type NotSeenDto,
+  type SeenObject,
+} from 'proto';
 import { firstValueFrom } from 'rxjs';
+import { SnapSeen } from './entities/snaps-seen.entity';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -24,6 +30,8 @@ export class UsersService implements OnModuleInit {
   private storageService: AwsStorageClient;
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(SnapSeen) private snapSeenRepo: Repository<SnapSeen>,
+
     @Inject(MICROSERVICES.STORAGE.package)
     private storageClient: ClientGrpc,
     @InjectRepository(Settings)
@@ -161,5 +169,24 @@ export class UsersService implements OnModuleInit {
     });
 
     return await this.settingsRepository.save(settings);
+  }
+
+  // handle seen operations
+
+  async addSeen(seenObject: SeenObject) {
+    let seen = this.snapSeenRepo.create({
+      snapID: seenObject.snapID,
+      userID: seenObject.userID,
+    });
+
+    return await this.snapSeenRepo.save(seen);
+  }
+
+  async getSeen(notSeenDTO: NotSeenDto) {
+    return await this.snapSeenRepo.find({
+      where: {
+        userID: notSeenDTO.seen ? notSeenDTO.userID : Not(notSeenDTO.userID),
+      },
+    });
   }
 }

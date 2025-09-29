@@ -7,13 +7,14 @@ import { Settings } from '../settings/entities/settings.entity';
 import { ClientsModule } from '@nestjs/microservices';
 import { storageProtoOptions } from 'proto';
 import { ClientOptions } from '@grpc/grpc-js';
+import { SnapSeen } from './entities/snaps-seen.entity';
 
 @Module({
   imports: [
     ClientsModule.register([
       { name: 'STORAGE', ...(storageProtoOptions as ClientOptions) },
     ]),
-    TypeOrmModule.forFeature([User, Settings]),
+    TypeOrmModule.forFeature([User, Settings, SnapSeen]),
   ],
   providers: [UsersService],
   controllers: [UsersController],

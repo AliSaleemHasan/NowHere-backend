@@ -9,6 +9,8 @@ import {
   CreateUserDTO,
   ValidateUserDto,
   Settings as ProtoSettingsType,
+  SeenObject,
+  NotSeenDto,
 } from 'proto';
 
 @Injectable()
@@ -69,5 +71,14 @@ export class GrpcService {
 
   async createUserSettings(userId: string): Promise<ProtoSettingsType | null> {
     return await this.usersService.createUserSettings(userId);
+  }
+
+  // handle seen functionality
+
+  async notSeen(notSeenDto: NotSeenDto) {
+    return { seen: await this.usersService.getSeen(notSeenDto) };
+  }
+  async setSeen(seenObject: SeenObject) {
+    return { success: await !!this.usersService.addSeen(seenObject) };
   }
 }

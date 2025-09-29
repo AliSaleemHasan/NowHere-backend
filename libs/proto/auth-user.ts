@@ -16,6 +16,24 @@ export enum UserRole {
   UNRECOGNIZED = -1,
 }
 
+export interface NotSeenDto {
+  seen: boolean;
+  userID: string;
+}
+
+export interface SeenObject {
+  snapID: string;
+  userID: string;
+}
+
+export interface SeenObjects {
+  seen: SeenObject[];
+}
+
+export interface Success {
+  success: boolean;
+}
+
 export interface Users {
   users: User[];
 }
@@ -64,6 +82,176 @@ export interface ValidateUserDto {
 export interface ValidateTokenDto {
   token: string;
 }
+
+function createBaseNotSeenDto(): NotSeenDto {
+  return { seen: false, userID: "" };
+}
+
+export const NotSeenDto: MessageFns<NotSeenDto> = {
+  encode(message: NotSeenDto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.seen !== false) {
+      writer.uint32(8).bool(message.seen);
+    }
+    if (message.userID !== "") {
+      writer.uint32(18).string(message.userID);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): NotSeenDto {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseNotSeenDto();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.seen = reader.bool();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.userID = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseSeenObject(): SeenObject {
+  return { snapID: "", userID: "" };
+}
+
+export const SeenObject: MessageFns<SeenObject> = {
+  encode(message: SeenObject, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.snapID !== "") {
+      writer.uint32(10).string(message.snapID);
+    }
+    if (message.userID !== "") {
+      writer.uint32(18).string(message.userID);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SeenObject {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSeenObject();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.snapID = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.userID = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseSeenObjects(): SeenObjects {
+  return { seen: [] };
+}
+
+export const SeenObjects: MessageFns<SeenObjects> = {
+  encode(message: SeenObjects, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.seen) {
+      SeenObject.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): SeenObjects {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSeenObjects();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.seen.push(SeenObject.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseSuccess(): Success {
+  return { success: false };
+}
+
+export const Success: MessageFns<Success> = {
+  encode(message: Success, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.success !== false) {
+      writer.uint32(8).bool(message.success);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Success {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSuccess();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.success = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
 
 function createBaseUsers(): Users {
   return { users: [] };
@@ -570,6 +758,12 @@ export interface AuthUsersClient {
   createUser(request: CreateUserDTO): Observable<User>;
 
   getAllUsers(request: Empty): Observable<Users>;
+
+  /** seen functionality */
+
+  setSeen(request: SeenObject): Observable<Success>;
+
+  notSeen(request: NotSeenDto): Observable<SeenObjects>;
 }
 
 export interface AuthUsersController {
@@ -584,11 +778,25 @@ export interface AuthUsersController {
   createUser(request: CreateUserDTO): Promise<User> | Observable<User> | User;
 
   getAllUsers(request: Empty): Promise<Users> | Observable<Users> | Users;
+
+  /** seen functionality */
+
+  setSeen(request: SeenObject): Promise<Success> | Observable<Success> | Success;
+
+  notSeen(request: NotSeenDto): Promise<SeenObjects> | Observable<SeenObjects> | SeenObjects;
 }
 
 export function AuthUsersControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["validateUser", "validateToken", "getUserSetting", "createUser", "getAllUsers"];
+    const grpcMethods: string[] = [
+      "validateUser",
+      "validateToken",
+      "getUserSetting",
+      "createUser",
+      "getAllUsers",
+      "setSeen",
+      "notSeen",
+    ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("AuthUsers", method)(constructor.prototype[method], method, descriptor);
@@ -651,6 +859,25 @@ export const AuthUsersService = {
     responseSerialize: (value: Users): Buffer => Buffer.from(Users.encode(value).finish()),
     responseDeserialize: (value: Buffer): Users => Users.decode(value),
   },
+  /** seen functionality */
+  setSeen: {
+    path: "/auth.AuthUsers/setSeen",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: SeenObject): Buffer => Buffer.from(SeenObject.encode(value).finish()),
+    requestDeserialize: (value: Buffer): SeenObject => SeenObject.decode(value),
+    responseSerialize: (value: Success): Buffer => Buffer.from(Success.encode(value).finish()),
+    responseDeserialize: (value: Buffer): Success => Success.decode(value),
+  },
+  notSeen: {
+    path: "/auth.AuthUsers/notSeen",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: NotSeenDto): Buffer => Buffer.from(NotSeenDto.encode(value).finish()),
+    requestDeserialize: (value: Buffer): NotSeenDto => NotSeenDto.decode(value),
+    responseSerialize: (value: SeenObjects): Buffer => Buffer.from(SeenObjects.encode(value).finish()),
+    responseDeserialize: (value: Buffer): SeenObjects => SeenObjects.decode(value),
+  },
 } as const;
 
 export interface AuthUsersServer extends UntypedServiceImplementation {
@@ -660,6 +887,9 @@ export interface AuthUsersServer extends UntypedServiceImplementation {
   getUserSetting: handleUnaryCall<GetUserSettingsDTO, Settings>;
   createUser: handleUnaryCall<CreateUserDTO, User>;
   getAllUsers: handleUnaryCall<Empty, Users>;
+  /** seen functionality */
+  setSeen: handleUnaryCall<SeenObject, Success>;
+  notSeen: handleUnaryCall<NotSeenDto, SeenObjects>;
 }
 
 interface MessageFns<T> {

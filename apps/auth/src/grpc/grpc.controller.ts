@@ -12,8 +12,13 @@ import {
   ValidateUserDto,
   Users,
   type Empty,
+  NotSeenDto,
+  SeenObjects,
+  SeenObject,
+  Success,
 } from 'proto';
 import { mapUserToProto } from './mappers/user-mappers';
+import { Observable } from 'rxjs';
 
 @Controller()
 export class GrpcController implements AuthUsersController {
@@ -44,5 +49,15 @@ export class GrpcController implements AuthUsersController {
   @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'getAllUsers')
   async getAllUsers(request: Empty): Promise<Users> {
     return { users: await this.grpcService.getAllUsers() };
+  }
+
+  @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'notSeen')
+  async notSeen(request: NotSeenDto): Promise<SeenObjects> {
+    return await this.grpcService.notSeen(request);
+  }
+
+  @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'setSeen')
+  async setSeen(request: SeenObject): Promise<Success> {
+    return await this.grpcService.setSeen(request);
   }
 }

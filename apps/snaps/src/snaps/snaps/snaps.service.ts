@@ -27,7 +27,7 @@ import {
   Settings,
 } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { first, firstValueFrom } from 'rxjs';
 import { deleteFromFolder } from 'nowhere-common/utils/deleteFromFolder';
 import { join } from 'path';
 import { SnapUploadedDto } from './dto/snap-uploaded-dto';
@@ -56,8 +56,6 @@ export class SnapsService implements OnModuleInit {
     this.storageService = this.storageClient.getService<AwsStorageClient>(
       AWS_STORAGE_SERVICE_NAME,
     );
-
-    console.log(Object.keys(this.storageService));
   }
 
   async handleCreateSnap(data: SnapUploadedDto) {
@@ -213,7 +211,7 @@ export class SnapsService implements OnModuleInit {
       { new: true },
     );
   }
-  async findOne(id: string) {
+  async findOne(id: string, userID: string) {
     try {
       let snap = await this.snapModel.findById(id).exec();
       if (!snap) throw new NotFoundException('Snap not found for id: ' + id);
@@ -222,6 +220,22 @@ export class SnapsService implements OnModuleInit {
       let imageKeys = await firstValueFrom(
         this.storageService.getSignedUrLs({ keys: snap.snaps }),
       );
+
+      // first get seen (to know if it is seen or not)
+
+      let seen = await firstValueFrom(
+        this.authUsersService.notSeen({ seen: true, userID }),
+      );
+
+      // now set it as seen
+
+      if (!seen) {
+        let { success } = await firstValueFrom(
+          this.authUsersService.setSeen({ snapID: id, userID }),
+        );
+
+        if (!success) this.logger.error('Seen is not being set correctly!!');
+      }
 
       return { snap, imageKeys: imageKeys.urls };
     } catch (e) {
@@ -239,4 +253,6 @@ export class SnapsService implements OnModuleInit {
   deleteAll(): Promise<DeleteResult> {
     return this.snapModel.deleteMany({});
   }
+
+  // seen functionality
 }
