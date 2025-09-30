@@ -16,8 +16,6 @@ export async function deleteFromFolder(
         await fs.rm(filePath, { recursive: true, force: true });
       }
     }
-
-    console.log(`Folder '${directoryPath}' emptied successfully.`);
   } catch (err) {
     console.error(`Error emptying folder '${directoryPath}':`, err);
   }

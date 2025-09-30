@@ -72,9 +72,6 @@ export class SnapsService implements OnModuleInit {
 
       throw new BadRequestException(data.error);
     }
-    this.logger.log(
-      ` snap with idupdated  ${data.snapId} and keys are ${JSON.stringify(data.keys)} `,
-    );
 
     let updateStatus = await this.updateSnapImages(data.snapId, data.keys);
 

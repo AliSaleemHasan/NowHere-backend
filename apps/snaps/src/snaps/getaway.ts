@@ -66,6 +66,7 @@ export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
       coordinates: data.coordinates,
       socketId: client.id,
     });
+
     return this.usersLocationMap.get(client.id);
   }
 

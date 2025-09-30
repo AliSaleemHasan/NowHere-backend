@@ -181,7 +181,6 @@ export class UsersService implements OnModuleInit {
 
     let savedSeen = await this.snapSeenRepo.save(seen);
 
-    console.log(savedSeen);
     return savedSeen;
   }
 
