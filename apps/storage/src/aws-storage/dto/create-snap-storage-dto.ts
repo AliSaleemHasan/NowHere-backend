@@ -4,6 +4,7 @@ import {
   IsArray,
   IsEnum,
   IsNumber,
+  IsNumberString,
   IsOptional,
   IsString,
   IsUUID,
@@ -21,7 +22,7 @@ export class GeoPointDto {
   @ArrayMaxSize(2, {
     message: 'coordinates must have exactly 2 values [lng, lat]',
   })
-  @IsNumber({}, { each: true, message: 'coordinates must be numbers' })
+  @IsNumberString({}, { each: true, message: 'coordinates must be numbers' })
   coordinates: [number, number];
 }
 export class CreateSnapStorageDTO {

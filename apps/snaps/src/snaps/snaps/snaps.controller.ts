@@ -12,12 +12,11 @@ import {
   ValidationPipe,
   Query,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { SnapsService } from './snaps.service';
 import { Snap } from './schemas/snap.schema';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { JwtGuard, ReqUser } from 'nowhere-common';
+import { JwtGuard, ReqUser, RoleGuard } from 'nowhere-common';
 import { CreateSnapDto } from './dto/create-snap.dto';
 import { FindLocationNear } from './dto/find-location-near.dto';
 import { CreateSnapDocs } from './docs/create-snap.doc';
@@ -107,10 +106,27 @@ export class SnapsController {
     @Param() location: FindLocationNear,
     @Query() query: FindSnapDTO,
   ) {
-    return await this.snapsService.findNear(
-      [location.lng, location.lat],
-      query.tags,
+    return await this.snapsService.getSeenSnaps(
+      {
+        location: [location.lng, location.lat],
+        tags: query.tags,
+        id: query.id,
+      },
       query.id,
+      false,
+    );
+  }
+
+  @Get('seen/:lng/:lat')
+  @UseGuards(JwtGuard)
+  async getSeenSnaps(
+    @ReqUser('Id') _userId: string,
+    @Param() location: FindLocationNear,
+    @Query() query: FindSnapDTO,
+  ) {
+    return await this.snapsService.getSeenSnaps(
+      { ...query, location: [location.lng, location.lat] },
+      _userId,
     );
   }
 

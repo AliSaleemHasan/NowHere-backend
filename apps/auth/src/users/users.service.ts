@@ -179,13 +179,17 @@ export class UsersService implements OnModuleInit {
       userID: seenObject.userID,
     });
 
-    return await this.snapSeenRepo.save(seen);
+    let savedSeen = await this.snapSeenRepo.save(seen);
+
+    console.log(savedSeen);
+    return savedSeen;
   }
 
   async getSeen(notSeenDTO: NotSeenDto) {
     return await this.snapSeenRepo.find({
       where: {
         userID: notSeenDTO.seen ? notSeenDTO.userID : Not(notSeenDTO.userID),
+        ...(notSeenDTO.snapID && { snapID: notSeenDTO.snapID }),
       },
     });
   }

@@ -31,6 +31,7 @@ import { first, firstValueFrom } from 'rxjs';
 import { deleteFromFolder } from 'nowhere-common/utils/deleteFromFolder';
 import { join } from 'path';
 import { SnapUploadedDto } from './dto/snap-uploaded-dto';
+import { FindSnapDTO } from './dto/find-snap.dto';
 
 @Injectable()
 export class SnapsService implements OnModuleInit {
@@ -98,12 +99,13 @@ export class SnapsService implements OnModuleInit {
     if (typeof location === 'string') location = JSON.parse(location);
     createSnapDto.location = location;
 
-    const alreadyHasPostedNear = await this.findNear(
-      location.coordinates,
-      Object.values(Tags),
-      id,
-      true,
-    );
+    const alreadyHasPostedNear = await this.findNear({
+      location: location.coordinates,
+      tags: Object.values(Tags),
+      _userId: id,
+      canPost: true,
+    });
+
     if (alreadyHasPostedNear.length > 0)
       throw new ForbiddenException(
         'User has already posted in this area today!!',
@@ -149,12 +151,17 @@ export class SnapsService implements OnModuleInit {
    * @returns a list of snaps if found
    */
 
-  async findNear(
-    location: [number, number],
-    tags: Tags[],
-    _userId?: string,
-    canPost?: boolean, // to check if the user is trying to post snap in the same region
-  ) {
+  async findNear({
+    location,
+    tags,
+    _userId,
+    canPost,
+  }: {
+    location: [Number, Number];
+    tags: Tags[];
+    _userId: string;
+    canPost?: boolean;
+  }) {
     // first get the seeting of the user
     let user_settings: Settings | null = null;
     if (_userId)
@@ -229,7 +236,7 @@ export class SnapsService implements OnModuleInit {
 
       // now set it as seen
 
-      if (!seen) {
+      if (!Object.keys(seen).length) {
         let { success } = await firstValueFrom(
           this.authUsersService.setSeen({ snapID: id, userID }),
         );
@@ -255,4 +262,27 @@ export class SnapsService implements OnModuleInit {
   }
 
   // seen functionality
+
+  async getSeenSnaps(
+    getSnapDTO: FindSnapDTO,
+    userID: string,
+    seen: boolean = true,
+  ) {
+    // first get the near snap (snaps that users can see)
+    let nearSnaps = await this.findNear({ ...getSnapDTO, _userId: userID });
+
+    if (!userID) return nearSnaps;
+
+    let seenSnaps: typeof nearSnaps = [];
+
+    for (const snap of nearSnaps) {
+      let seenSnap = await firstValueFrom(
+        this.authUsersService.notSeen({ userID, seen, snapID: snap.id }),
+      );
+
+      if (Object.keys(seenSnap).length > 0) seenSnaps.push(snap);
+    }
+
+    return seenSnaps;
+  }
 }

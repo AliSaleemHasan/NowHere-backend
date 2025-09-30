@@ -19,6 +19,7 @@ export enum UserRole {
 export interface NotSeenDto {
   seen: boolean;
   userID: string;
+  snapID?: string | undefined;
 }
 
 export interface SeenObject {
@@ -95,6 +96,9 @@ export const NotSeenDto: MessageFns<NotSeenDto> = {
     if (message.userID !== "") {
       writer.uint32(18).string(message.userID);
     }
+    if (message.snapID !== undefined) {
+      writer.uint32(26).string(message.snapID);
+    }
     return writer;
   },
 
@@ -119,6 +123,14 @@ export const NotSeenDto: MessageFns<NotSeenDto> = {
           }
 
           message.userID = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.snapID = reader.string();
           continue;
         }
       }

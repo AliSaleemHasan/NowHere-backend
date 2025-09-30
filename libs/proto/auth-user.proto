@@ -16,6 +16,7 @@ service AuthUsers {
     // seen functionality 
     rpc setSeen(SeenObject) returns (Success);
     rpc notSeen(NotSeenDto) returns (SeenObjects);
+    
 
 }
 
@@ -23,6 +24,7 @@ service AuthUsers {
 message NotSeenDto{
   bool seen =1 ;
   string userID = 2;
+  optional string snapID = 3;
 }
 
 

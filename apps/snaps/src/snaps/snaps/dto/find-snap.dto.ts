@@ -1,4 +1,12 @@
-import { IsEnum, IsNumber, IsOptional } from 'class-validator';
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
+  IsNumber,
+  IsNumberString,
+  IsOptional,
+} from 'class-validator';
 import { Tags } from '../schemas/snap.schema';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -16,4 +24,15 @@ export class FindSnapDTO {
   @IsOptional()
   @IsNumber()
   id: string;
+
+  @IsArray()
+  @ArrayMinSize(2, {
+    message: 'coordinates must have exactly 2 values [lng, lat]',
+  })
+  @ArrayMaxSize(2, {
+    message: 'coordinates must have exactly 2 values [lng, lat]',
+  })
+  @IsOptional()
+  @IsNumberString({}, { each: true, message: 'coordinates must be numbers' })
+  location: [number, number];
 }
