@@ -13,10 +13,11 @@ import { ApiTags } from '@nestjs/swagger';
 import { GetByEmailDocs } from './docs/get-by-email.doc';
 import { GetAllUsersDocs } from './docs/get-all-users.doc';
 import { GetByIdDocs } from './docs/get-by-id.doc';
-import { JwtGuard, ReqUser } from 'nowhere-common';
+import { JwtGuard, ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { AddUsersPhotoDocs } from './docs/add-user-image.doc';
+import { Roles } from './entities/user.entity';
 
 @ApiTags('users')
 @Controller('users')
@@ -29,9 +30,10 @@ export class UsersController {
     return await this.usersService.getUserById(id);
   }
 
-  //TODO: add jwt guard on this controller
   @Get()
   @GetAllUsersDocs()
+  @UserRoles([Roles.ADMIN])
+  @UseGuards(RoleGuard, JwtGuard)
   async getAllUsers() {
     return await this.usersService.getAllUsers();
   }
@@ -63,6 +65,7 @@ export class UsersController {
 
   @Get(':email')
   @GetByEmailDocs()
+  @UseGuards(JwtGuard)
   async getByEmail(@Param('email') email: string) {
     return await this.usersService.getUserByEmail(email);
   }

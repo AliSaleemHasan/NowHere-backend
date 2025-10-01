@@ -88,8 +88,6 @@ export class SnapsService implements OnModuleInit {
     // handle parising the data correctly
     createSnapDto._userId = id;
 
-    //TODO handle storage
-
     createSnapDto.snaps = [];
 
     let location = createSnapDto.location;

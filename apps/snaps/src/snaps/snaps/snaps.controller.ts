@@ -16,7 +16,7 @@ import {
 import { SnapsService } from './snaps.service';
 import { Snap } from './schemas/snap.schema';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { JwtGuard, ReqUser, RoleGuard } from 'nowhere-common';
+import { JwtGuard, ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
 import { CreateSnapDto } from './dto/create-snap.dto';
 import { FindLocationNear } from './dto/find-location-near.dto';
 import { CreateSnapDocs } from './docs/create-snap.doc';
@@ -25,16 +25,10 @@ import { FindOneSnapDocs } from './docs/find-one-snap.doc';
 import { DeleteAllSnapsDocs } from './docs/delete-all-snaps.doc';
 import { FindNearSnapsDocs } from './docs/find-near-snaps.doc';
 import { FindSnapDTO } from './dto/find-snap.dto';
-import {
-  Ctx,
-  MessagePattern,
-  Payload,
-  RedisContext,
-} from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { diskStorage } from 'multer';
 import { DeleteResult } from 'mongoose';
 import { join } from 'path';
-import { deleteFromFolder } from 'nowhere-common/utils/deleteFromFolder';
 import { SnapUploadedDto } from './dto/snap-uploaded-dto';
 
 @Controller('snaps')
@@ -43,7 +37,6 @@ export class SnapsController {
   constructor(private readonly snapsService: SnapsService) {}
 
   // handle getting the uploaded data
-  //TODO: handle data types
   @MessagePattern('snap-uploaded')
   async saveUploadedSnaps(
     @Payload()
@@ -78,6 +71,8 @@ export class SnapsController {
 
   @Get()
   @FindAllSnapsDocs()
+  @UserRoles(['ADMIN'])
+  @UseGuards(JwtGuard, RoleGuard)
   findAll(): Promise<Snap[]> {
     return this.snapsService.findAll();
   }
@@ -96,6 +91,8 @@ export class SnapsController {
 
   @Delete()
   @DeleteAllSnapsDocs()
+  @UserRoles(['ADMIN'])
+  @UseGuards(JwtGuard, RoleGuard)
   deleteAll(): Promise<DeleteResult> {
     return this.snapsService.deleteAll();
   }
@@ -129,10 +126,4 @@ export class SnapsController {
       _userId,
     );
   }
-
-  //
-  //      Handle snap settings
-  //
-
-  // first get snaps settings for user
 }

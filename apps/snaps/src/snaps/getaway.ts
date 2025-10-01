@@ -35,21 +35,6 @@ export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
     this.logger.log('UsersLocationMap Created ...');
   }
 
-  // // we check if the user is loggedIn first
-  // async handleConnection(client: Socket, ...args: any[]) {
-  //   console.log(client.handshake.auth.token);
-  //   // TODO: change this to client.handshake.auth.token
-  //   const token = client.handshake.auth.token;
-
-  //   try {
-  //     const user = await this.authService.validateToken(token);
-  //     client.data.userId = user.Id;
-  //   } catch (err) {
-  //     console.log(err);
-  //     client.disconnect(true); // if not logged in the connection will be refused
-  //   }
-  // }
-
   // remove  client from the map
   handleDisconnect(client: Socket) {
     if (this.usersLocationMap.get(client.id))

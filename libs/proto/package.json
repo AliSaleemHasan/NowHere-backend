@@ -4,6 +4,9 @@
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "proto:compile": "protoc --plugin=$(pnpm dlx which protoc-gen-ts_proto) --ts_proto_out=./ --ts_proto_opt=nestJs=true,outputServices=grpc-js,exportCommonSymbols=false *.proto -I .",
     "proto:build": "tsc -p tsconfig.lib.json",

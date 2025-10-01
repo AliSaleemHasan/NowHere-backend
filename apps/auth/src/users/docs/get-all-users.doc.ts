@@ -7,7 +7,7 @@ export function GetAllUsersDocs() {
     ApiBearerAuth('jwt authentication'),
     ApiOperation({
       description: 'Get Back all users in the DB',
-      summary: 'This is an admin action [requires admin authentication :TODO]',
+      summary: 'This is an admin action ',
     }),
 
     ApiResponse({
