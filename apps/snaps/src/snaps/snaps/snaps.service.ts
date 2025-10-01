@@ -6,6 +6,7 @@ import {
   Logger,
   NotFoundException,
   OnModuleInit,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { CreateSnapDto } from './dto/create-snap.dto';
 import { Snap, SnapStatus, Tags } from './schemas/snap.schema';
@@ -81,12 +82,12 @@ export class SnapsService implements OnModuleInit {
     );
   }
   async create(
-    id: string,
+    _userId: string,
     snaps: Array<Express.Multer.File>,
     createSnapDto: CreateSnapDto,
   ) {
     // handle parising the data correctly
-    createSnapDto._userId = id;
+    createSnapDto._userId = _userId;
 
     createSnapDto.snaps = [];
 
@@ -94,14 +95,26 @@ export class SnapsService implements OnModuleInit {
     if (typeof location === 'string') location = JSON.parse(location);
     createSnapDto.location = location;
 
-    const alreadyHasPostedNear = await this.findNear({
-      location: location.coordinates,
-      tags: Object.values(Tags),
-      _userId: id,
-      canPost: true,
-    });
+    let params = await this.getNearParams({ _userId });
 
-    if (alreadyHasPostedNear.length > 0)
+    console.log(params, location);
+
+    const exists = await this.snapModel
+      .findOne({
+        _userId,
+        createdAt: { $gte: params.showBefore, $lte: params.showAfter },
+        location: {
+          $near: {
+            $geometry: location,
+            $maxDistance: params.allowedPostDistance, // meters
+          },
+        },
+      })
+      .select('_id')
+      .lean() // returns plain object
+      .exec();
+
+    if (exists)
       throw new ForbiddenException(
         'User has already posted in this area today!!',
       );
@@ -118,7 +131,7 @@ export class SnapsService implements OnModuleInit {
 
       this.redisClient.emit('upload-snap', {
         files: snaps,
-        userId: id,
+        userId: _userId,
         snapId: created.id,
       });
 
@@ -137,37 +150,22 @@ export class SnapsService implements OnModuleInit {
 
   /**
    *
-   * @param location Location to find sanp near it [Long,Lat]
-   * @param tags Search Location Near based on tag or Array<Tags>
-   * @param _userId imporant internally to get user settings
-   * @param canPost To check if the user has already posted in the allowed regeion
-   * @param maxDistanceInMeters  Visibilty range of each user
-   * @param minPostDistance  Post range ability
-   * @returns a list of snaps if found
+   * @param input _userId here it is used to get user settings
+   * @returns (showAfter,showBefore) the time slot to search snaps within, visionDistance: max distance where snaps can be shown and allowedPostDistance: wheather user can post in an area
    */
-
-  async findNear({
-    location,
-    tags,
-    _userId,
-    canPost,
-  }: {
-    location: [Number, Number];
-    tags: Tags[];
-    _userId: string;
-    canPost?: boolean;
-  }) {
-    // first get the seeting of the user
+  async getNearParams(input: { _userId: string }) {
     let user_settings: Settings | null = null;
-    if (_userId)
+    if (!input._userId)
+      throw new UnauthorizedException('User Token was not provided!');
+    if (input._userId)
       user_settings = await firstValueFrom(
-        this.authUsersService.getUserSetting({ id: _userId }),
+        this.authUsersService.getUserSetting({ id: input._userId }),
       );
 
-    let distance = user_settings?.maxDistance || maxDistance_TO_SEE;
+    let visionDistance = user_settings?.maxDistance || maxDistance_TO_SEE;
 
-    if (canPost)
-      distance = user_settings?.newSnapDistance || MIN_DISTANCE_TO_POST;
+    let allowedPostDistance =
+      user_settings?.newSnapDistance || MIN_DISTANCE_TO_POST;
 
     const queryTime = new Date();
 
@@ -184,19 +182,44 @@ export class SnapsService implements OnModuleInit {
       queryTime.getTime() + days * 24 * 60 * 60 * 1000,
     );
 
+    return { showAfter, showBefore, visionDistance, allowedPostDistance };
+  }
+
+  /**
+   *
+   * @param location Location to find sanp near it [Long,Lat]
+   * @param tags Search Location Near based on tag or Array<Tags>
+   * @param _userId imporant internally to get user settings
+   * @param canPost To check if the user has already posted in the allowed regeion
+   * @param maxDistanceInMeters  Visibilty range of each user
+   * @param minPostDistance  Post range ability
+   * @returns a list of snaps if found
+   */
+
+  async findNear({
+    location,
+    tags,
+    _userId,
+  }: {
+    location: [Number, Number];
+    tags: Tags[];
+    _userId: string;
+  }) {
+    let params = await this.getNearParams({ _userId });
+
     return await this.snapModel
       .find({
         ...(tags && tags?.length > 0 && { tag: { $in: tags } }),
 
         ...(_userId && { _userId }),
-        createdAt: { $gte: showBefore, $lte: showAfter },
+        createdAt: { $gte: params.showBefore, $lte: params.showAfter },
         location: {
           $near: {
             $geometry: {
               type: 'Point',
               coordinates: location,
             },
-            $maxDistance: distance,
+            $maxDistance: params.visionDistance,
           },
         },
       })

@@ -4,6 +4,7 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { MICROSERVICES } from 'nowhere-common';
 import { storageProtoOptions } from 'proto';
 
+import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(StorageModule);
   app.connectMicroservice<MicroserviceOptions>({
@@ -16,6 +17,7 @@ async function bootstrap() {
 
   app.connectMicroservice<MicroserviceOptions>(storageProtoOptions);
 
+  app.use(helmet());
   await app.startAllMicroservices();
   await app.listen(3002);
 }

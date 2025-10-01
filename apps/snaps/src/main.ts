@@ -10,6 +10,7 @@ import {
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -42,6 +43,8 @@ async function bootstrap() {
       host: 'redis',
     },
   });
+
+  app.use(helmet());
 
   await app.startAllMicroservices();
 

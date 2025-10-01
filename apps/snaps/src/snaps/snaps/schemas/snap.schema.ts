@@ -35,7 +35,7 @@ export class Snap {
   })
   snaps: string[];
 
-  @Prop({ required: true })
+  @Prop({ type: String, required: true })
   _userId: string;
 
   @Prop({
@@ -63,4 +63,4 @@ export class Snap {
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);
 
-SnapSchema.index({ location: '2dsphere', createdAt: 'asc' });
+SnapSchema.index({ _userId: 1, createdAt: -1, location: '2dsphere' });

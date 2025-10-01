@@ -9,6 +9,7 @@ import {
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
 import { authProtoOptions } from 'proto';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule);
@@ -31,6 +32,7 @@ async function bootstrap() {
       },
     }),
   );
+  app.use(helmet());
 
   await app.startAllMicroservices();
   await app.listen(3001); // HTTP port
