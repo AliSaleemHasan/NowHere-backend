@@ -6,11 +6,12 @@ import { Snap, SnapSchema } from '../snaps/snaps/schemas/snap.schema';
 import { ClientsModule } from '@nestjs/microservices';
 import { ClientOptions } from '@grpc/grpc-js';
 import { authProtoOptions } from 'proto';
+import { AUTH_GRPC } from 'nowhere-common';
 
 @Module({
   imports: [
     ClientsModule.register({
-      clients: [{ name: 'auth', ...(authProtoOptions as ClientOptions) }],
+      clients: [{ name: AUTH_GRPC, ...(authProtoOptions as ClientOptions) }],
     }),
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],

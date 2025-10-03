@@ -826,7 +826,7 @@ export const AUTH_USERS_SERVICE_NAME = "AuthUsers";
 export type AuthUsersService = typeof AuthUsersService;
 export const AuthUsersService = {
   validateUser: {
-    path: "/auth.AuthUsers/validateUser",
+    path: "/AUTH.AuthUsers/validateUser",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ValidateUserDto): Buffer => Buffer.from(ValidateUserDto.encode(value).finish()),
@@ -835,7 +835,7 @@ export const AuthUsersService = {
     responseDeserialize: (value: Buffer): User => User.decode(value),
   },
   validateToken: {
-    path: "/auth.AuthUsers/validateToken",
+    path: "/AUTH.AuthUsers/validateToken",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ValidateTokenDto): Buffer => Buffer.from(ValidateTokenDto.encode(value).finish()),
@@ -845,7 +845,7 @@ export const AuthUsersService = {
   },
   /** user settings */
   getUserSetting: {
-    path: "/auth.AuthUsers/getUserSetting",
+    path: "/AUTH.AuthUsers/getUserSetting",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: GetUserSettingsDTO): Buffer => Buffer.from(GetUserSettingsDTO.encode(value).finish()),
@@ -854,7 +854,7 @@ export const AuthUsersService = {
     responseDeserialize: (value: Buffer): Settings => Settings.decode(value),
   },
   createUser: {
-    path: "/auth.AuthUsers/createUser",
+    path: "/AUTH.AuthUsers/createUser",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: CreateUserDTO): Buffer => Buffer.from(CreateUserDTO.encode(value).finish()),
@@ -863,7 +863,7 @@ export const AuthUsersService = {
     responseDeserialize: (value: Buffer): User => User.decode(value),
   },
   getAllUsers: {
-    path: "/auth.AuthUsers/getAllUsers",
+    path: "/AUTH.AuthUsers/getAllUsers",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: Empty): Buffer => Buffer.from(Empty.encode(value).finish()),
@@ -873,7 +873,7 @@ export const AuthUsersService = {
   },
   /** seen functionality */
   setSeen: {
-    path: "/auth.AuthUsers/setSeen",
+    path: "/AUTH.AuthUsers/setSeen",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: SeenObject): Buffer => Buffer.from(SeenObject.encode(value).finish()),
@@ -882,7 +882,7 @@ export const AuthUsersService = {
     responseDeserialize: (value: Buffer): Success => Success.decode(value),
   },
   notSeen: {
-    path: "/auth.AuthUsers/notSeen",
+    path: "/AUTH.AuthUsers/notSeen",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: NotSeenDto): Buffer => Buffer.from(NotSeenDto.encode(value).finish()),

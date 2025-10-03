@@ -1,8 +1,13 @@
 export enum MICROSERVICES_PACKAGES {
-  USERS = 'auth',
+  USERS = 'AUTH',
   SNAPS = 'SNAPS',
   STORAGE = 'STORAGE',
 }
+
+// tokens.ts
+export const AUTH_GRPC = 'AUTH_GRPC';
+export const STORAGE_GRPC = 'STORAGE_GRPC';
+export const STORAGE_REDIS = 'STORAGE_REDIS';
 
 export const MICROSERVICES: {
   [K in keyof typeof MICROSERVICES_PACKAGES]: {

@@ -19,9 +19,13 @@ import {
   SNAP_DISAPPEAR_TIME,
   handleMongoError,
   MICROSERVICES,
+  AUTH_GRPC,
+  STORAGE_REDIS,
+  STORAGE_GRPC,
 } from 'nowhere-common';
 import {
   AUTH_USERS_SERVICE_NAME,
+  authProtoOptions,
   AuthUsersClient,
   AWS_STORAGE_SERVICE_NAME,
   AwsStorageClient,
@@ -42,11 +46,9 @@ export class SnapsService implements OnModuleInit {
 
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
-    @Inject(MICROSERVICES.USERS.package) private client: ClientGrpc,
-    @Inject(MICROSERVICES.STORAGE.redis?.package || 'STORAGE_REDIS')
-    private redisClient: ClientProxy,
-    @Inject(MICROSERVICES.STORAGE.package)
-    private storageClient: ClientGrpc,
+    @Inject(AUTH_GRPC) private client: ClientGrpc,
+    @Inject(STORAGE_REDIS) private redisClient: ClientProxy,
+    @Inject(STORAGE_GRPC) private storageClient: ClientGrpc,
     private snapsGateaway: SnapsGetaway,
   ) {}
 

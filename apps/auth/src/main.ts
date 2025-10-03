@@ -14,8 +14,6 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule);
 
-  app.connectMicroservice<MicroserviceOptions>(authProtoLocalOptions);
-
   setupSwagger(app, { port: 3001, name: 'auth' });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new DataResponseInterceptor());
@@ -32,9 +30,11 @@ async function bootstrap() {
       },
     }),
   );
+  app.connectMicroservice<MicroserviceOptions>(authProtoLocalOptions);
+  await app.startAllMicroservices();
+
   app.use(helmet());
 
-  await app.startAllMicroservices();
   await app.listen(3001); // HTTP port
 }
 bootstrap();

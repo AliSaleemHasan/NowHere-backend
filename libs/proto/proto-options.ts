@@ -4,7 +4,7 @@ import { join } from 'path';
 export const authProtoOptions: MicroserviceOptions = {
   transport: Transport.GRPC,
   options: {
-    package: 'auth',
+    package: 'AUTH',
     protoPath: join(__dirname, 'auth-user.proto'),
     url: 'nowhere-auth:50051',
   },
@@ -13,7 +13,7 @@ export const authProtoOptions: MicroserviceOptions = {
 export const authProtoLocalOptions: MicroserviceOptions = {
   transport: Transport.GRPC,
   options: {
-    package: 'auth',
+    package: 'AUTH',
     protoPath: join(__dirname, 'auth-user.proto'),
     url: '0.0.0.0:50051',
   },

@@ -4,7 +4,7 @@ import { join } from 'path';
 import { InjectModel } from '@nestjs/mongoose';
 import { Snap, Tags } from '../snaps/snaps/schemas/snap.schema';
 import { Model } from 'mongoose';
-import { MICROSERVICES } from 'nowhere-common';
+import { AUTH_GRPC, MICROSERVICES } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
 import { AUTH_USERS_SERVICE_NAME, AuthUsersClient, UserRole } from 'proto';
 import { firstValueFrom } from 'rxjs';
@@ -15,7 +15,7 @@ export class SeedService implements OnModuleInit {
   authUsersService: AuthUsersClient;
   constructor(
     @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
-    @Inject(MICROSERVICES.USERS.package) private client: ClientGrpc,
+    @Inject(AUTH_GRPC) private client: ClientGrpc,
   ) {}
 
   onModuleInit() {
