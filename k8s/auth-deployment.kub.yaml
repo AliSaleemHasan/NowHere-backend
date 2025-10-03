@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: nowhere-auth
-          image: alisaleemhasan/auth:1.0.1
+          image: alisaleemhasan/auth:1.0.2
           ports:
             - containerPort: 3001
               name: auth

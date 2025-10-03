@@ -32,7 +32,7 @@ export class UsersController {
   @Get()
   @GetAllUsersDocs()
   @UserRoles([Roles.ADMIN])
-  @UseGuards(RoleGuard, JwtGuard)
+  @UseGuards(JwtGuard, RoleGuard)
   async getAllUsers() {
     return await this.usersService.getAllUsers();
   }

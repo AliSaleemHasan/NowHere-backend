@@ -7,18 +7,17 @@ import { SnapsGetaway } from './getaway';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MICROSERVICES } from 'nowhere-common';
 import { authProtoOptions, storageProtoOptions } from 'proto';
-import { ClientOptions } from '@grpc/grpc-js';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
         name: 'auth',
-        ...(authProtoOptions as ClientOptions),
+        options: { ...authProtoOptions },
       },
       {
         name: 'STORAGE',
-        ...(storageProtoOptions as ClientOptions),
+        options: { ...storageProtoOptions },
       },
 
       {
