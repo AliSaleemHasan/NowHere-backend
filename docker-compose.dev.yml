@@ -16,7 +16,7 @@ services:
       - /usr/src/node_modules
 
     ports:
-      - '3000:3000'
+      - "3000:3000"
     command: pnpm nx start snaps
     depends_on:
       - mongodb
@@ -37,7 +37,7 @@ services:
       - /usr/src/node_modules
     command: pnpm nx start auth
     ports:
-      - '3001:3001'
+      - "3001:3001"
     depends_on:
       - auth-db
 
@@ -56,8 +56,8 @@ services:
       - /usr/src/node_modules
     command: pnpm nx start storage
     ports:
-      - '3002:3002'
-      - '50052:50051'
+      - "3002:3002"
+      - "50052:50051"
 
   mongodb:
     image: mongo
@@ -104,7 +104,7 @@ services:
   redis:
     image: redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redis_data:/data
 

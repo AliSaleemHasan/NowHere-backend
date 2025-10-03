@@ -28,8 +28,8 @@ import {
   Settings,
 } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
-import { first, firstValueFrom } from 'rxjs';
-import { deleteFromFolder } from 'nowhere-common/utils/deleteFromFolder';
+import { firstValueFrom } from 'rxjs';
+import { deleteFromFolder } from 'nowhere-common';
 import { join } from 'path';
 import { SnapUploadedDto } from './dto/snap-uploaded-dto';
 import { FindSnapDTO } from './dto/find-snap.dto';
@@ -155,8 +155,8 @@ export class SnapsService implements OnModuleInit {
    */
   async getNearParams(input: { _userId: string }) {
     let user_settings: Settings | null = null;
-    if (!input._userId)
-      throw new UnauthorizedException('User Token was not provided!');
+    // if (!input._userId)
+    //   throw new UnauthorizedException('User Token was not provided!');
     if (input._userId)
       user_settings = await firstValueFrom(
         this.authUsersService.getUserSetting({ id: input._userId }),
@@ -287,6 +287,7 @@ export class SnapsService implements OnModuleInit {
     seen: boolean = true,
   ) {
     // first get the near snap (snaps that users can see)
+
     let nearSnaps = await this.findNear({ ...getSnapDTO, _userId: userID });
 
     if (!userID) return nearSnaps;

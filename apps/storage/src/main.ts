@@ -2,9 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { StorageModule } from './storage.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { MICROSERVICES } from 'nowhere-common';
-import { storageProtoOptions } from 'proto';
 
 import helmet from 'helmet';
+import { storageProtoLocalOptions } from 'proto';
 async function bootstrap() {
   const app = await NestFactory.create(StorageModule);
   app.connectMicroservice<MicroserviceOptions>({
@@ -15,7 +15,7 @@ async function bootstrap() {
     },
   });
 
-  app.connectMicroservice<MicroserviceOptions>(storageProtoOptions);
+  app.connectMicroservice<MicroserviceOptions>(storageProtoLocalOptions);
 
   app.use(helmet());
   await app.startAllMicroservices();

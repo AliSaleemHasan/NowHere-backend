@@ -25,7 +25,7 @@ import * as path from 'path';
         database: configService.get('MYSQL_DATABASE'),
         entities: [],
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),

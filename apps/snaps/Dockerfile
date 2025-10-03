@@ -14,26 +14,21 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.buil
 RUN pnpm fetch -r
 
 # =======================
-# Development Stage
+# Development Stage (kept unchanged)
 # =======================
 FROM base AS dev
 WORKDIR /usr/src
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json jest.config.base.js ./
 
-# # Copy sources for development
-# COPY apps/snaps ./apps/snaps
-# COPY libs ./libs
-
 # Install all dependencies including dev for ts-node
 RUN pnpm install --filter snaps --workspace-root
-
 
 WORKDIR /usr/src/apps/snaps
 EXPOSE 3000
 
 # Use ts-node for live dev
-CMD ["pnpm", "nx","start"]
+CMD ["pnpm", "nx", "start"]
 
 # =======================
 # Build Stage (for production)
@@ -51,25 +46,43 @@ RUN pnpm install --filter snaps -r
 # Build the service
 RUN pnpm --filter snaps build
 
-# =======================
-# Production Runtime Stage
-# =======================
-FROM node:24-alpine AS runtime
-WORKDIR /usr/src
+EXPOSE 3000
 
-# Install minimal runtime dependencies
-RUN apk add --no-cache dumb-init libstdc++
-
-# Set NODE_ENV to production by default
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
-# Copy built JS and only prod dependencies
-COPY --from=build /usr/src/dist ./dist
-COPY --from=build /usr/src/node_modules ./node_modules
+# Keep the build-stage CMD only for debug if someone runs the build image
+# CMD [ "node", "apps/snaps/dist/apps/snaps/src/main.js" ]
+
+# =======================
+# Production Runtime Stage (hardened)
+# =======================
+
+FROM node:24-slim AS runtime
+WORKDIR /usr/src
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends dumb-init ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# create user if missing
+RUN set -eux; \
+    if ! getent group app >/dev/null; then groupadd -r app; fi; \
+    if ! id -u app >/dev/null 2>&1; then useradd -r -g app -s /usr/sbin/nologin -M app; fi
+
+COPY --from=build /usr/src /usr/src
+
+# create upload tmp and fix ownership/permissions
+RUN mkdir -p /usr/src/apps/snaps/dist/apps/snaps/tmp \
+ && chown -R app:app /usr/src/apps/snaps/dist/apps/snaps \
+ && chmod -R 0755 /usr/src/apps/snaps/dist/apps/snaps
 
 WORKDIR /usr/src/apps/snaps
+ENV NODE_ENV=production
 EXPOSE 3000
 
-# Production CMD
-CMD ["dumb-init", "node", "dist/main.js"]
+ENTRYPOINT ["dumb-init", "--"]
+USER app
+CMD ["node", "dist/apps/snaps/src/main.js"]
+
+

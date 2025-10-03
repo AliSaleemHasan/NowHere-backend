@@ -19,7 +19,7 @@ type UserSocket = {
 type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000'],
+    origin: [process.env.GATEWAY_URL],
   },
 })
 export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {

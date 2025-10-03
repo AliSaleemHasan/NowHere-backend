@@ -63,4 +63,4 @@ export class Snap {
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);
 
-SnapSchema.index({ _userId: 1, createdAt: -1, location: '2dsphere' });
+SnapSchema.index({ createdAt: -1, location: '2dsphere' });

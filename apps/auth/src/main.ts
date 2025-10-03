@@ -8,13 +8,13 @@ import {
 } from 'nowhere-common';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
-import { authProtoOptions } from 'proto';
+import { authProtoLocalOptions } from 'proto';
 import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule);
 
-  app.connectMicroservice<MicroserviceOptions>(authProtoOptions);
+  app.connectMicroservice<MicroserviceOptions>(authProtoLocalOptions);
 
   setupSwagger(app, { port: 3001, name: 'auth' });
   app.useGlobalFilters(new HttpExceptionFilter());

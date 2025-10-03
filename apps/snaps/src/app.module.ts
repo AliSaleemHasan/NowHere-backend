@@ -24,13 +24,10 @@ import * as path from 'path';
       load: [configuration],
     }),
 
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('mongo_uri', { infer: true }),
-      }),
-      inject: [ConfigService],
-    }),
+    MongooseModule.forRoot(
+      `mongodb+srv://${process.env.MONGO_ROOT_USER}:${process.env.MONGO_ROOT_PASS}@nowhere.efgivau.mongodb.net/?retryWrites=true&w=majority&appName=nowhere`,
+      { authSource: 'admin' },
+    ),
     SnapsModule,
     SeedModule,
   ],

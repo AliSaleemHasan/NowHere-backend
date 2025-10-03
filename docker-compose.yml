@@ -1,86 +1,64 @@
 services:
-  # backend:
-  #   container_name: nest-dev
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/backend/Dockerfile
-  #   volumes:
-  #     - .:/usr/src/app
-  #     - /usr/src/app/node_modules
-  #   ports:
-  #     - '3000:3000'
-  #   command: npm run start:backend:dev
-  #   depends_on:
-  #     - mongodb
-
-  # auth:
-  #   container_name: nowhere-auth
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/auth/Dockerfile
-  #   volumes:
-  #     - .:/usr/src/app
-  #     - /usr/src/app/node_modules
-  #   ports:
-  #     - '50051:50051'
-  #     - '3001:3001'
-  #   command: npm run start:auth:dev
-  #   depends_on:
-  #     - auth-db
-
-  # storage:
-  #   container_name: nowhere-storage
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/storage/Dockerfile
-  #   volumes:
-  #     - .:/usr/src/app
-  #     - /usr/src/app/node_modules
-  #   ports:
-  #     - '3002:3002'
-  #     - '50052:50051'
-
-  #   command: npm run start:storage:dev
-
-  mongodb:
-    image: mongo
-    restart: always
-    ports:
-      - ${MONGO_PORT}:${MONGO_PORT}
+  backend:
+    env_file:
+      - ./apps/snaps/.env
+    container_name: nest-dev
+    build:
+      context: .
+      dockerfile: ./apps/snaps/Dockerfile
+      target: dev
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
-      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+      - NODE_ENV=development
     volumes:
-      - mongo-data:/data/db
-
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - ${MONGO_EXPRESS_PORT}:${MONGO_EXPRESS_PORT}
-    environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USER}
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASS}
-      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@mongodb:${MONGO_PORT}/
-      - ME_CONFIG_BASICAUTH=false
-
-  auth-db:
-    image: mysql:9.4.0
-    restart: always
+      - ./apps/snaps:/usr/src/apps/snaps
+      - ./libs:/usr/src/libs
+      - ./uploads:/usr/src/apps/uploads
+      - /usr/src/node_modules
 
     ports:
-      - 3307:3306
+      - "3000:3000"
+    command: pnpm nx start snaps
+
+  auth:
+    container_name: nowhere-auth
+    env_file:
+      - ./apps/auth/.env
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+      target: dev
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASS}
+      - NODE_ENV=development
+    volumes:
+      - ./apps/auth:/usr/src/apps/auth
+      - ./libs:/usr/src/libs
+      - /usr/src/node_modules
+    command: pnpm nx start auth
+    ports:
+      - "3001:3001"
+
+  storage:
+    env_file:
+      - ./apps/storage/.env
+    container_name: nowhere-storage
+
+    build:
+      context: .
+      dockerfile: ./apps/storage/Dockerfile
+      target: dev
+    volumes:
+      - ./apps/storage:/usr/src/apps/storage
+      - ./libs:/usr/src/libs
+      - /usr/src/node_modules
+    command: pnpm nx start storage
+    ports:
+      - "3002:3002"
+      - "50052:50051"
 
   redis:
     image: redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redis_data:/data
 

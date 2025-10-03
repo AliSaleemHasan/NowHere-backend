@@ -105,9 +105,8 @@ export class SnapsController {
   ) {
     return await this.snapsService.getSeenSnaps(
       {
+        ...query,
         location: [location.lng, location.lat],
-        tags: query.tags,
-        id: query.id,
       },
       query.id,
       false,
@@ -124,6 +123,7 @@ export class SnapsController {
     return await this.snapsService.getSeenSnaps(
       { ...query, location: [location.lng, location.lat] },
       _userId,
+      false,
     );
   }
 }

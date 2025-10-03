@@ -10,6 +10,24 @@ export const authProtoOptions: MicroserviceOptions = {
   },
 };
 
+export const authProtoLocalOptions: MicroserviceOptions = {
+  transport: Transport.GRPC,
+  options: {
+    package: 'auth',
+    protoPath: join(__dirname, 'auth-user.proto'),
+    url: '0.0.0.0:50051',
+  },
+};
+
+export const storageProtoLocalOptions: MicroserviceOptions = {
+  transport: Transport.GRPC,
+  options: {
+    package: 'STORAGE',
+    protoPath: join(__dirname, 'storage.proto'),
+    url: '0.0.0.0:50051',
+  },
+};
+
 export const storageProtoOptions: MicroserviceOptions = {
   transport: Transport.GRPC,
   options: {

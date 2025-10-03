@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-deployment
+  labels:
+    app: nowhere-snaps
+
+spec:
+  selector:
+    matchLabels:
+      app: nowhere-snaps
+  template:
+    metadata:
+      labels:
+        app: nowhere-snaps
+    spec:
+      containers:
+        - name: nowhere-nowhere-snaps
+          image: alisaleemhasan/snaps:1.0.1
+          ports:
+            - containerPort: 3000
+              name: nowhere-snaps
+          envFrom:
+            - secretRef:
+                name: nowhere-snaps-secrets
+            - secretRef:
+                name: nowhere-snaps-db-secrets
+            - secretRef:
+                name: nowhere-common-secret

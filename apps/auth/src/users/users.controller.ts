@@ -15,7 +15,6 @@ import { GetAllUsersDocs } from './docs/get-all-users.doc';
 import { GetByIdDocs } from './docs/get-by-id.doc';
 import { JwtGuard, ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
 import { AddUsersPhotoDocs } from './docs/add-user-image.doc';
 import { Roles } from './entities/user.entity';
 

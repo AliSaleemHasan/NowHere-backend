@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-auth-deployment
+  labels:
+    app: nowhere-auth
+
+spec:
+  selector:
+    matchLabels:
+      app: nowhere-auth
+  template:
+    metadata:
+      labels:
+        app: nowhere-auth
+    spec:
+      containers:
+        - name: nowhere-auth
+          image: alisaleemhasan/auth:1.0.1
+          ports:
+            - containerPort: 3001
+              name: auth
+            - containerPort: 50051
+              name: grpc
+          envFrom:
+            - secretRef:
+                name: nowhere-auth-db-secrets
+            - secretRef:
+                name: nowhere-auth-token-secrets
+            - secretRef:
+                name: nowhere-common-secret

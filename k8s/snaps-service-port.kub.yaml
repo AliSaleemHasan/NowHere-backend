@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: nowhere-snaps
+  name: nowhere-snaps-service
+spec:
+  type: NodePort
+  ports:
+    - name: 'nowhere-snaps-service'
+      port: 3000
+      targetPort: 3000
+      nodePort: 31000
+  selector:
+    app: nowhere-snaps

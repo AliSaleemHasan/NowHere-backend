@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-storage-dep
+  labels:
+    app: nowhere-storage
+
+spec:
+  selector:
+    matchLabels:
+      app: nowhere-storage
+  template:
+    metadata:
+      labels:
+        app: nowhere-storage
+    spec:
+      containers:
+        - name: nowhere-storage
+          image: alisaleemhasan/storage:1.0.1
+          ports:
+            - containerPort: 3002
+              name: nowhere-storage
+            - containerPort: 50051
+              name: grpc
+
+          envFrom:
+            - secretRef:
+                name: nowhere-storage-redis-secrets
+            - secretRef:
+                name: nowhere-storage-s3-secrets
+            - secretRef:
+                name: nowhere-common-secret
