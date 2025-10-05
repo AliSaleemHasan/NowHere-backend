@@ -6,18 +6,13 @@ services:
     build:
       context: .
       dockerfile: ./apps/snaps/Dockerfile
-      target: dev
+      target: runtime
     environment:
-      - NODE_ENV=development
-    volumes:
-      - ./apps/snaps:/usr/src/apps/snaps
-      - ./libs:/usr/src/libs
-      - ./uploads:/usr/src/apps/uploads
-      - /usr/src/node_modules
+      - NODE_ENV=deployment
 
     ports:
       - "3000:3000"
-    command: pnpm nx start snaps
+    command: node apps/snaps/dist/apps/snaps/src/main.js
 
   auth:
     container_name: nowhere-auth
@@ -26,14 +21,11 @@ services:
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
-      target: dev
+      target: runtime
     environment:
-      - NODE_ENV=development
-    volumes:
-      - ./apps/auth:/usr/src/apps/auth
-      - ./libs:/usr/src/libs
-      - /usr/src/node_modules
-    command: pnpm nx start auth
+      - NODE_ENV=deployment
+
+    command: node apps/auth/dist/apps/auth/src/main.js
     ports:
       - "3001:3001"
       - "50051:50051"
@@ -46,16 +38,12 @@ services:
     build:
       context: .
       dockerfile: ./apps/storage/Dockerfile
-      target: dev
-    volumes:
-      - ./apps/storage:/usr/src/apps/storage
-      - ./libs:/usr/src/libs
-      - /usr/src/node_modules
-    command: pnpm nx start storage
+      target: runtime
+
+    command: node apps/storage/dist/apps/storage/src/main.js
     ports:
       - "3002:3002"
       - "50052:50051"
-
   redis:
     image: redis
     ports:
@@ -64,5 +52,4 @@ services:
       - redis_data:/data
 
 volumes:
-  mongo-data:
   redis_data:

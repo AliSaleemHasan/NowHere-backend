@@ -27,7 +27,7 @@ import { ClientOptions } from '@grpc/grpc-js';
         ...(authProtoOptions as ClientOptions),
       },
       {
-        name: MICROSERVICES.STORAGE.redis?.package || STORAGE_REDIS,
+        name: STORAGE_REDIS,
         transport: Transport.REDIS,
         options: {
           port: Number(MICROSERVICES.STORAGE.redis?.redisPort) || 6379,

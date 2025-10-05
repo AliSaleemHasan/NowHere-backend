@@ -15,8 +15,8 @@ spec:
         app: nowhere-snaps
     spec:
       containers:
-        - name: nowhere-nowhere-snaps
-          image: alisaleemhasan/snaps:1.0.5
+        - name: nowhere-snaps
+          image: alisaleemhasan/nowhere-snaps:1.0.1
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

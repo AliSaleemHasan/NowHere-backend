@@ -53,6 +53,9 @@ importers:
       '@nestjs/websockets':
         specifier: ^11.1.6
         version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.6)(@nestjs/platform-socket.io@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      bcrypt:
+        specifier: ^6.0.0
+        version: 6.0.0
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -220,8 +223,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/nowhere-common
       proto:
-        specifier: ^1.0.19
-        version: 1.0.19
+        specifier: workspace:*
+        version: link:../../libs/proto
       socket.io:
         specifier: ^4.8.1
         version: 4.8.1

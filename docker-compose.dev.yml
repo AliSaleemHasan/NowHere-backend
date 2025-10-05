@@ -1,5 +1,5 @@
 services:
-  backend:
+  nowhere-snaps:
     env_file:
       - ./apps/snaps/.env
     container_name: nest-dev
@@ -18,10 +18,8 @@ services:
     ports:
       - "3000:3000"
     command: pnpm nx start snaps
-    depends_on:
-      - mongodb
 
-  auth:
+  nowhere-auth:
     container_name: nowhere-auth
     env_file:
       - ./apps/auth/.env
@@ -38,10 +36,9 @@ services:
     command: pnpm nx start auth
     ports:
       - "3001:3001"
-    depends_on:
-      - auth-db
+      - "50051:50051"
 
-  storage:
+  nowhere-storage:
     env_file:
       - ./apps/storage/.env
     container_name: nowhere-storage
@@ -59,48 +56,6 @@ services:
       - "3002:3002"
       - "50052:50051"
 
-  mongodb:
-    image: mongo
-    restart: always
-    env_file:
-      - ./apps/snaps/.env
-    ports:
-      - ${MONGO_PORT}:${MONGO_PORT}
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
-      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
-    volumes:
-      - mongo-data:/data/db
-
-  mongo-express:
-    env_file:
-      - ./apps/snaps/.env
-    image: mongo-express
-    restart: always
-    ports:
-      - ${MONGO_EXPRESS_PORT}:${MONGO_EXPRESS_PORT}
-    environment:
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USER}
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASS}
-      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_ROOT_USER}:${MONGO_ROOT_PASS}@mongodb:${MONGO_PORT}/
-      - ME_CONFIG_BASICAUTH=false
-
-  auth-db:
-    image: mysql:9.4.0
-    restart: always
-
-    env_file:
-      - ./apps/auth/.env
-
-    ports:
-      - 3307:3306
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASS}
-
   redis:
     image: redis
     ports:
@@ -109,5 +64,4 @@ services:
       - redis_data:/data
 
 volumes:
-  mongo-data:
   redis_data:

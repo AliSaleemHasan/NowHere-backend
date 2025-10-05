@@ -46,9 +46,10 @@ export class SnapsService implements OnModuleInit {
 
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
-    @Inject(AUTH_GRPC) private client: ClientGrpc,
     @Inject(STORAGE_REDIS) private redisClient: ClientProxy,
     @Inject(STORAGE_GRPC) private storageClient: ClientGrpc,
+    @Inject(AUTH_GRPC) private client: ClientGrpc,
+
     private snapsGateaway: SnapsGetaway,
   ) {}
 
