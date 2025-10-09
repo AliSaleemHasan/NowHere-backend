@@ -12,11 +12,12 @@ import { Not, Repository } from 'typeorm';
 import { CreateUserDTO } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Settings } from '../settings/entities/settings.entity';
-import { MICROSERVICES } from 'nowhere-common';
+import { MICROSERVICES, STORAGE_GRPC } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
   AWS_STORAGE_SERVICE_NAME,
   AwsStorageClient,
+  storageProtoOptions,
   type NotSeenDto,
   type SeenObject,
 } from 'proto';
@@ -32,13 +33,17 @@ export class UsersService implements OnModuleInit {
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(SnapSeen) private snapSeenRepo: Repository<SnapSeen>,
 
-    @Inject(MICROSERVICES.STORAGE.package)
+    @Inject(STORAGE_GRPC)
     private storageClient: ClientGrpc,
     @InjectRepository(Settings)
     private settingsRepository: Repository<Settings>,
   ) {}
 
   onModuleInit() {
+    console.log(
+      'Those are proto options for storage from auth ',
+      JSON.stringify(storageProtoOptions),
+    );
     this.storageService = this.storageClient.getService<AwsStorageClient>(
       AWS_STORAGE_SERVICE_NAME,
     );

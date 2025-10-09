@@ -256,6 +256,9 @@ importers:
       nowhere-common:
         specifier: workspace:*
         version: link:../../libs/nowhere-common
+      proto:
+        specifier: workspace:*
+        version: link:../../libs/proto
       redis:
         specifier: ^5.8.2
         version: 5.8.2

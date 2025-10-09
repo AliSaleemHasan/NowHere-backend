@@ -5,7 +5,7 @@ metadata:
     app: nowhere-storage
   name: nowhere-storage-service
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
     - name: 'nowhere-storage-service'
       port: 3002

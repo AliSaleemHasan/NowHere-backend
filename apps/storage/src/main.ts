@@ -7,6 +7,8 @@ import helmet from 'helmet';
 import { storageProtoLocalOptions } from 'proto';
 async function bootstrap() {
   const app = await NestFactory.create(StorageModule);
+  app.use(helmet());
+
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.REDIS,
     options: {
@@ -15,9 +17,11 @@ async function bootstrap() {
     },
   });
 
-  app.connectMicroservice<MicroserviceOptions>(storageProtoLocalOptions);
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: storageProtoLocalOptions,
+  });
 
-  app.use(helmet());
   await app.startAllMicroservices();
   await app.listen(3002);
 }

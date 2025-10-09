@@ -30,6 +30,7 @@ import {
   AWS_STORAGE_SERVICE_NAME,
   AwsStorageClient,
   Settings,
+  storageProtoOptions,
 } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';

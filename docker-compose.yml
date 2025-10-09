@@ -1,8 +1,8 @@
 services:
-  backend:
+  nowhere-snaps:
     env_file:
       - ./apps/snaps/.env
-    container_name: nest-dev
+    container_name: nowhere-snaps
     build:
       context: .
       dockerfile: ./apps/snaps/Dockerfile
@@ -14,8 +14,8 @@ services:
       - "3000:3000"
     command: node apps/snaps/dist/apps/snaps/src/main.js
 
-  auth:
-    container_name: nowhere-auth
+  nowhere-auth:
+    container_name: nowhere-auth-dep
     env_file:
       - ./apps/auth/.env
     build:
@@ -30,10 +30,10 @@ services:
       - "3001:3001"
       - "50051:50051"
 
-  storage:
+  nowhere-storage:
     env_file:
       - ./apps/storage/.env
-    container_name: nowhere-storage
+    container_name: nowhere-storage-dep
 
     build:
       context: .

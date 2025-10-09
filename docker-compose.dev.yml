@@ -20,7 +20,7 @@ services:
     command: pnpm nx start snaps
 
   nowhere-auth:
-    container_name: nowhere-auth
+    container_name: nowhere-auth-dev
     env_file:
       - ./apps/auth/.env
     build:
@@ -41,7 +41,7 @@ services:
   nowhere-storage:
     env_file:
       - ./apps/storage/.env
-    container_name: nowhere-storage
+    container_name: nowhere-storage-dev
 
     build:
       context: .

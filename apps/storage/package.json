@@ -21,6 +21,7 @@
     "cache-manager": "^7.2.0",
     "keyv": "^5.5.2",
     "nowhere-common": "workspace:*",
+    "proto": "workspace:*",
     "redis": "^5.8.2"
   },
   "author": "Ali Hasan",

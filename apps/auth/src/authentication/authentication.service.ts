@@ -53,7 +53,7 @@ export class AuthenticationService {
 
       return newUser;
     } catch (error) {
-      this.logger.error('Signup error:', error);
+      this.logger.error('Signup error:', error.message);
       throw new BadRequestException('Email already exists');
     }
   }

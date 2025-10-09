@@ -86,5 +86,6 @@ COPY --from=build /usr/src /usr/src/
 
 ENV NODE_ENV=production
 EXPOSE 3001
+EXPOSE 50051
 
 CMD ["dumb-init","node", "apps/auth/dist/apps/auth/src/main.js"]

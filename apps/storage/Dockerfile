@@ -85,6 +85,7 @@ COPY --from=build /usr/src /usr/src/
 
 
 ENV NODE_ENV=production
-EXPOSE 3000
+EXPOSE 3002
+EXPOSE 50051
 
 CMD ["dumb-init","node", "apps/storage/dist/apps/storage/src/main.js"]

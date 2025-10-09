@@ -4,15 +4,19 @@ import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
-import { ClientsModule } from '@nestjs/microservices';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { storageProtoOptions } from 'proto';
-import { ClientOptions } from '@grpc/grpc-js';
 import { SnapSeen } from './entities/snaps-seen.entity';
+import { STORAGE_GRPC } from 'nowhere-common';
 
 @Module({
   imports: [
     ClientsModule.register([
-      { name: 'STORAGE', ...(storageProtoOptions as ClientOptions) },
+      {
+        name: STORAGE_GRPC,
+        transport: Transport.GRPC,
+        options: storageProtoOptions,
+      },
     ]),
     TypeOrmModule.forFeature([User, Settings, SnapSeen]),
   ],

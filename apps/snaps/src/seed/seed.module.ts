@@ -11,7 +11,7 @@ import { AUTH_GRPC } from 'nowhere-common';
 @Module({
   imports: [
     ClientsModule.register({
-      clients: [{ name: AUTH_GRPC, ...(authProtoOptions as ClientOptions) }],
+      clients: [{ name: AUTH_GRPC, options: authProtoOptions }],
     }),
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],

@@ -55,9 +55,6 @@ COPY libs ./libs
 # Install all dependencies (dev deps needed for build)
 RUN pnpm install --filter snaps...
 
-RUN ls node_modules
-RUN ls apps/snaps/node_modules
-
 # Build the service
 RUN pnpm nx build snaps
 
@@ -82,7 +79,6 @@ RUN apt-get update \
 
 
 COPY --from=build /usr/src /usr/src/
-
 
 ENV NODE_ENV=production
 EXPOSE 3000

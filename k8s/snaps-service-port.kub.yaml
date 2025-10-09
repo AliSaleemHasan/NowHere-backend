@@ -5,7 +5,7 @@ metadata:
     app: nowhere-snaps
   name: nowhere-snaps-service
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
     - name: 'nowhere-snaps-service'
       port: 3000

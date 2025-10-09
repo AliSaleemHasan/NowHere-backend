@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: nowhere-storage
-          image: alisaleemhasan/nowhere-storage:1.0.1
+          image: alisaleemhasan/nowhere-storage:1.0.2
           ports:
             - containerPort: 3002
               name: nowhere-storage

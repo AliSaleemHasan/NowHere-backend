@@ -5,7 +5,7 @@ metadata:
     app: nowhere-auth
   name: nowhere-auth-service
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
     - name: 'nowhere-auth-service'
       port: 3001

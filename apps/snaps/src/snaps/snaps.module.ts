@@ -12,19 +12,20 @@ import {
   STORAGE_REDIS,
 } from 'nowhere-common';
 import { authProtoOptions, storageProtoOptions } from 'proto';
-import { ClientOptions } from '@grpc/grpc-js';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
         name: STORAGE_GRPC,
-        ...(storageProtoOptions as ClientOptions),
+        transport: Transport.GRPC,
+        options: storageProtoOptions,
       },
 
       {
         name: AUTH_GRPC,
-        ...(authProtoOptions as ClientOptions),
+        transport:Transport.GRPC,
+        options: authProtoOptions,
       },
       {
         name: STORAGE_REDIS,

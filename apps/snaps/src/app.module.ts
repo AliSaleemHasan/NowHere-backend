@@ -24,11 +24,11 @@ import { SeedModule } from './seed/seed.module';
     }),
 
     MongooseModule.forRoot(
-      `mongodb+srv://${process.env.MONGO_ROOT_USER}:${process.env.MONGO_ROOT_PASS}@nowhere.efgivau.mongodb.net/?retryWrites=true&w=majority&appName=nowhere`,
+      `mongodb+srv://${process.env.MONGO_ROOT_USER}:${process.env.MONGO_ROOT_PASS}@${process.env.MONGO_HOST}/?retryWrites=true&w=majority&appName=nowhere`,
       { authSource: 'admin' },
     ),
     SnapsModule,
-    SeedModule,
+    // SeedModule,
   ],
   controllers: [],
   providers: [],

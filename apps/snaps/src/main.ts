@@ -18,6 +18,7 @@ async function bootstrap() {
       prefix: 'NowHere    ',
     }),
   });
+  app.use(helmet());
 
   setupSwagger(app, { name: 'backend', port: 3000 });
   app.useGlobalFilters(new HttpExceptionFilter());
@@ -43,8 +44,6 @@ async function bootstrap() {
       host: 'redis',
     },
   });
-
-  app.use(helmet());
 
   await app.startAllMicroservices();
 
