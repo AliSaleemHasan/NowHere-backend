@@ -2,11 +2,12 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { SnapsModule } from './snaps/snaps.module';
-import { configuration } from 'nowhere-common';
+import { configuration, getValidateFn } from 'nowhere-common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedModule } from './seed/seed.module';
+import { SnapsEnvVariables } from './utils/snaps-env-variables';
 @Module({
   imports: [
     JwtModule.register({
@@ -18,7 +19,8 @@ import { SeedModule } from './seed/seed.module';
       serveStaticOptions: { index: false },
     }),
     ConfigModule.forRoot({
-      // validate,
+      validate: getValidateFn(SnapsEnvVariables),
+
       isGlobal: true,
       load: [configuration],
     }),
