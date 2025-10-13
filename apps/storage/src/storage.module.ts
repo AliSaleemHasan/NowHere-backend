@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import * as path from 'path';
 import { AwsGrpcModule } from './aws-grpc/aws-grpc.module';
+import { getValidateFn } from 'nowhere-common';
+import { StroageEnvVariables } from './utils/storage-env-variables';
 
 @Module({
   imports: [
@@ -11,6 +13,7 @@ import { AwsGrpcModule } from './aws-grpc/aws-grpc.module';
     AwsGrpcModule,
 
     ConfigModule.forRoot({
+      validate: getValidateFn(StroageEnvVariables),
       isGlobal: true,
       envFilePath: [path.resolve(process.cwd(), '.env')],
     }),
