@@ -10,12 +10,12 @@ export class SnapsEnvVariables {
   @Min(0)
   @Max(65535)
   MONGO_PORT!: number;
-  @IsString({ message: 'Name of used MYSQL users database' })
+  @IsString({ message: 'Name of used snaps Mongodb database' })
   MONGO_DATABASE!: string;
-  @IsString({ message: "Password for Users Database' root user" })
+  @IsString({ message: "Password for snaps Database' root user" })
   MONGO_ROOT_USER!: string;
 
-  @IsString({ message: 'Password of used Users database' })
+  @IsString({ message: 'Password of used snaps database' })
   MONGO_HOST!: string;
 
   @IsNumber()
@@ -23,10 +23,13 @@ export class SnapsEnvVariables {
   @IsNumber()
   MIN_DISTANCE_SAME_USER!: number;
 
-  @IsString({ message: 'Refrech secret usef for refreshing JWT access token' })
+  @IsString({ message: 'Access secret used for JWT authentication' })
   ACCESS_SECRET!: string;
 
-  @IsString()
+  @IsString({
+    message:
+      'Folder PATH to get uploded temporary file from (USED in STROAGE too)',
+  })
   STATIC_TMP_FILES!: string;
 
   @IsString()

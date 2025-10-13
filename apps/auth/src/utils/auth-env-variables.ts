@@ -27,7 +27,7 @@ export class AuthEnvVariables {
   @IsString({ message: 'Secret used for JWT authentication' })
   ACCESS_SECRET!: string;
 
-  @IsString({ message: 'Refrech secret usef for refreshing JWT access token' })
+  @IsString({ message: 'Refresh secret used for refreshing JWT access token' })
   REFRESH_SECRET!: string;
 
   @IsString()
