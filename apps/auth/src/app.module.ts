@@ -6,11 +6,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthenticationModule } from './authentication/authentication.module';
 import { GrpcModule } from './grpc/grpc.module';
 import * as path from 'path';
+import { getValidateFn } from 'nowhere-common';
+import { AuthEnvVariables } from './utils/auth-env-variables';
 @Module({
   imports: [
     GrpcModule,
     ConfigModule.forRoot({
-      // validate,
+      validate: getValidateFn(AuthEnvVariables),
       isGlobal: true,
       envFilePath: [path.resolve(process.cwd(), '.env')],
     }),
