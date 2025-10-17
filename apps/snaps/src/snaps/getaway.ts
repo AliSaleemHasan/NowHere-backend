@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { CreateSnapDto } from './snaps/dto/create-snap.dto';
 import { BadRequestException, Body, Logger } from '@nestjs/common';
+import { tryCatch } from 'nowhere-common';
 
 type UserSocket = {
   socketId: string;
@@ -105,18 +106,15 @@ export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
   // A user Posts a Snap
   handleNewSnap(body: CreateSnapDto) {
     // first handle posting this snap to snaps Service
-    try {
-      const users = this.findNearbyUsers(
-        body.location.coordinates[1],
-        body.location.coordinates[0],
-        100,
-      );
 
-      users.forEach((user) => {
-        this.server.to(user.socketId).emit('snap-added', body);
-      });
-    } catch (err) {
-      throw new BadRequestException(err);
-    }
+    const users = this.findNearbyUsers(
+      body.location.coordinates[1],
+      body.location.coordinates[0],
+      100,
+    );
+
+    users.forEach((user) => {
+      this.server.to(user.socketId).emit('snap-added', body);
+    });
   }
 }
