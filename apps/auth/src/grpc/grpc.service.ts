@@ -12,6 +12,7 @@ import {
   SeenObject,
   NotSeenDto,
 } from 'proto';
+import { tryCatch } from 'nowhere-common';
 
 @Injectable()
 export class GrpcService {
@@ -26,11 +27,11 @@ export class GrpcService {
   }
 
   async createUser(createUserDto: CreateUserDTO) {
-    try {
-      return this.usersService.createUser(mapProtoToEntityDto(createUserDto));
-    } catch (e) {
-      return {};
-    }
+    let { error, data } = await tryCatch(
+      this.usersService.createUser(mapProtoToEntityDto(createUserDto)),
+    );
+    if (error) return {};
+    return data;
   }
   async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
     // first getting the user from the data base
@@ -48,23 +49,26 @@ export class GrpcService {
   // a function to verify a jwt token and return it's paylod
   async validateToken(token?: string): Promise<User> {
     if (!token) throw new UnauthorizedException('User is not loggedin/found');
-    try {
-      const payload = await this.jwt.verifyAsync<any>(token, {
+
+    let { error: JwtError, data: payload } = await tryCatch(
+      this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get('ACCESS_SECRET'),
-      });
+      }),
+    );
 
-      if (!payload.user) throw new Error('User is not found in the token');
+    if (JwtError || !payload.user)
+      throw new Error('User is not found in the token');
 
-      const user = await this.usersService.getUserByEmail(payload.user.email);
+    let { error, data: user } = await tryCatch(
+      this.usersService.getUserByEmail(payload.user.email),
+    );
+    if (error) throw new UnauthorizedException(error.message);
+    if (!user)
+      throw new UnauthorizedException('User not found, please signup/signin');
 
-      if (!user)
-        throw new UnauthorizedException('User not found, please sign up');
-
-      return payload.user as User;
-    } catch (err: any) {
-      throw new UnauthorizedException(JSON.stringify(err.message));
-    }
+    return payload.user as User;
   }
+
   async getUserSetting(id: string) {
     return await this.usersService.getUserSetting(id);
   }
