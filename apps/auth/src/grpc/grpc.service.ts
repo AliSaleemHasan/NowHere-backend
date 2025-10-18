@@ -31,7 +31,7 @@ export class GrpcService {
       this.usersService.createUser(mapProtoToEntityDto(createUserDto)),
     );
     if (error) return {};
-    return data;
+    return data as User;
   }
   async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
     // first getting the user from the data base

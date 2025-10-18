@@ -104,7 +104,10 @@ export class UsersService implements OnModuleInit {
         where: { email },
       }),
     );
+
     if (error) throw new NotFoundException('No user found with this email!');
+
+    return data;
   }
 
   async getAllUsers() {

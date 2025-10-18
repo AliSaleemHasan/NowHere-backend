@@ -13,6 +13,7 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
 import { S3Provider } from '../s3ObjectProvider/s3-object.provider';
+import { tryCatch } from 'nowhere-common';
 
 // define redis client
 @Injectable()
@@ -32,19 +33,22 @@ export class AwsStorageService {
   async uploadFile(file: Buffer, key: string) {
     this.logger.log(`Uploading ${key} to S3...`);
 
-    try {
-      await this.client.send(
+    let { data, error } = await tryCatch(
+      this.client.send(
         new PutObjectCommand({
           Bucket: this.bucket,
           Key: key,
           Body: file,
         }),
-      );
-      return key;
-    } catch (e) {
-      this.logger.error(`Upload failed: ${e.message}`);
+      ),
+    );
+
+    if (error) {
+      this.logger.error(`Upload failed: ${error.message}`);
       throw new InternalServerErrorException('File upload failed');
     }
+
+    return key;
   }
 
   async listFiles(prefix = '') {
@@ -94,31 +98,47 @@ export class AwsStorageService {
     let keys: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
-      try {
-        let fileName = files[i].filename;
-        // first get the file
-        let file = await fetch(
+      let fileName = files[i].filename;
+
+      let { data: file, error: fetchError } = await tryCatch(
+        fetch(
           `${process.env.SNAPS_URL}/${process.env.STATIC_TMP_FILES}/${fileName}`,
-        );
+        ),
+      );
 
-        if (!file.ok) {
-          notSaved.push(files[i]);
-          continue;
-        }
-
-        const today = new Date().toISOString().split('T')[0]; // safer format
-        const key = `${today}/${userId}/${fileName}`;
-
-        const fileKey = await this.uploadFile(
-          Buffer.from(await file.arrayBuffer()),
-          key,
-        );
-
-        keys.push(fileKey);
-      } catch (e) {
+      if (fetchError) {
         notSaved.push(files[i]);
-        this.logger.error('file not uploaded correctly: ', e.message);
+        this.logger.error(
+          'file not uploaded correctly : (Fetch error) ',
+          fetchError.message,
+        );
       }
+      // first get the file
+
+      if (!file?.ok) {
+        notSaved.push(files[i]);
+        continue;
+      }
+
+      const today = new Date().toISOString().split('T')[0]; // safer format
+      const key = `${today}/${userId}/${fileName}`;
+
+      let { data: fileKey, error } = await tryCatch(
+        this.uploadFile(Buffer.from(await file.arrayBuffer()), key),
+      );
+      if (error) {
+        notSaved.push(files[i]);
+        this.logger.error('file not uploaded correctly: ', error.message);
+      }
+
+      if (!fileKey) {
+        this.logger.error(
+          'File not uploaded correctly for some reason , returned data is empty!',
+        );
+        continue;
+      }
+
+      keys.push(fileKey);
     }
 
     return { notSaved, keys };
