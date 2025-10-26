@@ -43,14 +43,7 @@ export class UsersController {
   @UseInterceptors(FileInterceptor('photo', {}))
   async updateUserImage(
     @ReqUser('Id') id: string,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          // new FileTypeValidator({ fileType: /(jpg|jpeg|png)$/ }),
-          // new MaxFileSizeValidator({ maxSize: 1024 * 1024 }), // 1MB
-        ],
-      }),
-    )
+    @UploadedFile()
     photo: Express.Multer.File,
   ) {
     return await this.usersService.setUserPhoto(photo.buffer, id);
