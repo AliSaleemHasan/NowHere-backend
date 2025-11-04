@@ -26,6 +26,7 @@ import { AuthEnvVariables } from './utils/auth-env-variables';
         password: configService.get('MYSQL_PASS'),
         database: configService.get('MYSQL_DATABASE'),
         entities: [],
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
         autoLoadEntities: true,
         synchronize: false,
       }),
