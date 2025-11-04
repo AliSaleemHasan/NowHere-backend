@@ -7,12 +7,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-// import { JWTPayload } from 'types/jwt-payload.type';
-
 import { UsersService } from '../users/users.service';
 import { CreateUserDTO } from '../users/dto/create-user.dto';
 import { User } from '../users/entities/user.entity';
 import { GrpcService } from '../grpc/grpc.service';
+import { tryCatch } from 'nowhere-common';
 @Injectable()
 export class AuthenticationService {
   private readonly logger = new Logger(AuthenticationService.name, {
@@ -45,17 +44,21 @@ export class AuthenticationService {
     const salt = await bcrypt.genSalt();
     createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
 
-    try {
-      let newUser = await this.usersService.createUser(createUserDto);
+    let { error: createUserError, data: newUser } = await tryCatch(
+      this.usersService.createUser(createUserDto),
+    );
+    if (createUserError || !newUser)
+      throw new BadRequestException(
+        createUserError?.message || 'User Not Found',
+      );
 
-      // create settings object for the user
-      await this.grpcService.getUserSetting(newUser.Id);
+    let { error, data } = await tryCatch(
+      this.grpcService.getUserSetting(newUser?.Id),
+    );
 
-      return newUser;
-    } catch (error) {
-      this.logger.error('Signup error:', error.message);
-      throw new BadRequestException('Email already exists');
-    }
+    if (error) throw new BadRequestException(error.message);
+
+    return newUser;
   }
 
   // this function is for refreshing the token if
@@ -63,17 +66,21 @@ export class AuthenticationService {
     if (!token) throw new UnauthorizedException('No refresh token provided!');
 
     // validate the recieved refresh token
-    try {
-      const payload = await this.jwt.verifyAsync<any>(token, {
+
+    let { error: jwtError, data: payload } = await tryCatch(
+      this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
-      });
-      const newTokens = await this.generateTokens(payload.user, payload.sub);
-      return { user: payload.user, tokens: newTokens };
-    } catch {
-      throw new UnauthorizedException(
-        'User Session has been ended, please login-agin',
-      );
-    }
+      }),
+    );
+
+    if (jwtError) throw new UnauthorizedException(jwtError.message);
+
+    let { error, data } = await tryCatch(
+      this.generateTokens(payload.user, payload.sub),
+    );
+
+    if (error) throw new UnauthorizedException(error.message);
+    return { user: payload.user, tokens: data };
   }
 
   async generateTokens(user: Partial<User>, Id: string) {

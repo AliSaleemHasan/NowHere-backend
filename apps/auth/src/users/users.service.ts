@@ -12,7 +12,7 @@ import { Not, Repository } from 'typeorm';
 import { CreateUserDTO } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Settings } from '../settings/entities/settings.entity';
-import { MICROSERVICES, STORAGE_GRPC } from 'nowhere-common';
+import { MICROSERVICES, STORAGE_GRPC, tryCatch } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
   AWS_STORAGE_SERVICE_NAME,
@@ -23,6 +23,7 @@ import {
 } from 'proto';
 import { firstValueFrom } from 'rxjs';
 import { SnapSeen } from './entities/snaps-seen.entity';
+import e from 'express';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -58,13 +59,10 @@ export class UsersService implements OnModuleInit {
     let email = process.env.ADMIN_EMAIL as string;
     let password = process.env.ADMIN_PASSWORD as string;
 
-    let adminFound;
-
-    try {
-      adminFound = await this.getUserByEmail(email);
-    } catch (e) {
-      console.log(e.message);
-    }
+    let { error, data: adminFound } = await tryCatch(
+      this.getUserByEmail(email),
+    );
+    if (error) this.logger.error(error.message);
 
     if (adminFound) {
       this.logger.log('Admin user already exists, skipping seeding.');
@@ -73,7 +71,7 @@ export class UsersService implements OnModuleInit {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const admin = await this.createUser({
+    await this.createUser({
       bio: '',
       email,
       password: hashedPassword,
@@ -101,13 +99,15 @@ export class UsersService implements OnModuleInit {
   }
 
   async getUserByEmail(email: string) {
-    try {
-      return await this.userRepository.findOneOrFail({
+    let { error, data } = await tryCatch(
+      this.userRepository.findOneOrFail({
         where: { email },
-      });
-    } catch (e) {
-      throw new NotFoundException('No user found with this email!');
-    }
+      }),
+    );
+
+    if (error) throw new NotFoundException('No user found with this email!');
+
+    return data;
   }
 
   async getAllUsers() {

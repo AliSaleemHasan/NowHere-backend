@@ -2,6 +2,7 @@ import { S3Client } from '@aws-sdk/client-s3';
 import { Injectable, Logger } from '@nestjs/common';
 import { S3Provider } from '../s3ObjectProvider/s3-object.provider';
 import { AwsStorageService } from '../aws-storage/aws-storage.service';
+import { tryCatch } from 'nowhere-common';
 
 @Injectable()
 export class AwsGrpcService {
@@ -26,11 +27,13 @@ export class AwsGrpcService {
 
   // get one photo
   async getSignedUrl(key: string) {
-    try {
-      return await this.storageService.getSignedUrlForFile(key);
-    } catch (e) {
-      this.logger.error(e.message);
-    }
+    const { data, error } = await tryCatch(
+      this.storageService.getSignedUrlForFile(key),
+    );
+
+    if (error) this.logger.error(error.message);
+
+    return data;
   }
   // get multiple photos
 
