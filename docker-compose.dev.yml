@@ -13,6 +13,21 @@ services:
     volumes:
       - mongo-data:/data/db
 
+  minio:
+    image: quay.io/minio/minio
+    command: server /data --console-address ":9001"
+    container_name: minio-local
+
+    ports:
+      - "9000:9000" #(S3 API)
+      - "9001:9001" #(Web Console)
+
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+
+    volumes:
+      - minio-data:/data
   auth-db:
     image: mysql:9.4.0
     restart: always
@@ -25,6 +40,7 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASS}
+    command: ["", "arg"]
   nowhere-snaps:
     env_file:
       - ./apps/snaps/.env
@@ -96,3 +112,4 @@ services:
 volumes:
   redis_data:
   mongo-data:
+  minio-data:
