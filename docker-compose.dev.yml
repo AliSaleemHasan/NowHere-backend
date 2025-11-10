@@ -40,7 +40,6 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASS}
-    command: ["", "arg"]
   nowhere-snaps:
     env_file:
       - ./apps/snaps/.env
