@@ -28,7 +28,7 @@ import { AuthEnvVariables } from './utils/auth-env-variables';
         entities: [],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true, //TODO: handle this in production
       }),
       inject: [ConfigService],
     }),
