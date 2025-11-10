@@ -26,7 +26,7 @@ import { SnapsEnvVariables } from './utils/snaps-env-variables';
     }),
 
     MongooseModule.forRoot(
-      `mongodb+srv://${process.env.MONGO_ROOT_USER}:${process.env.MONGO_ROOT_PASS}@${process.env.MONGO_HOST}/?retryWrites=true&w=majority&appName=nowhere`,
+      `mongodb://${process.env.MONGO_ROOT_USER}:${process.env.MONGO_ROOT_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
       { authSource: 'admin' },
     ),
     SnapsModule,

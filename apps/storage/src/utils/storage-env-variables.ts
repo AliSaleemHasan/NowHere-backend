@@ -17,9 +17,6 @@ export class StroageEnvVariables {
   @IsString()
   AWS_SECRET_ACCESS_KEY!: string;
 
-  @IsString()
-  AWS_SESSION_TOKEN!: string;
-
   @IsString({ message: 'Access secret used for JWT authentication' })
   ACCESS_SECRET!: string;
 
