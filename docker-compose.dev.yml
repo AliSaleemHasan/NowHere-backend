@@ -83,6 +83,24 @@ services:
     depends_on:
       - auth-db
 
+  authentication:
+    container_name: nowhere-authentication-dev
+    env_file:
+      - ./apps/authentication/.env
+    build:
+      context: .
+      dockerfile: ./apps/authentication/Dockerfile
+      target: dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/authentication:/usr/src/apps/authentication
+      - ./libs:/usr/src/libs
+      - /usr/src/node_modules
+    command: pnpm nx start authentication
+    ports:
+      - "3004:3004"
+
   nowhere-storage:
     env_file:
       - ./apps/storage/.env
