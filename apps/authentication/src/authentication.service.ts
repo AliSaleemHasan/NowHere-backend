@@ -1,8 +1,25 @@
-import { Injectable } from '@nestjs/common';
-
+import { Injectable, Logger } from '@nestjs/common';
 @Injectable()
 export class AuthenticationService {
-  getHello(): string {
-    return 'Hello World!';
+  private readonly logger = new Logger(AuthenticationService.name, {
+    timestamp: true,
+  });
+
+  constructor() {}
+
+  async login() {
+    return 'Test Login ';
+  }
+
+  async signup() {
+    return 'Test SignUp';
+  }
+
+  async refreshToken() {
+    return 'Test Refresh';
+  }
+
+  async generateTokens() {
+    return 'Test Generate';
   }
 }
