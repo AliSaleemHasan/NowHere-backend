@@ -28,11 +28,11 @@ services:
 
     volumes:
       - minio-data:/data
-  auth-db:
+  users-db:
     image: mysql:9.4.0
     restart: always
     env_file:
-      - ./apps/auth/.env
+      - ./apps/users/.env
     ports:
       - 3307:3306
     environment:
@@ -62,26 +62,26 @@ services:
       - "3000:3000"
     command: pnpm nx start snaps
 
-  nowhere-auth:
-    container_name: nowhere-auth-dev
+  nowhere-users:
+    container_name: nowhere-users-dev
     env_file:
-      - ./apps/auth/.env
+      - ./apps/users/.env
     build:
       context: .
-      dockerfile: ./apps/auth/Dockerfile
+      dockerfile: ./apps/users/Dockerfile
       target: dev
     environment:
       - NODE_ENV=development
     volumes:
-      - ./apps/auth:/usr/src/apps/auth
+      - ./apps/users:/usr/src/apps/users
       - ./libs:/usr/src/libs
       - /usr/src/node_modules
-    command: pnpm nx start auth
+    command: pnpm nx start users
     ports:
       - "3001:3001"
       - "50051:50051"
     depends_on:
-      - auth-db
+      - users-db
 
   authentication:
     container_name: nowhere-authentication-dev

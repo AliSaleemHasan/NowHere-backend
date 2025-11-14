@@ -5,7 +5,7 @@ export function setupSwagger(
   app: INestApplication,
   microservice: {
     port: number;
-    name: 'auth' | 'backend';
+    name: 'users' | 'backend';
   },
 ) {
   const config = new DocumentBuilder()
