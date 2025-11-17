@@ -35,11 +35,12 @@ services:
       - ./apps/users/.env
     ports:
       - 3307:3306
+    volumes:
+      - ./mysql_init:/docker-entrypoint-initdb.d
+      - sql_data:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASS}
-      - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_USER=${MYSQL_USER}
-      - MYSQL_PASSWORD=${MYSQL_PASS}
+      - MYSQL_ROOT_PASSWORD=root
+
   nowhere-snaps:
     env_file:
       - ./apps/snaps/.env
@@ -130,3 +131,4 @@ volumes:
   redis_data:
   mongo-data:
   minio-data:
+  sql_data:
