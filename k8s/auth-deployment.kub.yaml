@@ -24,7 +24,7 @@ spec:
               name: grpc
           envFrom:
             - secretRef:
-                name: nowhere-users-db-secrets
+                name: nowhere-mysql-secrets
             - secretRef:
                 name: nowhere-auth-token-secrets
             - secretRef:

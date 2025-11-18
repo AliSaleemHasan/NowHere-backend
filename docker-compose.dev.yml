@@ -28,7 +28,7 @@ services:
 
     volumes:
       - minio-data:/data
-  users-db:
+  mysql:
     image: mysql:9.4.0
     restart: always
     env_file:
@@ -82,7 +82,7 @@ services:
       - "3001:3001"
       - "50051:50051"
     depends_on:
-      - users-db
+      - mysql
 
   authentication:
     container_name: nowhere-authentication-dev
