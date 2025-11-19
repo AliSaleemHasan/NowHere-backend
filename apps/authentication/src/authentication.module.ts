@@ -1,9 +1,34 @@
 import { Module } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { AuthenticationController } from './authentication.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as path from 'path';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      // validate: getValidateFn(AuthEnvVariables),
+      isGlobal: true,
+      envFilePath: [path.resolve(process.cwd(), '.env')],
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get('MYSQL_HOST'),
+        port: Number(configService.get('MYSQL_PORT')),
+        username: configService.get('MYSQL_USER'),
+        password: configService.get('MYSQL_PASS'),
+        database: configService.get('MYSQL_DATABASE'),
+        entities: [],
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+        autoLoadEntities: true,
+        synchronize: true, //TODO: handle this in production
+      }),
+      inject: [ConfigService],
+    }),
+  ],
   controllers: [AuthenticationController],
   providers: [AuthenticationService],
   exports: [AuthenticationService],
