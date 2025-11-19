@@ -5,9 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { Credential } from './entities/user-credentials-entity';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([Credential]),
+    JwtModule.register({ global: true }),
     ConfigModule.forRoot({
       // validate: getValidateFn(AuthEnvVariables),
       isGlobal: true,

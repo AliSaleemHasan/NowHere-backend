@@ -30,6 +30,6 @@ export class Credential {
   @Column({ type: 'simple-enum', enum: Roles, default: Roles.USER })
   role: string;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   lastLoginAt: Date;
 }
