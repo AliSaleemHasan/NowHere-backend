@@ -4,6 +4,7 @@ import { AuthenticationController } from './authentication.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
+import { Credential } from './entities/user-credentials-entity';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import * as path from 'path';
         username: configService.get('MYSQL_USER'),
         password: configService.get('MYSQL_PASS'),
         database: configService.get('MYSQL_DATABASE'),
-        entities: [],
+        entities: [Credential],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         autoLoadEntities: true,
         synchronize: true, //TODO: handle this in production
