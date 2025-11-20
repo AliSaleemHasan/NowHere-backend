@@ -102,6 +102,24 @@ services:
     ports:
       - "3004:3004"
 
+  nowhere-gateway:
+    container_name: nowhere-gateway-dev
+    env_file:
+      - ./apps/gateway/.env
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./apps/gateway:/usr/src/apps/gateway
+      - ./libs:/usr/src/libs
+      - /usr/src/node_modules
+    command: pnpm nx start gateway
+    ports:
+      - "3005:3005"
+
   nowhere-storage:
     env_file:
       - ./apps/storage/.env
