@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package USERS;
+
+
+service Users {
+    rpc getSettings(UserSettingFetchDTO) returns (UserSetting);
+    rpc CreateUserInfo(CreateUser) returns (UserObject);
+    rpc getAllUsersInfo (EmptyUserInfo) returns (UsersObject);
+
+
+    // seen functionality 
+    rpc setSeenSnap(UserSeenObject) returns (UserSuccess);
+    rpc notSeenSnaps(UserNotSeenObject) returns (UserSeenObjects);
+    
+
+}
+
+
+message UserNotSeenObject{
+  bool seen =1 ;
+  string userID = 2;
+  optional string snapID = 3;
+}
+
+
+
+
+message UserSeenObject{
+  string snapID  = 1;
+  string userID = 2;
+}
+
+message UserSeenObjects{
+  repeated UserSeenObject seen = 1;
+}
+
+
+message UserSuccess{
+  bool success = 1;
+}
+
+message UsersObject {
+  repeated UserObject users=1;
+}
+message EmptyUserInfo{
+  
+}
+
+message CreateUser{
+  string bio = 1;
+  string authID= 2; // this will save authentication information id for each user 
+  string firstName = 3; 
+  string lastName = 4;
+}
+
+
+message UserSetting{
+  string id =1;
+  UserObject user =2;
+  int32 maxDistance=3;
+  int32 newSnapDistance=4;
+  int32 snapDisappearTime=5;
+
+}
+message UserSettingFetchDTO {
+  string id=1;
+}
+
+message UserObject{
+  string Id = 1;
+  string userID=2;
+  string firstName = 3;
+  string lastName = 4;
+  string bio = 5;
+  string image = 6;
+
+}
+
+
+
+
