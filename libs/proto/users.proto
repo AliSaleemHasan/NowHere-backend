@@ -7,23 +7,15 @@ service Users {
     rpc getSettings(UserSettingFetchDTO) returns (UserSetting);
     rpc CreateUserInfo(CreateUser) returns (UserObject);
     rpc getAllUsersInfo (EmptyUserInfo) returns (UsersObject);
-
-
-    // seen functionality 
     rpc setSeenSnap(UserSeenObject) returns (UserSuccess);
     rpc notSeenSnaps(UserNotSeenObject) returns (UserSeenObjects);
-    
-
 }
-
 
 message UserNotSeenObject{
   bool seen =1 ;
   string userID = 2;
   optional string snapID = 3;
 }
-
-
 
 
 message UserSeenObject{

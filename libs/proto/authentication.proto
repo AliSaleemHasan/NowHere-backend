@@ -8,22 +8,12 @@ import "google/protobuf/timestamp.proto";
 service Credentials {
     rpc validateAuthUser(ValidateUserAuthDto ) returns (AuthUser);
     rpc validateAuthToken(ValidateTokenAuthDto) returns (AuthUser) ;
-
-
 }
-
-
-
-
-
 
 enum AuthUserRole{
   ADMIN =0;
   USER = 1;
 }
-
-
-
 
 message AuthUser{
   string Id = 1;
