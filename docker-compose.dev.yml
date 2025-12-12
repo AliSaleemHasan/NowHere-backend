@@ -94,6 +94,7 @@ services:
       target: dev
     environment:
       - NODE_ENV=development
+      - PORT=3004
     volumes:
       - ./apps/authentication:/usr/src/apps/authentication
       - ./libs:/usr/src/libs
@@ -101,6 +102,7 @@ services:
     command: pnpm nx start authentication
     ports:
       - "3004:3004"
+      - "50052:50052"
 
   nowhere-gateway:
     container_name: nowhere-gateway-dev
@@ -112,6 +114,7 @@ services:
       target: dev
     environment:
       - NODE_ENV=development
+      - PORT=3005
     volumes:
       - ./apps/gateway:/usr/src/apps/gateway
       - ./libs:/usr/src/libs
@@ -136,7 +139,7 @@ services:
     command: pnpm nx start storage
     ports:
       - "3002:3002"
-      - "50052:50051"
+      - "50053:50052"
 
   redis:
     image: redis

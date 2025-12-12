@@ -3,7 +3,7 @@ import { join } from 'path';
 export const authProtoOptions = {
   package: 'AUTH',
   protoPath: join(__dirname, 'auth-user.proto'),
-  url: 'nowhere-auth:50051',
+  url: 'nowhere-users:50051',
 };
 
 export const authProtoLocalOptions = {
@@ -15,11 +15,24 @@ export const authProtoLocalOptions = {
 export const storageProtoLocalOptions = {
   package: 'STORAGE',
   protoPath: join(__dirname, 'storage.proto'),
-  url: '0.0.0.0:50051',
+  url: '0.0.0.0:50053',
 };
+
 
 export const storageProtoOptions = {
   package: 'STORAGE',
   protoPath: join(__dirname, 'storage.proto'),
-  url: 'nowhere-storage:50051',
+  url: 'nowhere-storage:50053',
+};
+
+export const credentialsProtoOptions = {
+  package: 'Credentials',
+  protoPath: join(__dirname, 'authentication.proto'),
+  url: 'authentication:50052',
+};
+
+export const credentialsProtoLocalOptions = {
+  package: 'Credentials',
+  protoPath: join(__dirname, 'authentication.proto'),
+  url: '0.0.0.0:50052',
 };

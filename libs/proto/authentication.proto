@@ -6,8 +6,10 @@ package Credentials;
 import "google/protobuf/timestamp.proto";
 
 service Credentials {
-    rpc validateAuthUser(ValidateUserAuthDto ) returns (AuthUser);
-    rpc validateAuthToken(ValidateTokenAuthDto) returns (AuthUser) ;
+    rpc validateAuthUser(ValidateUserAuthDto ) returns (AuthResponse);
+    rpc validateAuthToken(ValidateTokenAuthDto) returns (AuthResponse) ;
+    rpc signup(CreateCredentialDto) returns (AuthResponse);
+    rpc refreshToken(ValidateTokenAuthDto) returns (AuthResponse);
 }
 
 enum AuthUserRole{
@@ -33,4 +35,22 @@ message ValidateUserAuthDto{
 
 message ValidateTokenAuthDto{
   string token=1;
+}
+
+message CreateCredentialDto {
+    string email = 1;
+    string password = 2;
+    string firstName = 3;
+    string lastName = 4;
+    string bio = 5;
+}
+
+message Tokens {
+    string accessToken = 1;
+    string refreshToken = 2;
+}
+
+message AuthResponse {
+    AuthUser user = 1;
+    Tokens tokens = 2;
 }

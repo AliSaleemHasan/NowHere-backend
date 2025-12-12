@@ -35,6 +35,24 @@ export interface ValidateTokenAuthDto {
   token: string;
 }
 
+export interface CreateCredentialDto {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  bio: string;
+}
+
+export interface Tokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthResponse {
+  user: AuthUser | undefined;
+  tokens: Tokens | undefined;
+}
+
 function createBaseAuthUser(): AuthUser {
   return { Id: "", password: "", email: "", isActive: false, role: "", lastLoginAt: undefined };
 }
@@ -212,21 +230,206 @@ export const ValidateTokenAuthDto: MessageFns<ValidateTokenAuthDto> = {
   },
 };
 
-export interface CredentialsClient {
-  validateAuthUser(request: ValidateUserAuthDto): Observable<AuthUser>;
+function createBaseCreateCredentialDto(): CreateCredentialDto {
+  return { email: "", password: "", firstName: "", lastName: "", bio: "" };
+}
 
-  validateAuthToken(request: ValidateTokenAuthDto): Observable<AuthUser>;
+export const CreateCredentialDto: MessageFns<CreateCredentialDto> = {
+  encode(message: CreateCredentialDto, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.email !== "") {
+      writer.uint32(10).string(message.email);
+    }
+    if (message.password !== "") {
+      writer.uint32(18).string(message.password);
+    }
+    if (message.firstName !== "") {
+      writer.uint32(26).string(message.firstName);
+    }
+    if (message.lastName !== "") {
+      writer.uint32(34).string(message.lastName);
+    }
+    if (message.bio !== "") {
+      writer.uint32(42).string(message.bio);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CreateCredentialDto {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCreateCredentialDto();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.email = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.password = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.firstName = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.lastName = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.bio = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseTokens(): Tokens {
+  return { accessToken: "", refreshToken: "" };
+}
+
+export const Tokens: MessageFns<Tokens> = {
+  encode(message: Tokens, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.accessToken !== "") {
+      writer.uint32(10).string(message.accessToken);
+    }
+    if (message.refreshToken !== "") {
+      writer.uint32(18).string(message.refreshToken);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Tokens {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseTokens();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.accessToken = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.refreshToken = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBaseAuthResponse(): AuthResponse {
+  return { user: undefined, tokens: undefined };
+}
+
+export const AuthResponse: MessageFns<AuthResponse> = {
+  encode(message: AuthResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.user !== undefined) {
+      AuthUser.encode(message.user, writer.uint32(10).fork()).join();
+    }
+    if (message.tokens !== undefined) {
+      Tokens.encode(message.tokens, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): AuthResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseAuthResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.user = AuthUser.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.tokens = Tokens.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+export interface CredentialsClient {
+  validateAuthUser(request: ValidateUserAuthDto): Observable<AuthResponse>;
+
+  validateAuthToken(request: ValidateTokenAuthDto): Observable<AuthResponse>;
+
+  signup(request: CreateCredentialDto): Observable<AuthResponse>;
+
+  refreshToken(request: ValidateTokenAuthDto): Observable<AuthResponse>;
 }
 
 export interface CredentialsController {
-  validateAuthUser(request: ValidateUserAuthDto): Promise<AuthUser> | Observable<AuthUser> | AuthUser;
+  validateAuthUser(request: ValidateUserAuthDto): Promise<AuthResponse> | Observable<AuthResponse> | AuthResponse;
 
-  validateAuthToken(request: ValidateTokenAuthDto): Promise<AuthUser> | Observable<AuthUser> | AuthUser;
+  validateAuthToken(request: ValidateTokenAuthDto): Promise<AuthResponse> | Observable<AuthResponse> | AuthResponse;
+
+  signup(request: CreateCredentialDto): Promise<AuthResponse> | Observable<AuthResponse> | AuthResponse;
+
+  refreshToken(request: ValidateTokenAuthDto): Promise<AuthResponse> | Observable<AuthResponse> | AuthResponse;
 }
 
 export function CredentialsControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["validateAuthUser", "validateAuthToken"];
+    const grpcMethods: string[] = ["validateAuthUser", "validateAuthToken", "signup", "refreshToken"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("Credentials", method)(constructor.prototype[method], method, descriptor);
@@ -249,8 +452,8 @@ export const CredentialsService = {
     responseStream: false,
     requestSerialize: (value: ValidateUserAuthDto): Buffer => Buffer.from(ValidateUserAuthDto.encode(value).finish()),
     requestDeserialize: (value: Buffer): ValidateUserAuthDto => ValidateUserAuthDto.decode(value),
-    responseSerialize: (value: AuthUser): Buffer => Buffer.from(AuthUser.encode(value).finish()),
-    responseDeserialize: (value: Buffer): AuthUser => AuthUser.decode(value),
+    responseSerialize: (value: AuthResponse): Buffer => Buffer.from(AuthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
   },
   validateAuthToken: {
     path: "/Credentials.Credentials/validateAuthToken",
@@ -258,14 +461,34 @@ export const CredentialsService = {
     responseStream: false,
     requestSerialize: (value: ValidateTokenAuthDto): Buffer => Buffer.from(ValidateTokenAuthDto.encode(value).finish()),
     requestDeserialize: (value: Buffer): ValidateTokenAuthDto => ValidateTokenAuthDto.decode(value),
-    responseSerialize: (value: AuthUser): Buffer => Buffer.from(AuthUser.encode(value).finish()),
-    responseDeserialize: (value: Buffer): AuthUser => AuthUser.decode(value),
+    responseSerialize: (value: AuthResponse): Buffer => Buffer.from(AuthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
+  },
+  signup: {
+    path: "/Credentials.Credentials/signup",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: CreateCredentialDto): Buffer => Buffer.from(CreateCredentialDto.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CreateCredentialDto => CreateCredentialDto.decode(value),
+    responseSerialize: (value: AuthResponse): Buffer => Buffer.from(AuthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
+  },
+  refreshToken: {
+    path: "/Credentials.Credentials/refreshToken",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: ValidateTokenAuthDto): Buffer => Buffer.from(ValidateTokenAuthDto.encode(value).finish()),
+    requestDeserialize: (value: Buffer): ValidateTokenAuthDto => ValidateTokenAuthDto.decode(value),
+    responseSerialize: (value: AuthResponse): Buffer => Buffer.from(AuthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
   },
 } as const;
 
 export interface CredentialsServer extends UntypedServiceImplementation {
-  validateAuthUser: handleUnaryCall<ValidateUserAuthDto, AuthUser>;
-  validateAuthToken: handleUnaryCall<ValidateTokenAuthDto, AuthUser>;
+  validateAuthUser: handleUnaryCall<ValidateUserAuthDto, AuthResponse>;
+  validateAuthToken: handleUnaryCall<ValidateTokenAuthDto, AuthResponse>;
+  signup: handleUnaryCall<CreateCredentialDto, AuthResponse>;
+  refreshToken: handleUnaryCall<ValidateTokenAuthDto, AuthResponse>;
 }
 
 interface MessageFns<T> {

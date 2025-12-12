@@ -6,9 +6,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { Credential } from './entities/user-credentials-entity';
 import { JwtModule } from '@nestjs/jwt';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { authProtoOptions } from '../../../libs/proto/proto-options';
 
 @Module({
   imports: [
+    ClientsModule.register([
+      {
+        name: 'AUTH_PACKAGE',
+        transport: Transport.GRPC,
+        options: authProtoOptions,
+      },
+    ]),
     TypeOrmModule.forFeature([Credential]),
     JwtModule.register({ global: true }),
     ConfigModule.forRoot({

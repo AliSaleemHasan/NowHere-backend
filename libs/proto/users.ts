@@ -596,8 +596,6 @@ export interface UsersClient {
 
   getAllUsersInfo(request: EmptyUserInfo): Observable<UsersObject>;
 
-  /** seen functionality */
-
   setSeenSnap(request: UserSeenObject): Observable<UserSuccess>;
 
   notSeenSnaps(request: UserNotSeenObject): Observable<UserSeenObjects>;
@@ -609,8 +607,6 @@ export interface UsersController {
   createUserInfo(request: CreateUser): Promise<UserObject> | Observable<UserObject> | UserObject;
 
   getAllUsersInfo(request: EmptyUserInfo): Promise<UsersObject> | Observable<UsersObject> | UsersObject;
-
-  /** seen functionality */
 
   setSeenSnap(request: UserSeenObject): Promise<UserSuccess> | Observable<UserSuccess> | UserSuccess;
 
@@ -663,7 +659,6 @@ export const UsersService = {
     responseSerialize: (value: UsersObject): Buffer => Buffer.from(UsersObject.encode(value).finish()),
     responseDeserialize: (value: Buffer): UsersObject => UsersObject.decode(value),
   },
-  /** seen functionality */
   setSeenSnap: {
     path: "/USERS.Users/setSeenSnap",
     requestStream: false,
@@ -688,7 +683,6 @@ export interface UsersServer extends UntypedServiceImplementation {
   getSettings: handleUnaryCall<UserSettingFetchDTO, UserSetting>;
   createUserInfo: handleUnaryCall<CreateUser, UserObject>;
   getAllUsersInfo: handleUnaryCall<EmptyUserInfo, UsersObject>;
-  /** seen functionality */
   setSeenSnap: handleUnaryCall<UserSeenObject, UserSuccess>;
   notSeenSnaps: handleUnaryCall<UserNotSeenObject, UserSeenObjects>;
 }

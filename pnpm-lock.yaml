@@ -184,7 +184,7 @@ importers:
         specifier: ^8.20.0
         version: 8.43.0(eslint@9.35.0)(typescript@5.9.2)
 
-  apps/auth:
+  apps/authentication:
     dependencies:
       '@nestjs/jwt':
         specifier: ^11.0.0
@@ -208,7 +208,7 @@ importers:
         specifier: ^0.3.26
         version: 0.3.26(babel-plugin-macros@3.1.0)(ioredis@5.7.0)(mongodb@6.18.0(socks@2.8.7))(mysql2@3.14.5)(redis@5.8.2)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.1)(typescript@5.9.2))
 
-  apps/authentication:
+  apps/gateway:
     dependencies:
       '@nestjs/jwt':
         specifier: ^11.0.0
@@ -286,6 +286,30 @@ importers:
       redis:
         specifier: ^5.8.2
         version: 5.8.2
+
+  apps/users:
+    dependencies:
+      '@nestjs/jwt':
+        specifier: ^11.0.0
+        version: 11.0.0(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))
+      bcrypt:
+        specifier: ^6.0.0
+        version: 6.0.0
+      multer:
+        specifier: ^2.0.2
+        version: 2.0.2
+      mysql2:
+        specifier: ^3.14.2
+        version: 3.14.5
+      nowhere-common:
+        specifier: workspace:*
+        version: link:../../libs/nowhere-common
+      proto:
+        specifier: workspace:*
+        version: link:../../libs/proto
+      typeorm:
+        specifier: ^0.3.26
+        version: 0.3.26(babel-plugin-macros@3.1.0)(ioredis@5.7.0)(mongodb@6.18.0(socks@2.8.7))(mysql2@3.14.5)(redis@5.8.2)(reflect-metadata@0.2.2)(sqlite3@5.1.7)(ts-node@10.9.2(@swc/core@1.13.5)(@types/node@22.18.1)(typescript@5.9.2))
 
   libs/nowhere-common:
     dependencies:
