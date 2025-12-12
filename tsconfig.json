@@ -18,10 +18,18 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "nowhere-common": ["libs/nowhere-common/src"],
-      "nowhere-common/*": ["libs/nowhere-common/src/*"],
-      "proto": ["libs/proto"],
-      "proto/*": ["libs/proto/*"]
+      "nowhere-common": [
+        "libs/nowhere-common/src"
+      ],
+      "nowhere-common/*": [
+        "libs/nowhere-common/src/*"
+      ],
+      "proto": [
+        "libs/proto"
+      ],
+      "proto/*": [
+        "libs/proto/*"
+      ]
     }
   },
   "watchOptions": {

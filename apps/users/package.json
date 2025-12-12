@@ -1,0 +1,32 @@
+{
+  "name": "users",
+  "version": "1.0.0",
+  "main": "dist/apps/users/src/index.js",
+  "private": true,
+  "scripts": {
+    "start": "ts-node-dev -r tsconfig-paths/register --ignore-watch  --respawn src/main.ts",
+    "start:prod": "node dist/apps/users/src/main.js",
+    "build": "tsc -p tsconfig.app.json",
+    "test": "nx jest:test",
+    "test:watch": "nx jest:test --watch",
+    "test:cov": "nx jest:test --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "nx jest:test --config ./apps/backend/test/jest-e2e.json",
+    "typeorm": "npx typeorm-ts-node-commonjs --dataSource src/data-source.ts",
+    "typeorm:migrate": "npx typeorm-ts-node-commonjs migration:run --dataSource src/data-source.ts",
+    "typeorm:generate": "npx typeorm-ts-node-commonjs migration:generate --dataSource src/data-source.ts src/migrations/createUser --timestamp",
+    "typeorm:revert": "npx typeorm-ts-node-commonjs --dataSource src/data-source.ts migration:revert"
+  },
+  "dependencies": {
+    "@nestjs/jwt": "^11.0.0",
+    "bcrypt": "^6.0.0",
+    "multer": "^2.0.2",
+    "mysql2": "^3.14.2",
+    "nowhere-common": "workspace:*",
+    "proto": "workspace:*",
+    "typeorm": "^0.3.26"
+  },
+  "author": "Ali Hasan",
+  "license": "ISC",
+  "packageManager": "pnpm@10.15.1"
+}

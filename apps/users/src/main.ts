@@ -15,7 +15,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AuthModule);
   app.use(helmet());
 
-  setupSwagger(app, { port: 3001, name: 'auth' });
+  setupSwagger(app, { port: 3001, name: 'users' });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new DataResponseInterceptor());
   app.useGlobalPipes(

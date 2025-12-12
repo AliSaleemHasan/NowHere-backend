@@ -38,13 +38,10 @@ export class UsersService implements OnModuleInit {
     private storageClient: ClientGrpc,
     @InjectRepository(Settings)
     private settingsRepository: Repository<Settings>,
-  ) {}
+  ) { }
 
   onModuleInit() {
-    console.log(
-      'Those are proto options for storage from auth ',
-      JSON.stringify(storageProtoOptions),
-    );
+
     this.storageService = this.storageClient.getService<AwsStorageClient>(
       AWS_STORAGE_SERVICE_NAME,
     );
@@ -90,10 +87,12 @@ export class UsersService implements OnModuleInit {
     const user = await this.userRepository.findOne({ where: { Id } });
 
     if (!user) throw new NotFoundException('User not found!');
-    let userImage = await firstValueFrom(
-      this.storageService.getSignedUrl({ key: user.image }),
-    );
-
+    let userImage = { signed: '' };
+    if (user.image) {
+      userImage = await firstValueFrom(
+        this.storageService.getSignedUrl({ key: user.image }),
+      );
+    }
     const { password, ...rest } = user;
     return { user: rest, userImage: userImage.signed };
   }

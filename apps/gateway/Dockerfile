@@ -31,10 +31,10 @@ WORKDIR /usr/src
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json jest.config.base.js nx.json  ./
 
 # Install all dependencies including dev for ts-node
-RUN pnpm install --filter auth -r --workspace-root
+RUN pnpm install --filter gateway -r --workspace-root
 
 
-WORKDIR /usr/src/apps/auth
+WORKDIR /usr/src/apps/gateway
 EXPOSE 3000
 
 # Use ts-node for live dev
@@ -49,25 +49,25 @@ FROM base AS build
 WORKDIR /usr/src
 
 # Copy only required sources for building
-COPY apps/auth ./apps/auth
+COPY apps/gateway ./apps/gateway
 COPY libs ./libs
 
 # Install all dependencies (dev deps needed for build)
-RUN pnpm install --filter auth...
+RUN pnpm install --filter gateway...
 
 RUN ls node_modules
-RUN ls apps/auth/node_modules
+RUN ls apps/gateway/node_modules
 
 # Build the service
-RUN pnpm nx build auth
+RUN pnpm nx build gateway
 
-EXPOSE 3001
+EXPOSE 3005
 
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
 # Keep the build-stage CMD only for debug if someone runs the build image
-# CMD ["node", "dist/apps/auth/src/main.js"]
+# CMD ["node", "dist/apps/gateway/src/main.js"]
 
 # =======================
 # Production Runtime Stage (hardened with pnpm)
@@ -85,7 +85,7 @@ COPY --from=build /usr/src /usr/src/
 
 
 ENV NODE_ENV=production
-EXPOSE 3001
+EXPOSE 3005
 EXPOSE 50051
 
-CMD ["dumb-init","node", "apps/auth/dist/apps/auth/src/main.js"]
+CMD ["dumb-init","node", "apps/gateway/dist/apps/gateway/src/main.js"]

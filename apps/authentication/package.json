@@ -1,11 +1,11 @@
 {
-  "name": "auth",
+  "name": "authentication",
   "version": "1.0.0",
-  "main": "dist/apps/auth/src/index.js",
+  "main": "dist/apps/authentication/src/index.js",
   "private": true,
   "scripts": {
     "start": "ts-node-dev -r tsconfig-paths/register --ignore-watch  --respawn src/main.ts",
-    "start:prod": "node dist/apps/auth/src/main.js",
+    "start:prod": "node dist/apps/authentication/src/main.js",
     "build": "tsc -p tsconfig.app.json",
     "test": "nx jest:test",
     "test:watch": "nx jest:test --watch",
