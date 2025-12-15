@@ -8,6 +8,8 @@ export enum MICROSERVICES_PACKAGES {
 export const AUTH_GRPC = 'AUTH_GRPC';
 export const STORAGE_GRPC = 'STORAGE_GRPC';
 export const STORAGE_REDIS = 'STORAGE_REDIS';
+export const CREDENTIALS_GRPC = 'CREDENTIALS_GRPC';
+
 
 export const MICROSERVICES: {
   [K in keyof typeof MICROSERVICES_PACKAGES]: {

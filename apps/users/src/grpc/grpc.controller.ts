@@ -3,11 +3,11 @@ import { GrpcService } from './grpc.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
   AUTH_USERS_SERVICE_NAME,
-  AuthUsersController,
+  UsersController,
   CreateUserDTO as ProtoCreateUserDto,
   GetUserSettingsDTO,
   Settings,
-  User,
+  UserObject as User,
   ValidateTokenDto,
   ValidateUserDto,
   Users,
@@ -16,48 +16,51 @@ import {
   SeenObjects,
   SeenObject,
   Success,
+  CreateUser,
+  EmptyUserInfo,
+  UsersObject,
+  UserSetting,
+  UserSettingFetchDTO,
+  UserNotSeenObject,
+  UserSeenObjects,
+  UserSeenObject,
+  UserSuccess,
 } from 'proto';
 import { mapUserToProto } from './mappers/user-mappers';
 import { Observable } from 'rxjs';
 
 @Controller()
-export class GrpcController implements AuthUsersController {
-  constructor(private readonly grpcService: GrpcService) {}
+export class GrpcController implements UsersController {
+  constructor(private readonly grpcService: GrpcService) { }
 
-  @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'createUser')
-  async createUser(request: ProtoCreateUserDto): Promise<User> {
+
+  async createUserInfo(request: CreateUser): Promise<User> {
     return mapUserToProto(await this.grpcService.createUser(request));
-  }
 
-  @GrpcMethod(AUTH_USERS_SERVICE_NAME)
-  async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
-    return await this.grpcService.validateUser(validateUserDto);
   }
-
-  @GrpcMethod(AUTH_USERS_SERVICE_NAME)
-  async validateToken(request: ValidateTokenDto): Promise<User> {
-    return await this.grpcService.validateToken(request.token);
-  }
-
-  @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'getUserSetting')
-  async getUserSetting(getUserSettings: GetUserSettingsDTO) {
-    return (await this.grpcService.getUserSetting(
-      getUserSettings.id,
-    )) as Settings;
-  }
-
-  @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'getAllUsers')
-  async getAllUsers(request: Empty): Promise<Users> {
+  async getAllUsersInfo(request: EmptyUserInfo): Promise<UsersObject> {
     return { users: await this.grpcService.getAllUsers() };
   }
 
-  @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'notSeen')
-  async notSeen(request: NotSeenDto): Promise<SeenObjects> {
+  async getSettings(request: UserSettingFetchDTO): Promise<UserSetting> {
+    return await this.grpcService.getUserSetting(request.id) as UserSetting;
+  }
+  // @GrpcMethod(AUTH_USERS_SERVICE_NAME)
+  // async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
+  //   return await this.grpcService.validateUser(validateUserDto);
+  // }
+
+  // @GrpcMethod(AUTH_USERS_SERVICE_NAME)
+  // async validateToken(request: ValidateTokenDto): Promise<User> {
+  //   return await this.grpcService.validateToken(request.token);
+  // }
+
+
+  async notSeenSnaps(request: UserNotSeenObject): Promise<UserSeenObjects> {
     return await this.grpcService.notSeen(request);
   }
 
-  @GrpcMethod(AUTH_USERS_SERVICE_NAME, 'setSeen')
-  async setSeen(request: SeenObject): Promise<Success> {
+  async setSeenSnap(request: UserSeenObject): Promise<UserSuccess> {
     return await this.grpcService.setSeen(request);
   }
 }

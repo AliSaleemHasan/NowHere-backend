@@ -1,14 +1,14 @@
 import { join } from 'path';
 
-export const authProtoOptions = {
-  package: 'AUTH',
-  protoPath: join(__dirname, 'auth-user.proto'),
+export const usersProtoOptions = {
+  package: 'USERS',
+  protoPath: join(__dirname, 'users.proto'),
   url: 'nowhere-users:50051',
 };
 
-export const authProtoLocalOptions = {
-  package: 'AUTH',
-  protoPath: join(__dirname, 'auth-user.proto'),
+export const usersProtoLocalOptions = {
+  package: 'USERS',
+  protoPath: join(__dirname, 'users.proto'),
   url: '0.0.0.0:50051',
 };
 

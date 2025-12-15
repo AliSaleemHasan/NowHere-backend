@@ -1,16 +1,15 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../users/entities/user.entity';
-import { mapProtoToEntityDto, mapUserToProto } from './mappers/user-mappers';
+import { mapProtoToEntityDto } from './mappers/user-mappers';
 import {
   CreateUserDTO,
-  ValidateUserDto,
-  Settings as ProtoSettingsType,
+  UserSetting,
   SeenObject,
   NotSeenDto,
+  CreateUser,
 } from 'proto';
 import { tryCatch } from 'nowhere-common';
 
@@ -20,31 +19,34 @@ export class GrpcService {
     private usersService: UsersService,
     private configService: ConfigService,
     private jwt: JwtService,
-  ) {}
+  ) { }
 
   async getAllUsers() {
     return await this.usersService.getAllUsers();
   }
 
-  async createUser(createUserDto: CreateUserDTO) {
+  async createUser(createUserDto: CreateUser) {
     let { error, data } = await tryCatch(
-      this.usersService.createUser(mapProtoToEntityDto(createUserDto)),
+      this.usersService.createUser(createUserDto),
     );
     if (error) return {};
     return data as User;
   }
-  async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
-    // first getting the user from the data base
-    const user = await this.usersService.getUserByEmail(validateUserDto.email);
 
-    if (!user)
-      throw new UnauthorizedException('User not found, please sign up');
+  //TODO: This should be implemented in auth or gateway service
 
-    if (!(await bcrypt.compare(validateUserDto.password, user.password))) {
-      throw new UnauthorizedException('Wrong password');
-    }
-    return user;
-  }
+  // async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
+  //   // first getting the user from the data base
+  //   const user = await this.usersService.getUserByEmail(validateUserDto.email);
+
+  //   if (!user)
+  //     throw new UnauthorizedException('User not found, please sign up');
+
+  //   if (!(await bcrypt.compare(validateUserDto.password, user.password))) {
+  //     throw new UnauthorizedException('Wrong password');
+  //   }
+  //   return user;
+  // }
 
   // a function to verify a jwt token and return it's paylod
   async validateToken(token?: string): Promise<User> {
@@ -73,7 +75,7 @@ export class GrpcService {
     return await this.usersService.getUserSetting(id);
   }
 
-  async createUserSettings(userId: string): Promise<ProtoSettingsType | null> {
+  async createUserSettings(userId: string): Promise<UserSetting | null> {
     return await this.usersService.createUserSettings(userId);
   }
 

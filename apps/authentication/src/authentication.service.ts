@@ -30,11 +30,13 @@ export class AuthenticationService implements OnModuleInit {
     private userRepository: Repository<Credential>,
     private configService: ConfigService,
     @Inject('AUTH_PACKAGE') private client: ClientGrpc,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.authUsersService = this.client.getService('AuthUsers');
   }
+
+
 
   async craeteUserCredentials(createUserDto: CreateCredentialDTO) {
     const user = this.userRepository.create(createUserDto);

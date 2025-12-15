@@ -41,9 +41,10 @@ message EmptyUserInfo{
 
 message CreateUser{
   string bio = 1;
-  string authID= 2; // this will save authentication information id for each user 
-  string firstName = 3; 
-  string lastName = 4;
+  string email = 2;
+  string authID= 3; // this will save authentication information id for each user 
+  string firstName = 4; 
+  string lastName = 5;
 }
 
 
@@ -61,7 +62,7 @@ message UserSettingFetchDTO {
 
 message UserObject{
   string Id = 1;
-  string userID=2;
+  string email = 2;
   string firstName = 3;
   string lastName = 4;
   string bio = 5;

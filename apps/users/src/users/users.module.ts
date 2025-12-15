@@ -5,9 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { storageProtoOptions } from 'proto';
+import { credentialsProtoOptions, storageProtoOptions } from 'proto';
 import { SnapSeen } from './entities/snaps-seen.entity';
-import { STORAGE_GRPC } from 'nowhere-common';
+import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
 
 @Module({
   imports: [
@@ -17,6 +17,11 @@ import { STORAGE_GRPC } from 'nowhere-common';
         transport: Transport.GRPC,
         options: storageProtoOptions,
       },
+      {
+        name: CREDENTIALS_GRPC,
+        transport: Transport.GRPC,
+        options: credentialsProtoOptions,
+      }
     ]),
     TypeOrmModule.forFeature([User, Settings, SnapSeen]),
   ],
@@ -25,7 +30,7 @@ import { STORAGE_GRPC } from 'nowhere-common';
   exports: [UsersService],
 })
 export class UsersModule implements OnModuleInit {
-  constructor(private userService: UsersService) {}
+  constructor(private userService: UsersService) { }
   async onModuleInit() {
     await this.userService.seedAdmin();
   }

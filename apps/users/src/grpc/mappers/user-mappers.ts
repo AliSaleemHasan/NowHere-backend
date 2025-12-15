@@ -2,7 +2,7 @@
 import {
   UserRole,
   CreateUserDTO as CreateUserProtoDTO,
-  User as ProtoUser,
+  UserObject as ProtoUser,
 } from 'proto';
 import { CreateUserDTO as CreateUserEntityDTO } from '../../users/dto/create-user.dto';
 import { Roles, User } from '../../users/entities/user.entity';
@@ -21,12 +21,10 @@ export function mapProtoToEntityDto(
   protoDto: CreateUserProtoDTO,
 ): CreateUserEntityDTO {
   return {
-    password: protoDto.password,
     email: protoDto.email,
     bio: protoDto.bio ?? '',
     firstName: protoDto.firstName,
     lastName: protoDto.lastName,
-    role: mapProtoRoleToEntityRole(protoDto.role),
   };
 }
 
@@ -34,11 +32,8 @@ export let emptyProtoUser: ProtoUser = {
   firstName: '',
   lastName: '',
   email: '',
-  password: '',
-  role: '', // or role default
   Id: '',
   bio: '',
-  isActive: false,
   image: '',
 };
 
@@ -51,8 +46,5 @@ export function mapUserToProto(user: Partial<User>): ProtoUser {
     bio: user.bio ?? '',
     email: user.email ?? '',
     image: user.image ?? '',
-    isActive: user.isActive ?? false,
-    password: user.password ?? '',
-    role: user.role ?? '',
   };
 }
