@@ -38,9 +38,7 @@ export interface ValidateTokenAuthDto {
 export interface CreateCredentialDto {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
-  bio: string;
+  role: AuthUserRole;
 }
 
 export interface Tokens {
@@ -231,7 +229,7 @@ export const ValidateTokenAuthDto: MessageFns<ValidateTokenAuthDto> = {
 };
 
 function createBaseCreateCredentialDto(): CreateCredentialDto {
-  return { email: "", password: "", firstName: "", lastName: "", bio: "" };
+  return { email: "", password: "", role: 0 };
 }
 
 export const CreateCredentialDto: MessageFns<CreateCredentialDto> = {
@@ -242,14 +240,8 @@ export const CreateCredentialDto: MessageFns<CreateCredentialDto> = {
     if (message.password !== "") {
       writer.uint32(18).string(message.password);
     }
-    if (message.firstName !== "") {
-      writer.uint32(26).string(message.firstName);
-    }
-    if (message.lastName !== "") {
-      writer.uint32(34).string(message.lastName);
-    }
-    if (message.bio !== "") {
-      writer.uint32(42).string(message.bio);
+    if (message.role !== 0) {
+      writer.uint32(24).int32(message.role);
     }
     return writer;
   },
@@ -278,27 +270,11 @@ export const CreateCredentialDto: MessageFns<CreateCredentialDto> = {
           continue;
         }
         case 3: {
-          if (tag !== 26) {
+          if (tag !== 24) {
             break;
           }
 
-          message.firstName = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.lastName = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.bio = reader.string();
+          message.role = reader.int32() as any;
           continue;
         }
       }
@@ -447,7 +423,7 @@ export const CREDENTIALS_SERVICE_NAME = "Credentials";
 export type CredentialsService = typeof CredentialsService;
 export const CredentialsService = {
   validateAuthUser: {
-    path: "/Credentials.Credentials/validateAuthUser",
+    path: "/AUTHENTICATION.Credentials/validateAuthUser",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ValidateUserAuthDto): Buffer => Buffer.from(ValidateUserAuthDto.encode(value).finish()),
@@ -456,7 +432,7 @@ export const CredentialsService = {
     responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
   },
   validateAuthToken: {
-    path: "/Credentials.Credentials/validateAuthToken",
+    path: "/AUTHENTICATION.Credentials/validateAuthToken",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ValidateTokenAuthDto): Buffer => Buffer.from(ValidateTokenAuthDto.encode(value).finish()),
@@ -465,7 +441,7 @@ export const CredentialsService = {
     responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
   },
   signup: {
-    path: "/Credentials.Credentials/signup",
+    path: "/AUTHENTICATION.Credentials/signup",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: CreateCredentialDto): Buffer => Buffer.from(CreateCredentialDto.encode(value).finish()),
@@ -474,7 +450,7 @@ export const CredentialsService = {
     responseDeserialize: (value: Buffer): AuthResponse => AuthResponse.decode(value),
   },
   refreshToken: {
-    path: "/Credentials.Credentials/refreshToken",
+    path: "/AUTHENTICATION.Credentials/refreshToken",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: ValidateTokenAuthDto): Buffer => Buffer.from(ValidateTokenAuthDto.encode(value).finish()),

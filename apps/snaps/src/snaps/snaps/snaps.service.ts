@@ -18,19 +18,16 @@ import {
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
   handleMongoError,
-  MICROSERVICES,
-  AUTH_GRPC,
   STORAGE_REDIS,
   STORAGE_GRPC,
+  USERS_GRPC,
 } from 'nowhere-common';
 import {
-  AUTH_USERS_SERVICE_NAME,
-  authProtoOptions,
+  USERS_SERVICE_NAME,
   AuthUsersClient,
   AWS_STORAGE_SERVICE_NAME,
   AwsStorageClient,
   Settings,
-  storageProtoOptions,
 } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -49,14 +46,14 @@ export class SnapsService implements OnModuleInit {
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
     @Inject(STORAGE_REDIS) private redisClient: ClientProxy,
     @Inject(STORAGE_GRPC) private storageClient: ClientGrpc,
-    @Inject(AUTH_GRPC) private client: ClientGrpc,
+    @Inject(USERS_GRPC) private client: ClientGrpc,
 
     private snapsGateaway: SnapsGetaway,
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.authUsersService = this.client.getService<AuthUsersClient>(
-      AUTH_USERS_SERVICE_NAME,
+      USERS_SERVICE_NAME,
     );
 
     this.storageService = this.storageClient.getService<AwsStorageClient>(

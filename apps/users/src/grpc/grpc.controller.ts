@@ -2,7 +2,7 @@ import { Controller } from '@nestjs/common';
 import { GrpcService } from './grpc.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
-  AUTH_USERS_SERVICE_NAME,
+  USERS_SERVICE_NAME,
   UsersController,
   CreateUserDTO as ProtoCreateUserDto,
   GetUserSettingsDTO,
@@ -34,6 +34,7 @@ export class GrpcController implements UsersController {
   constructor(private readonly grpcService: GrpcService) { }
 
 
+  @GrpcMethod(USERS_SERVICE_NAME, "CreateUserInfo")
   async createUserInfo(request: CreateUser): Promise<User> {
     return mapUserToProto(await this.grpcService.createUser(request));
 
@@ -45,12 +46,12 @@ export class GrpcController implements UsersController {
   async getSettings(request: UserSettingFetchDTO): Promise<UserSetting> {
     return await this.grpcService.getUserSetting(request.id) as UserSetting;
   }
-  // @GrpcMethod(AUTH_USERS_SERVICE_NAME)
+  // @GrpcMethod(USERS_SERVICE_NAME)
   // async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
   //   return await this.grpcService.validateUser(validateUserDto);
   // }
 
-  // @GrpcMethod(AUTH_USERS_SERVICE_NAME)
+  // @GrpcMethod(USERS_SERVICE_NAME)
   // async validateToken(request: ValidateTokenDto): Promise<User> {
   //   return await this.grpcService.validateToken(request.token);
   // }

@@ -9,13 +9,15 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { tryCatch } from 'nowhere-common';
+import { tryCatch, USERS_GRPC } from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Credential } from 'apps/authentication/src/entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { CreateCredentialDTO } from './dto/create-credential-dto';
 import { ClientGrpc } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
+import { AuthUserRole, USERS_SERVICE_NAME } from 'proto';
+import { Roles } from './entities/user-credentials-entity';
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
@@ -29,11 +31,11 @@ export class AuthenticationService implements OnModuleInit {
     @InjectRepository(Credential)
     private userRepository: Repository<Credential>,
     private configService: ConfigService,
-    @Inject('AUTH_PACKAGE') private client: ClientGrpc,
+    @Inject(USERS_GRPC) private client: ClientGrpc,
   ) { }
 
   onModuleInit() {
-    this.authUsersService = this.client.getService('AuthUsers');
+    this.authUsersService = this.client.getService(USERS_SERVICE_NAME);
   }
 
 
@@ -47,6 +49,8 @@ export class AuthenticationService implements OnModuleInit {
     const { error, data: user } = await tryCatch(
       this.userRepository.findOneBy({ email }),
     );
+
+    console.log(user)
 
     if (error) {
       throw new QueryFailedError('get user by email', undefined, error);
@@ -70,6 +74,12 @@ export class AuthenticationService implements OnModuleInit {
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
     createUserDto.password = hashedPassword;
 
+    // Map gRPC role (number) to Entity role (string) if necessary
+    if (typeof createUserDto.role === 'number') {
+      createUserDto.role =
+        createUserDto.role === AuthUserRole.ADMIN ? Roles.ADMIN : Roles.USER;
+    }
+
     let { error: createUserError, data: newUser } = await tryCatch(
       this.craeteUserCredentials(createUserDto),
     );
@@ -79,12 +89,12 @@ export class AuthenticationService implements OnModuleInit {
         createUserError?.message || 'User Not Found',
       );
 
+
     // Call Users service to create profile
     try {
-      await lastValueFrom(this.authUsersService.createUser({
-        ...createUserDto,
-        password: hashedPassword, // Send hashed password
-        role: 1, // Default to USER role (1)
+      await lastValueFrom(this.authUsersService.CreateUserInfo({
+        email: createUserDto.email,
+        authID: newUser.Id,
       }));
     } catch (e) {
       // Rollback credential creation if user creation fails?

@@ -14,6 +14,7 @@ import { Settings } from '../settings/entities/settings.entity';
 import { STORAGE_GRPC, CREDENTIALS_GRPC, tryCatch } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
+  AuthUserRole,
   AWS_STORAGE_SERVICE_NAME,
   AwsStorageClient,
   CREDENTIALS_SERVICE_NAME,
@@ -67,14 +68,13 @@ export class UsersService implements OnModuleInit {
     let email = process.env.ADMIN_EMAIL as string;
     let password = process.env.ADMIN_PASSWORD as string;
 
-    console.log(email)
     // first check if admin credentials exist
     let { error, data: adminCredentials } = await tryCatch(
-      firstValueFrom(this.credentialsService.validateAuthUser({ email, password })),
+      firstValueFrom(await this.credentialsService.validateAuthUser({ email, password })),
     );
 
 
-    if (error) { this.logger.error(error.message); return; }
+    // if (error) { this.logger.error(error.message); return; }
 
     if (adminCredentials) {
       this.logger.log('Admin user already exists, skipping seeding.');
@@ -84,7 +84,7 @@ export class UsersService implements OnModuleInit {
 
 
     let { error: SignupError, data: adminUser } = await tryCatch(
-      firstValueFrom(this.credentialsService.signup({ email, password, bio: "", firstName: "admin", lastName: "admin" })),
+      firstValueFrom(this.credentialsService.signup({ email, password, role: AuthUserRole.ADMIN })),
     );
 
     if (SignupError || !adminUser) { this.logger.error(SignupError?.message || "Admin User Signup Failed"); return; }

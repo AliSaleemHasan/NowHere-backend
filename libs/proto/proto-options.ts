@@ -26,13 +26,13 @@ export const storageProtoOptions = {
 };
 
 export const credentialsProtoOptions = {
-  package: 'Credentials',
+  package: 'AUTHENTICATION',
   protoPath: join(__dirname, 'authentication.proto'),
   url: 'authentication:50052',
 };
 
 export const credentialsProtoLocalOptions = {
-  package: 'Credentials',
+  package: 'AUTHENTICATION',
   protoPath: join(__dirname, 'authentication.proto'),
   url: '0.0.0.0:50052',
 };

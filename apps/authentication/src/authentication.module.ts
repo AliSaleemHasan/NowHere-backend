@@ -7,15 +7,21 @@ import * as path from 'path';
 import { Credential } from './entities/user-credentials-entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { authProtoOptions } from '../../../libs/proto/proto-options';
+import { credentialsProtoOptions, usersProtoOptions } from 'proto';
+import { USERS_GRPC, CREDENTIALS_GRPC } from 'nowhere-common';
 
 @Module({
   imports: [
     ClientsModule.register([
       {
-        name: 'AUTH_PACKAGE',
+        name: CREDENTIALS_GRPC,
         transport: Transport.GRPC,
-        options: authProtoOptions,
+        options: credentialsProtoOptions,
+      },
+      {
+        name: USERS_GRPC,
+        transport: Transport.GRPC,
+        options: usersProtoOptions,
       },
     ]),
     TypeOrmModule.forFeature([Credential]),
@@ -46,4 +52,4 @@ import { authProtoOptions } from '../../../libs/proto/proto-options';
   providers: [AuthenticationService],
   exports: [AuthenticationService],
 })
-export class AuthenticationModule {}
+export class AuthenticationModule { }
