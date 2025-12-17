@@ -43,6 +43,7 @@ export class GrpcController implements UsersController {
     return { users: await this.grpcService.getAllUsers() };
   }
 
+  @GrpcMethod(USERS_SERVICE_NAME, "getSettings")
   async getSettings(request: UserSettingFetchDTO): Promise<UserSetting> {
     return await this.grpcService.getUserSetting(request.id) as UserSetting;
   }
