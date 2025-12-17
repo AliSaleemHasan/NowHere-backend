@@ -38,6 +38,7 @@ export interface EmptyUserInfo {
 
 export interface CreateUser {
   bio: string;
+  email: string;
   /** this will save authentication information id for each user */
   authID: string;
   firstName: string;
@@ -58,7 +59,7 @@ export interface UserSettingFetchDTO {
 
 export interface UserObject {
   Id: string;
-  userID: string;
+  email: string;
   firstName: string;
   lastName: string;
   bio: string;
@@ -310,7 +311,7 @@ export const EmptyUserInfo: MessageFns<EmptyUserInfo> = {
 };
 
 function createBaseCreateUser(): CreateUser {
-  return { bio: "", authID: "", firstName: "", lastName: "" };
+  return { bio: "", email: "", authID: "", firstName: "", lastName: "" };
 }
 
 export const CreateUser: MessageFns<CreateUser> = {
@@ -318,14 +319,17 @@ export const CreateUser: MessageFns<CreateUser> = {
     if (message.bio !== "") {
       writer.uint32(10).string(message.bio);
     }
+    if (message.email !== "") {
+      writer.uint32(18).string(message.email);
+    }
     if (message.authID !== "") {
-      writer.uint32(18).string(message.authID);
+      writer.uint32(26).string(message.authID);
     }
     if (message.firstName !== "") {
-      writer.uint32(26).string(message.firstName);
+      writer.uint32(34).string(message.firstName);
     }
     if (message.lastName !== "") {
-      writer.uint32(34).string(message.lastName);
+      writer.uint32(42).string(message.lastName);
     }
     return writer;
   },
@@ -350,7 +354,7 @@ export const CreateUser: MessageFns<CreateUser> = {
             break;
           }
 
-          message.authID = reader.string();
+          message.email = reader.string();
           continue;
         }
         case 3: {
@@ -358,11 +362,19 @@ export const CreateUser: MessageFns<CreateUser> = {
             break;
           }
 
-          message.firstName = reader.string();
+          message.authID = reader.string();
           continue;
         }
         case 4: {
           if (tag !== 34) {
+            break;
+          }
+
+          message.firstName = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
             break;
           }
 
@@ -498,7 +510,7 @@ export const UserSettingFetchDTO: MessageFns<UserSettingFetchDTO> = {
 };
 
 function createBaseUserObject(): UserObject {
-  return { Id: "", userID: "", firstName: "", lastName: "", bio: "", image: "" };
+  return { Id: "", email: "", firstName: "", lastName: "", bio: "", image: "" };
 }
 
 export const UserObject: MessageFns<UserObject> = {
@@ -506,8 +518,8 @@ export const UserObject: MessageFns<UserObject> = {
     if (message.Id !== "") {
       writer.uint32(10).string(message.Id);
     }
-    if (message.userID !== "") {
-      writer.uint32(18).string(message.userID);
+    if (message.email !== "") {
+      writer.uint32(18).string(message.email);
     }
     if (message.firstName !== "") {
       writer.uint32(26).string(message.firstName);
@@ -544,7 +556,7 @@ export const UserObject: MessageFns<UserObject> = {
             break;
           }
 
-          message.userID = reader.string();
+          message.email = reader.string();
           continue;
         }
         case 3: {

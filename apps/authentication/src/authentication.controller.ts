@@ -19,6 +19,8 @@ export class AuthenticationController {
   }
 
   @Post('signup')
+  @GrpcMethod('Credentials', 'signup')
+
   async signup(@Body('user') createUserDTO: CreateCredentialDTO) {
     const data = await this.authService.signup(createUserDTO);
     return data;
@@ -38,10 +40,12 @@ export class AuthenticationController {
 
   @GrpcMethod('Credentials', 'validateAuthUser')
   async validateAuthUser(data: SigninDTO) {
+
     const { user, tokens } = await this.authService.login(
       data.email,
       data.password,
     );
+
     return {
       user: {
         ...user,

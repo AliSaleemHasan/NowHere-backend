@@ -8,8 +8,9 @@ import {
 } from 'nowhere-common';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
-import { authProtoLocalOptions } from 'proto';
+
 import helmet from 'helmet';
+import { usersProtoOptions } from 'proto';
 
 async function bootstrap() {
   const app = await NestFactory.create(AuthModule);
@@ -33,7 +34,7 @@ async function bootstrap() {
   );
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
-    options: authProtoLocalOptions,
+    options: usersProtoOptions,
   });
   await app.startAllMicroservices();
 

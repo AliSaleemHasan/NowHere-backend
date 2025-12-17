@@ -18,19 +18,16 @@ import {
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
   handleMongoError,
-  MICROSERVICES,
-  AUTH_GRPC,
   STORAGE_REDIS,
   STORAGE_GRPC,
+  USERS_GRPC,
 } from 'nowhere-common';
 import {
-  AUTH_USERS_SERVICE_NAME,
-  authProtoOptions,
-  AuthUsersClient,
+  USERS_SERVICE_NAME,
   AWS_STORAGE_SERVICE_NAME,
   AwsStorageClient,
-  Settings,
-  storageProtoOptions,
+  UserSetting,
+  UsersClient,
 } from 'proto';
 import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -42,21 +39,21 @@ import { FindSnapDTO } from './dto/find-snap.dto';
 @Injectable()
 export class SnapsService implements OnModuleInit {
   private logger: Logger = new Logger(SnapsService.name);
-  private authUsersService: AuthUsersClient;
+  private usersService: UsersClient;
   private storageService: AwsStorageClient;
 
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
     @Inject(STORAGE_REDIS) private redisClient: ClientProxy,
     @Inject(STORAGE_GRPC) private storageClient: ClientGrpc,
-    @Inject(AUTH_GRPC) private client: ClientGrpc,
+    @Inject(USERS_GRPC) private client: ClientGrpc,
 
     private snapsGateaway: SnapsGetaway,
-  ) {}
+  ) { }
 
   onModuleInit() {
-    this.authUsersService = this.client.getService<AuthUsersClient>(
-      AUTH_USERS_SERVICE_NAME,
+    this.usersService = this.client.getService<UsersClient>(
+      USERS_SERVICE_NAME,
     );
 
     this.storageService = this.storageClient.getService<AwsStorageClient>(
@@ -158,12 +155,12 @@ export class SnapsService implements OnModuleInit {
    * @returns (showAfter,showBefore) the time slot to search snaps within, visionDistance: max distance where snaps can be shown and allowedPostDistance: wheather user can post in an area
    */
   async getNearParams(input: { _userId: string }) {
-    let user_settings: Settings | null = null;
+    let user_settings: UserSetting | null = null;
     // if (!input._userId)
     //   throw new UnauthorizedException('User Token was not provided!');
     if (input._userId)
       user_settings = await firstValueFrom(
-        this.authUsersService.getUserSetting({ id: input._userId }),
+        this.usersService.getSettings({ id: input._userId }),
       );
 
     let visionDistance = user_settings?.maxDistance || maxDistance_TO_SEE;
@@ -253,14 +250,14 @@ export class SnapsService implements OnModuleInit {
       // first get seen (to know if it is seen or not)
 
       let seen = await firstValueFrom(
-        this.authUsersService.notSeen({ seen: true, userID }),
+        this.usersService.notSeenSnaps({ seen: true, userID }),
       );
 
       // now set it as seen
 
       if (!Object.keys(seen).length) {
         let { success } = await firstValueFrom(
-          this.authUsersService.setSeen({ snapID: id, userID }),
+          this.usersService.setSeenSnap({ snapID: id, userID }),
         );
 
         if (!success) this.logger.error('Seen is not being set correctly!!');
@@ -300,7 +297,7 @@ export class SnapsService implements OnModuleInit {
 
     for (const snap of nearSnaps) {
       let seenSnap = await firstValueFrom(
-        this.authUsersService.notSeen({ userID, seen, snapID: snap.id }),
+        this.usersService.notSeenSnaps({ userID, seen, snapID: snap.id }),
       );
 
       if (Object.keys(seenSnap).length > 0) seenSnaps.push(snap);

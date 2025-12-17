@@ -1,14 +1,14 @@
 import { join } from 'path';
 
-export const authProtoOptions = {
-  package: 'AUTH',
-  protoPath: join(__dirname, 'auth-user.proto'),
+export const usersProtoOptions = {
+  package: 'USERS',
+  protoPath: join(__dirname, 'users.proto'),
   url: 'nowhere-users:50051',
 };
 
-export const authProtoLocalOptions = {
-  package: 'AUTH',
-  protoPath: join(__dirname, 'auth-user.proto'),
+export const usersProtoLocalOptions = {
+  package: 'USERS',
+  protoPath: join(__dirname, 'users.proto'),
   url: '0.0.0.0:50051',
 };
 
@@ -26,13 +26,13 @@ export const storageProtoOptions = {
 };
 
 export const credentialsProtoOptions = {
-  package: 'Credentials',
+  package: 'AUTHENTICATION',
   protoPath: join(__dirname, 'authentication.proto'),
   url: 'authentication:50052',
 };
 
 export const credentialsProtoLocalOptions = {
-  package: 'Credentials',
+  package: 'AUTHENTICATION',
   protoPath: join(__dirname, 'authentication.proto'),
   url: '0.0.0.0:50052',
 };

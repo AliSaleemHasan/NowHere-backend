@@ -3,7 +3,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthenticationModule } from './authentication/authentication.module';
 import { GrpcModule } from './grpc/grpc.module';
 import * as path from 'path';
 import { getValidateFn } from 'nowhere-common';
@@ -33,10 +32,9 @@ import { AuthEnvVariables } from './utils/auth-env-variables';
       inject: [ConfigService],
     }),
     UsersModule,
-    AuthenticationModule,
     // SeedService,
     JwtModule.register({ global: true }),
   ],
   controllers: [],
 })
-export class AuthModule {}
+export class AuthModule { }

@@ -4,18 +4,18 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SeedController } from './seed.controller';
 import { Snap, SnapSchema } from '../snaps/snaps/schemas/snap.schema';
 import { ClientsModule } from '@nestjs/microservices';
-import { ClientOptions } from '@grpc/grpc-js';
-import { authProtoOptions } from 'proto';
-import { AUTH_GRPC } from 'nowhere-common';
+
+import { USERS_GRPC } from 'nowhere-common';
+import { credentialsProtoOptions } from 'proto';
 
 @Module({
   imports: [
     ClientsModule.register({
-      clients: [{ name: AUTH_GRPC, options: authProtoOptions }],
+      clients: [{ name: USERS_GRPC, options: credentialsProtoOptions }],
     }),
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],
   providers: [SeedService],
   controllers: [SeedController],
 })
-export class SeedModule {}
+export class SeedModule { }

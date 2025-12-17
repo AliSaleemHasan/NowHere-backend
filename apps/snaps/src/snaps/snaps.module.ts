@@ -6,12 +6,12 @@ import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
 import { SnapsGetaway } from './getaway';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import {
-  AUTH_GRPC,
   MICROSERVICES,
   STORAGE_GRPC,
   STORAGE_REDIS,
+  USERS_GRPC,
 } from 'nowhere-common';
-import { authProtoOptions, storageProtoOptions } from 'proto';
+import { credentialsProtoOptions, storageProtoOptions, usersProtoOptions } from 'proto';
 
 @Module({
   imports: [
@@ -23,9 +23,9 @@ import { authProtoOptions, storageProtoOptions } from 'proto';
       },
 
       {
-        name: AUTH_GRPC,
-        transport:Transport.GRPC,
-        options: authProtoOptions,
+        name: USERS_GRPC,
+        transport: Transport.GRPC,
+        options: usersProtoOptions,
       },
       {
         name: STORAGE_REDIS,
@@ -41,4 +41,4 @@ import { authProtoOptions, storageProtoOptions } from 'proto';
   controllers: [SnapsController],
   providers: [SnapsService, SnapsGetaway],
 })
-export class SnapsModule {}
+export class SnapsModule { }

@@ -4,10 +4,10 @@ import { join } from 'path';
 import { InjectModel } from '@nestjs/mongoose';
 import { Snap, Tags } from '../snaps/snaps/schemas/snap.schema';
 import { Model } from 'mongoose';
-import { AUTH_GRPC, MICROSERVICES } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { AUTH_USERS_SERVICE_NAME, AuthUsersClient, UserRole } from 'proto';
+import { USERS_SERVICE_NAME, AuthUsersClient, UserRole } from 'proto';
 import { firstValueFrom } from 'rxjs';
+import { USERS_GRPC } from 'nowhere-common';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
@@ -15,12 +15,12 @@ export class SeedService implements OnModuleInit {
   authUsersService: AuthUsersClient;
   constructor(
     @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
-    @Inject(AUTH_GRPC) private client: ClientGrpc,
-  ) {}
+    @Inject(USERS_GRPC) private client: ClientGrpc,
+  ) { }
 
   onModuleInit() {
     this.authUsersService = this.client.getService<AuthUsersClient>(
-      AUTH_USERS_SERVICE_NAME,
+      USERS_SERVICE_NAME,
     );
   }
 
@@ -55,7 +55,7 @@ export class SeedService implements OnModuleInit {
 
       const lat2 = Math.asin(
         Math.sin(lat1) * Math.cos(distance) +
-          Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
+        Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
       );
 
       const lng2 =
@@ -186,7 +186,7 @@ export class SeedService implements OnModuleInit {
           },
           tag: Tags[
             Object.keys(Tags)[
-              Math.floor(Math.random() * Object.keys(Tags).length)
+            Math.floor(Math.random() * Object.keys(Tags).length)
             ]
           ],
         });

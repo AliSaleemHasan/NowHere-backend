@@ -10,32 +10,35 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Roles, User } from './entities/user.entity';
 import { Not, Repository } from 'typeorm';
 import { CreateUserDTO } from './dto/create-user.dto';
-import * as bcrypt from 'bcrypt';
 import { Settings } from '../settings/entities/settings.entity';
-import { MICROSERVICES, STORAGE_GRPC, tryCatch } from 'nowhere-common';
+import { STORAGE_GRPC, CREDENTIALS_GRPC, tryCatch } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
+  AuthUserRole,
   AWS_STORAGE_SERVICE_NAME,
   AwsStorageClient,
-  storageProtoOptions,
+  CREDENTIALS_SERVICE_NAME,
+  CredentialsClient,
   type NotSeenDto,
   type SeenObject,
 } from 'proto';
 import { firstValueFrom } from 'rxjs';
 import { SnapSeen } from './entities/snaps-seen.entity';
-import e from 'express';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
 
   private storageService: AwsStorageClient;
+  private credentialsService: CredentialsClient
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(SnapSeen) private snapSeenRepo: Repository<SnapSeen>,
 
     @Inject(STORAGE_GRPC)
     private storageClient: ClientGrpc,
+    @Inject(CREDENTIALS_GRPC)
+    private credentialsClient: ClientGrpc,
     @InjectRepository(Settings)
     private settingsRepository: Repository<Settings>,
   ) { }
@@ -45,41 +48,67 @@ export class UsersService implements OnModuleInit {
     this.storageService = this.storageClient.getService<AwsStorageClient>(
       AWS_STORAGE_SERVICE_NAME,
     );
+
+    this.credentialsService = this.credentialsClient.getService<CredentialsClient>(
+      CREDENTIALS_SERVICE_NAME,
+    );
   }
 
   async createUser(createUserDto: CreateUserDTO) {
-    const user = this.userRepository.create(createUserDto);
+    const user = this.userRepository.create({
+      ...createUserDto,
+      Id: createUserDto.Id, // Ensure Explicit ID assignment
+    });
     return this.userRepository.save(user);
   }
 
   async seedAdmin() {
+
+    // Check if admin user profile (User Entity) already exists
     let email = process.env.ADMIN_EMAIL as string;
     let password = process.env.ADMIN_PASSWORD as string;
 
-    let { error, data: adminFound } = await tryCatch(
-      this.getUserByEmail(email),
+    // first check if admin credentials exist
+    let { error, data: adminCredentials } = await tryCatch(
+      firstValueFrom(await this.credentialsService.validateAuthUser({ email, password })),
     );
-    if (error) this.logger.error(error.message);
 
-    if (adminFound) {
+
+    // if (error) { this.logger.error(error.message); return; }
+
+    if (adminCredentials) {
       this.logger.log('Admin user already exists, skipping seeding.');
       return;
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+
+
+    let { error: SignupError, data: adminUser } = await tryCatch(
+      firstValueFrom(this.credentialsService.signup({ email, password, role: AuthUserRole.ADMIN })),
+    );
+
+    if (SignupError || !adminUser) { this.logger.error(SignupError?.message || "Admin User Signup Failed"); return; }
+
 
     await this.createUser({
+      Id: adminUser.user?.Id,
       bio: '',
       email,
-      password: hashedPassword,
-      role: Roles.ADMIN,
       firstName: 'admin',
       lastName: 'admin',
     });
 
-    this.logger.log('Admin user created successfuly');
+    this.logger.log(`Admin user seeded successfully with ID: ${adminUser.user?.Id}`);
   }
   //   getUsers() just for admin (to be created when adding authorization)
+
+
+  // implement getUserByEmail
+  async getUserByEmail(email: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) throw new NotFoundException('User not found!');
+    return user;
+  }
 
   async getUserById(Id: string) {
     // each time get user is performed, aws call must be done to get the image
@@ -93,21 +122,9 @@ export class UsersService implements OnModuleInit {
         this.storageService.getSignedUrl({ key: user.image }),
       );
     }
-    const { password, ...rest } = user;
-    return { user: rest, userImage: userImage.signed };
+    return { user, userImage: userImage.signed };
   }
 
-  async getUserByEmail(email: string) {
-    let { error, data } = await tryCatch(
-      this.userRepository.findOneOrFail({
-        where: { email },
-      }),
-    );
-
-    if (error) throw new NotFoundException('No user found with this email!');
-
-    return data;
-  }
 
   async getAllUsers() {
     return await this.userRepository.find();
@@ -145,8 +162,7 @@ export class UsersService implements OnModuleInit {
     const updatedUser = await this.userRepository.save(user);
 
     // remove sensitive field
-    const { password, ...safeUser } = updatedUser;
-    return { user: safeUser, userImage: signedURL.signed };
+    return { user: updatedUser, userImage: signedURL.signed };
   }
 
   async getUserSetting(id: string) {

@@ -8,14 +8,11 @@ import {
 import { Roles } from '../entities/user.entity';
 
 export class CreateUserDTO {
-  @IsStrongPassword({
-    minLength: 6,
-    minLowercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-    minUppercase: 1,
-  })
-  password: string;
+
+  @IsOptional()
+  Id?: string;
+
+
 
   @IsString()
   @IsOptional()
@@ -30,7 +27,5 @@ export class CreateUserDTO {
   @IsString()
   lastName: string;
 
-  @IsOptional()
-  @IsEnum(Roles)
-  role?: Roles.ADMIN | Roles.USER;
+
 }

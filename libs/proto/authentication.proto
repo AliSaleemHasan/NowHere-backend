@@ -1,7 +1,7 @@
 
 syntax = "proto3";
 
-package Credentials;
+package AUTHENTICATION;
 
 import "google/protobuf/timestamp.proto";
 
@@ -40,9 +40,7 @@ message ValidateTokenAuthDto{
 message CreateCredentialDto {
     string email = 1;
     string password = 2;
-    string firstName = 3;
-    string lastName = 4;
-    string bio = 5;
+    AuthUserRole role = 3;
 }
 
 message Tokens {

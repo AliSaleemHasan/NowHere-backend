@@ -10,16 +10,6 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   Id: string;
 
-  @Column({ nullable: false })
-  @IsStrongPassword({
-    minLength: 8,
-    minLowercase: 1,
-    minNumbers: 1,
-    minSymbols: 1,
-    minUppercase: 1,
-  })
-  password: string;
-
   @Column({ unique: true })
   @IsEmail()
   email: string;
@@ -33,12 +23,9 @@ export class User {
   @Column({ nullable: true })
   bio: string;
 
-  @Column({ default: true })
-  isActive: boolean;
-
-  @Column({ type: 'simple-enum', enum: Roles, default: Roles.USER })
-  role: string;
 
   @Column({ nullable: true, type: 'text' })
   image: string;
 }
+
+
