@@ -1,9 +1,18 @@
 {
-  "moduleFileExtensions": ["js", "json", "ts"],
+  "moduleFileExtensions": [
+    "js",
+    "json",
+    "ts"
+  ],
   "rootDir": ".",
   "testEnvironment": "node",
   "testRegex": ".e2e-spec.ts$",
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^apps/authentication/src/(.*)$": "<rootDir>/../src/$1",
+    "^nowhere-common(|/.*)$": "<rootDir>/../../../libs/nowhere-common/src/$1",
+    "^proto(|/.*)$": "<rootDir>/../../../libs/proto/$1"
   }
 }
