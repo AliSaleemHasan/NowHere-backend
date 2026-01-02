@@ -11,7 +11,7 @@
     "test:watch": "nx jest:test --watch",
     "test:cov": "nx jest:test --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "nx jest:test --config ./apps/backend/test/jest-e2e.json",
+    "test:e2e": "nx jest:test --config ./test/jest-e2e.json",
     "typeorm": "npx typeorm-ts-node-commonjs --dataSource src/data-source.ts",
     "typeorm:migrate": "npx typeorm-ts-node-commonjs migration:run --dataSource src/data-source.ts",
     "typeorm:generate": "npx typeorm-ts-node-commonjs migration:generate --dataSource src/data-source.ts src/migrations/createUser --timestamp",
