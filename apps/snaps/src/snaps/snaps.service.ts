@@ -8,11 +8,11 @@ import {
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreateSnapDto } from '../dto/create-snap.dto';
-import { Snap, SnapStatus, Tags } from '../schemas/snap.schema';
+import { CreateSnapDto } from './dto/create-snap.dto';
+import { Snap, SnapStatus, Tags } from './schemas/snap.schema';
 import { DeleteResult, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { SnapsGateway } from '../gateway';
+import { SnapsGateway } from './gateway';
 import {
   maxDistance_TO_SEE,
   MIN_DISTANCE_TO_POST,
@@ -33,8 +33,8 @@ import { ClientGrpc, ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { deleteFromFolder } from 'nowhere-common';
 import { join } from 'path';
-import { SnapUploadedDto } from '../dto/snap-uploaded-dto';
-import { FindSnapDTO } from '../dto/find-snap.dto';
+import { SnapUploadedDto } from './dto/snap-uploaded-dto';
+import { FindSnapDTO } from './dto/find-snap.dto';
 
 @Injectable()
 export class SnapsService implements OnModuleInit {
@@ -200,7 +200,7 @@ export class SnapsService implements OnModuleInit {
     tags,
     _userId,
   }: {
-    location: [number, number];
+    location: [Number, Number];
     tags: Tags[];
     _userId: string;
   }) {
@@ -263,7 +263,7 @@ export class SnapsService implements OnModuleInit {
 
       return { snap, imageKeys: imageKeys.urls };
     } catch (e) {
-      throw e;
+      throw new NotFoundException('Snap not found ' + e.message);
     }
   }
 
@@ -291,10 +291,14 @@ export class SnapsService implements OnModuleInit {
 
     if (!userID || nearSnaps.length === 0) return nearSnaps;
 
-    const snapIds = nearSnaps.map((snap) => snap.id);
+    const snapIds = nearSnaps.map((s) => s.id);
 
     const response = await firstValueFrom(
-      this.usersService.notSeenSnaps({ userId: userID, seen, snapIds }),
+      this.usersService.notSeenSnaps({
+        userId: userID,
+        seen,
+        snapIds,
+      }),
     );
 
     const seenSnapIdsSet = new Set((response.seen || []).map((s) => s.snapId));

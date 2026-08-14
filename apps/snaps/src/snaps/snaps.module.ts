@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { SnapsService } from './snaps/snaps.service';
-import { SnapsController } from './snaps/snaps.controller';
+import { SnapsService } from './snaps.service';
+import { SnapsController } from './snaps.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Snap, SnapSchema } from './snaps/schemas/snap.schema';
-import { SnapsGetaway } from './getaway';
+import { Snap, SnapSchema } from './schemas/snap.schema';
+import { SnapsGateway } from './gateway';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import {
   MICROSERVICES,
@@ -11,7 +11,11 @@ import {
   STORAGE_REDIS,
   USERS_GRPC,
 } from 'nowhere-common';
-import { credentialsProtoOptions, storageProtoOptions, usersProtoOptions } from 'proto';
+import {
+  credentialsProtoOptions,
+  storageProtoOptions,
+  usersProtoOptions,
+} from 'proto';
 
 @Module({
   imports: [
@@ -39,6 +43,6 @@ import { credentialsProtoOptions, storageProtoOptions, usersProtoOptions } from 
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],
   controllers: [SnapsController],
-  providers: [SnapsService, SnapsGetaway],
+  providers: [SnapsService, SnapsGateway],
 })
-export class SnapsModule { }
+export class SnapsModule {}

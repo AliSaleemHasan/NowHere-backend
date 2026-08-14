@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SnapsService } from './snaps.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { Snap, SnapStatus, Tags } from '../schemas/snap.schema';
+import { Snap, SnapStatus, Tags } from './schemas/snap.schema';
 import { SnapsGateway } from '../gateway';
 import {
   STORAGE_REDIS,

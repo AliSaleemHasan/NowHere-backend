@@ -10,7 +10,7 @@ import { Roles } from '../entities/user.entity';
 export class CreateUserDTO {
 
   @IsOptional()
-  Id?: string;
+  id?: string;
 
 
 

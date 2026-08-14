@@ -7,9 +7,9 @@ import { mapProtoToEntityDto } from './mappers/user-mappers';
 import {
   CreateUserDTO,
   UserSetting,
-  SeenObject,
-  NotSeenDto,
+  UserSeenObject,
   CreateUser,
+  UserNotSeenObject,
 } from 'proto';
 import { tryCatch } from 'nowhere-common';
 
@@ -19,7 +19,7 @@ export class GrpcService {
     private usersService: UsersService,
     private configService: ConfigService,
     private jwt: JwtService,
-  ) { }
+  ) {}
 
   async getAllUsers() {
     return await this.usersService.getAllUsers();
@@ -81,10 +81,10 @@ export class GrpcService {
 
   // handle seen functionality
 
-  async notSeen(notSeenDto: NotSeenDto) {
+  async notSeen(notSeenDto: UserNotSeenObject) {
     return { seen: await this.usersService.getSeen(notSeenDto) };
   }
-  async setSeen(seenObject: SeenObject) {
+  async setSeen(seenObject: UserSeenObject) {
     return { success: await !!this.usersService.addSeen(seenObject) };
   }
 }

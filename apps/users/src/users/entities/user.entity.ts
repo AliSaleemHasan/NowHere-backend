@@ -8,7 +8,7 @@ export enum Roles {
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  Id: string;
+  id: string;
 
   @Column({ unique: true })
   @IsEmail()

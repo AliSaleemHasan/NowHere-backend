@@ -18,7 +18,7 @@ export enum AuthUserRole {
 }
 
 export interface AuthUser {
-  Id: string;
+  id: string;
   password: string;
   email: string;
   isActive: boolean;
@@ -52,13 +52,13 @@ export interface AuthResponse {
 }
 
 function createBaseAuthUser(): AuthUser {
-  return { Id: "", password: "", email: "", isActive: false, role: "", lastLoginAt: undefined };
+  return { id: "", password: "", email: "", isActive: false, role: "", lastLoginAt: undefined };
 }
 
 export const AuthUser: MessageFns<AuthUser> = {
   encode(message: AuthUser, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.Id !== "") {
-      writer.uint32(10).string(message.Id);
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
     }
     if (message.password !== "") {
       writer.uint32(18).string(message.password);
@@ -90,7 +90,7 @@ export const AuthUser: MessageFns<AuthUser> = {
             break;
           }
 
-          message.Id = reader.string();
+          message.id = reader.string();
           continue;
         }
         case 2: {

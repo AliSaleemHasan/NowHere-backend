@@ -16,11 +16,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     let exception_error = exception.getResponse();
     if (typeof exception_error === 'string')
-      exception_error = JSON.parse(exception_error) as Object;
-    response.status(status).json({
-      success: false,
-      ...exception_error,
-      path: request.url,
-    });
+      try {
+        exception_error = JSON.parse(exception_error) as Object;
+        response.status(status).json({
+          success: false,
+          ...exception_error,
+          path: request.url,
+        });
+      } catch (e) {
+        response.status(status).json({
+          success: false,
+          message: exception_error,
+          path: request.url,
+          error: exception_error,
+        });
+      }
   }
 }

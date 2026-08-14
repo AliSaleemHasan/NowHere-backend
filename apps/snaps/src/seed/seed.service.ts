@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import { InjectModel } from '@nestjs/mongoose';
-import { Snap, Tags } from '../snaps/snaps/schemas/snap.schema';
+import { Snap, Tags } from '../snaps/schemas/snap.schema';
 import { Model } from 'mongoose';
 import { ClientGrpc } from '@nestjs/microservices';
 import { USERS_SERVICE_NAME, AuthUsersClient, UserRole } from 'proto';
@@ -16,12 +16,11 @@ export class SeedService implements OnModuleInit {
   constructor(
     @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
     @Inject(USERS_GRPC) private client: ClientGrpc,
-  ) { }
+  ) {}
 
   onModuleInit() {
-    this.authUsersService = this.client.getService<AuthUsersClient>(
-      USERS_SERVICE_NAME,
-    );
+    this.authUsersService =
+      this.client.getService<AuthUsersClient>(USERS_SERVICE_NAME);
   }
 
   /**
@@ -55,7 +54,7 @@ export class SeedService implements OnModuleInit {
 
       const lat2 = Math.asin(
         Math.sin(lat1) * Math.cos(distance) +
-        Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
+          Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
       );
 
       const lng2 =
@@ -142,7 +141,7 @@ export class SeedService implements OnModuleInit {
       try {
         // adding new user
         await firstValueFrom(
-          await this.authUsersService.createUser({
+          this.authUsersService.createUser({
             bio: `Hey There I am ${name} Welcome to my NowHere profile Page`,
             email: `${name.split(' ').join('_')}@test.com`,
             password: 'Qqqqq1!',
@@ -171,11 +170,11 @@ export class SeedService implements OnModuleInit {
     for (let i = 0; i < locations.length; i++) {
       try {
         let current_user = users[i % users.length];
-        if (!current_user.Id) {
+        if (!current_user.id) {
           continue;
         }
         let newSnap = await this.SnapsModel.create({
-          _userId: current_user.Id,
+          _userId: current_user.id,
           description: `This is a small description for snap posted by a user with name ${current_user.firstName} ${current_user.lastName} and email ${current_user.email}`,
           snaps: new Array(Math.floor(Math.random() * 4) || 1)
             .fill(null)
@@ -186,7 +185,7 @@ export class SeedService implements OnModuleInit {
           },
           tag: Tags[
             Object.keys(Tags)[
-            Math.floor(Math.random() * Object.keys(Tags).length)
+              Math.floor(Math.random() * Object.keys(Tags).length)
             ]
           ],
         });

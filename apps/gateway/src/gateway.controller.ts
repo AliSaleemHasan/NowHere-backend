@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { GatewayService } from './gateway.service';
 import { AuthGuard } from './guards/auth.guard';
 import { Request } from 'express';
+
+import { extractTokenFromHeader } from 'nowhere-common';
 
 @Controller()
 export class GatewayController {
@@ -24,7 +26,10 @@ export class GatewayController {
 
   @Get('auth/refresh')
   async refresh(@Req() request: Request) {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    const token = extractTokenFromHeader(request);
+    if (!token) {
+      throw new UnauthorizedException('Missing or invalid Authorization header');
+    }
     return await this.gatewayService.refresh(token);
   }
 

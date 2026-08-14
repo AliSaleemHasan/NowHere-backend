@@ -32,15 +32,13 @@ export class AuthenticationService implements OnModuleInit {
     private userRepository: Repository<Credential>,
     private configService: ConfigService,
     @Inject(USERS_GRPC) private client: ClientGrpc,
-  ) { }
+  ) {}
 
   onModuleInit() {
     this.authUsersService = this.client.getService(USERS_SERVICE_NAME);
   }
 
-
-
-  async craeteUserCredentials(createUserDto: CreateCredentialDTO) {
+  async createUserCredentials(createUserDto: CreateCredentialDTO) {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
@@ -50,7 +48,7 @@ export class AuthenticationService implements OnModuleInit {
       this.userRepository.findOneBy({ email }),
     );
 
-    console.log(user)
+    console.log(user);
 
     if (error) {
       throw new QueryFailedError('get user by email', undefined, error);
@@ -65,7 +63,7 @@ export class AuthenticationService implements OnModuleInit {
 
     this.userRepository.save({ ...user, lastLoginAt: new Date() });
 
-    const tokens = await this.generateTokens(user, user.Id);
+    const tokens = await this.generateTokens(user, user.id);
     return { user, tokens };
   }
 
@@ -81,7 +79,7 @@ export class AuthenticationService implements OnModuleInit {
     }
 
     let { error: createUserError, data: newUser } = await tryCatch(
-      this.craeteUserCredentials(createUserDto),
+      this.createUserCredentials(createUserDto),
     );
 
     if (createUserError || !newUser)
@@ -89,21 +87,25 @@ export class AuthenticationService implements OnModuleInit {
         createUserError?.message || 'User Not Found',
       );
 
-
     // Call Users service to create profile
     try {
-      await lastValueFrom(this.authUsersService.CreateUserInfo({
-        email: createUserDto.email,
-        authID: newUser.Id,
-      }));
+      await lastValueFrom(
+        this.authUsersService.CreateUserInfo({
+          email: createUserDto.email,
+          authId: newUser.id,
+        }),
+      );
     } catch (e) {
-      // Rollback credential creation if user creation fails?
-      // For now just log error
       this.logger.error('Failed to create user profile in Users service', e);
-      // throw new BadRequestException('Failed to create user profile');
+      await this.userRepository.delete(newUser.id);
+
+      // Reject the signup request
+      throw new BadRequestException(
+        'Failed to complete user registration. Please try again.',
+      );
     }
 
-    const tokens = await this.generateTokens(newUser, newUser.Id);
+    const tokens = await this.generateTokens(newUser, newUser.id);
     return { user: newUser, tokens };
   }
 

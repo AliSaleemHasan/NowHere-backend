@@ -8,7 +8,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CreateSnapDto } from './snaps/dto/create-snap.dto';
+import { CreateSnapDto } from './dto/create-snap.dto';
 import { BadRequestException, Body, Logger } from '@nestjs/common';
 import { tryCatch } from 'nowhere-common';
 
@@ -23,8 +23,8 @@ type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
     origin: [process.env.GATEWAY_URL],
   },
 })
-export class SnapsGetaway implements OnGatewayInit, OnGatewayDisconnect {
-  private readonly logger = new Logger(SnapsGetaway.name, { timestamp: true });
+export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
+  private readonly logger = new Logger(SnapsGateway.name, { timestamp: true });
   @WebSocketServer()
   server: Server;
 

@@ -12,15 +12,15 @@ service Users {
 }
 
 message UserNotSeenObject{
-  bool seen =1 ;
-  string userID = 2;
-  optional string snapID = 3;
+  bool seen = 1;
+  string userId = 2;
+  repeated string snapIds = 3;
 }
 
 
 message UserSeenObject{
-  string snapID  = 1;
-  string userID = 2;
+  string snapId = 1;
+  string userId = 2;
 }
 
 message UserSeenObjects{
@@ -42,26 +42,26 @@ message EmptyUserInfo{
 message CreateUser{
   string bio = 1;
   string email = 2;
-  string authID= 3; // this will save authentication information id for each user 
+  string authId = 3; // this will save authentication information id for each user 
   string firstName = 4; 
   string lastName = 5;
 }
 
 
 message UserSetting{
-  string id =1;
-  UserObject user =2;
-  int32 maxDistance=3;
-  int32 newSnapDistance=4;
-  int32 snapDisappearTime=5;
+  string id = 1;
+  UserObject user = 2;
+  int32 maxDistance = 3;
+  int32 newSnapDistance = 4;
+  int32 snapDisappearTime = 5;
 
 }
 message UserSettingFetchDTO {
-  string id=1;
+  string id = 1;
 }
 
 message UserObject{
-  string Id = 1;
+  string id = 1;
   string email = 2;
   string firstName = 3;
   string lastName = 4;

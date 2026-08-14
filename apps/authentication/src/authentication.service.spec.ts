@@ -19,7 +19,7 @@ describe('AuthenticationService', () => {
   let authUsersServiceMock: any;
 
   const mockUser: Credential = {
-    Id: 'user-id',
+    id: 'user-id',
     email: 'test@example.com',
     password: 'hashedPassword',
     role: 'USER',
@@ -93,7 +93,7 @@ describe('AuthenticationService', () => {
     });
 
     it('should throw BadRequestException if DB fails', async () => {
-      jest.spyOn(service, 'craeteUserCredentials').mockRejectedValue(new Error('DB error'));
+      jest.spyOn(service, 'createUserCredentials').mockRejectedValue(new Error('DB error'));
       const dto = { email: 'test@example.com', password: 'password', role: AuthUserRole.USER };
       await expect(service.signup(dto as any)).rejects.toThrow(BadRequestException);
     });

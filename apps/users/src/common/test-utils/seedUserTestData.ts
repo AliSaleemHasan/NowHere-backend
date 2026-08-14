@@ -10,8 +10,6 @@ export const seedUserTestData = async (repo: Repository<User>) => {
       email: `${userName}@test.com`,
       firstName: userName,
       lastName: userName,
-      password: 'test',
-      role: 'USER',
     });
     await repo.save(temp);
   }

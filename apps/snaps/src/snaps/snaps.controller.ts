@@ -55,14 +55,14 @@ export class SnapsController {
         destination: join(__dirname, '..', '..', '..', 'tmp'),
         filename: (req: any, file, cb) => {
           const fileName =
-            (req.user?.Id || 'unkown') + Date.now() + file.originalname;
+            (req.user?.id || 'unkown') + Date.now() + file.originalname;
           cb(null, fileName);
         },
       }),
     }),
   )
   create(
-    @ReqUser('Id') id: string,
+    @ReqUser('id') id: string,
     @UploadedFiles() snaps: Array<Express.Multer.File>,
     @Body() createSnapDto: CreateSnapDto,
   ) {

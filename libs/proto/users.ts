@@ -12,13 +12,13 @@ import { Observable } from "rxjs";
 
 export interface UserNotSeenObject {
   seen: boolean;
-  userID: string;
-  snapID?: string | undefined;
+  userId: string;
+  snapIds: string[];
 }
 
 export interface UserSeenObject {
-  snapID: string;
-  userID: string;
+  snapId: string;
+  userId: string;
 }
 
 export interface UserSeenObjects {
@@ -40,7 +40,7 @@ export interface CreateUser {
   bio: string;
   email: string;
   /** this will save authentication information id for each user */
-  authID: string;
+  authId: string;
   firstName: string;
   lastName: string;
 }
@@ -58,7 +58,7 @@ export interface UserSettingFetchDTO {
 }
 
 export interface UserObject {
-  Id: string;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -67,7 +67,7 @@ export interface UserObject {
 }
 
 function createBaseUserNotSeenObject(): UserNotSeenObject {
-  return { seen: false, userID: "" };
+  return { seen: false, userId: "", snapIds: [] };
 }
 
 export const UserNotSeenObject: MessageFns<UserNotSeenObject> = {
@@ -75,11 +75,11 @@ export const UserNotSeenObject: MessageFns<UserNotSeenObject> = {
     if (message.seen !== false) {
       writer.uint32(8).bool(message.seen);
     }
-    if (message.userID !== "") {
-      writer.uint32(18).string(message.userID);
+    if (message.userId !== "") {
+      writer.uint32(18).string(message.userId);
     }
-    if (message.snapID !== undefined) {
-      writer.uint32(26).string(message.snapID);
+    for (const v of message.snapIds) {
+      writer.uint32(26).string(v!);
     }
     return writer;
   },
@@ -104,7 +104,7 @@ export const UserNotSeenObject: MessageFns<UserNotSeenObject> = {
             break;
           }
 
-          message.userID = reader.string();
+          message.userId = reader.string();
           continue;
         }
         case 3: {
@@ -112,7 +112,7 @@ export const UserNotSeenObject: MessageFns<UserNotSeenObject> = {
             break;
           }
 
-          message.snapID = reader.string();
+          message.snapIds.push(reader.string());
           continue;
         }
       }
@@ -126,16 +126,16 @@ export const UserNotSeenObject: MessageFns<UserNotSeenObject> = {
 };
 
 function createBaseUserSeenObject(): UserSeenObject {
-  return { snapID: "", userID: "" };
+  return { snapId: "", userId: "" };
 }
 
 export const UserSeenObject: MessageFns<UserSeenObject> = {
   encode(message: UserSeenObject, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.snapID !== "") {
-      writer.uint32(10).string(message.snapID);
+    if (message.snapId !== "") {
+      writer.uint32(10).string(message.snapId);
     }
-    if (message.userID !== "") {
-      writer.uint32(18).string(message.userID);
+    if (message.userId !== "") {
+      writer.uint32(18).string(message.userId);
     }
     return writer;
   },
@@ -152,7 +152,7 @@ export const UserSeenObject: MessageFns<UserSeenObject> = {
             break;
           }
 
-          message.snapID = reader.string();
+          message.snapId = reader.string();
           continue;
         }
         case 2: {
@@ -160,7 +160,7 @@ export const UserSeenObject: MessageFns<UserSeenObject> = {
             break;
           }
 
-          message.userID = reader.string();
+          message.userId = reader.string();
           continue;
         }
       }
@@ -311,7 +311,7 @@ export const EmptyUserInfo: MessageFns<EmptyUserInfo> = {
 };
 
 function createBaseCreateUser(): CreateUser {
-  return { bio: "", email: "", authID: "", firstName: "", lastName: "" };
+  return { bio: "", email: "", authId: "", firstName: "", lastName: "" };
 }
 
 export const CreateUser: MessageFns<CreateUser> = {
@@ -322,8 +322,8 @@ export const CreateUser: MessageFns<CreateUser> = {
     if (message.email !== "") {
       writer.uint32(18).string(message.email);
     }
-    if (message.authID !== "") {
-      writer.uint32(26).string(message.authID);
+    if (message.authId !== "") {
+      writer.uint32(26).string(message.authId);
     }
     if (message.firstName !== "") {
       writer.uint32(34).string(message.firstName);
@@ -362,7 +362,7 @@ export const CreateUser: MessageFns<CreateUser> = {
             break;
           }
 
-          message.authID = reader.string();
+          message.authId = reader.string();
           continue;
         }
         case 4: {
@@ -510,13 +510,13 @@ export const UserSettingFetchDTO: MessageFns<UserSettingFetchDTO> = {
 };
 
 function createBaseUserObject(): UserObject {
-  return { Id: "", email: "", firstName: "", lastName: "", bio: "", image: "" };
+  return { id: "", email: "", firstName: "", lastName: "", bio: "", image: "" };
 }
 
 export const UserObject: MessageFns<UserObject> = {
   encode(message: UserObject, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.Id !== "") {
-      writer.uint32(10).string(message.Id);
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
     }
     if (message.email !== "") {
       writer.uint32(18).string(message.email);
@@ -548,7 +548,7 @@ export const UserObject: MessageFns<UserObject> = {
             break;
           }
 
-          message.Id = reader.string();
+          message.id = reader.string();
           continue;
         }
         case 2: {

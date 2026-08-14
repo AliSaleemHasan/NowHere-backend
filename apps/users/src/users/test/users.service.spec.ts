@@ -50,18 +50,17 @@ describe('UsersService (unit)', () => {
 
   it('getUserById returns user without password', async () => {
     const user = {
-      Id: 'u1',
+      id: 'u1',
       email: 'a@a.com',
-      password: 'secret',
       firstName: 'A',
       lastName: 'B',
       bio: '',
-      isActive: false,
+      image: '',
     } as User;
     repo.findOne.mockResolvedValue(user);
 
     const result = await service.getUserById('u1');
-    expect(repo.findOne).toHaveBeenCalledWith({ where: { Id: 'u1' } });
+    expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 'u1' } });
     expect(result).toEqual({
       Id: 'u1',
       email: 'a@a.com',

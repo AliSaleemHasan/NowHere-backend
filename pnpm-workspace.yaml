@@ -2,5 +2,12 @@ packages:
   - apps/*
   - libs/*
 
+allowBuilds:
+  '@nestjs/core': set this to true or false
+  bcrypt: set this to true or false
+  nx: set this to true or false
+  protobufjs: set this to true or false
+  sqlite3: set this to true or false
+
 onlyBuiltDependencies:
   - sqlite3
