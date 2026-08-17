@@ -7,9 +7,11 @@ import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { S3Module } from '../s3ObjectProvider/s3-object.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
+    JwtModule.register({}),
     S3Module,
     CacheModule.registerAsync({
       imports: [ConfigModule],

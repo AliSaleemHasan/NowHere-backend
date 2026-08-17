@@ -11,7 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { tryCatch, USERS_GRPC } from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Credential } from 'apps/authentication/src/entities/user-credentials-entity';
+import { Credential } from './entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { CreateCredentialDTO } from './dto/create-credential-dto';
 import { ClientGrpc } from '@nestjs/microservices';

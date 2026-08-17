@@ -9,9 +9,6 @@ import { StroageEnvVariables } from './utils/storage-env-variables';
 
 @Module({
   imports: [
-    AwsStorageModule,
-    AwsGrpcModule,
-
     ConfigModule.forRoot({
       validate: getValidateFn(StroageEnvVariables),
       isGlobal: true,
@@ -20,6 +17,8 @@ import { StroageEnvVariables } from './utils/storage-env-variables';
     JwtModule.register({
       global: true,
     }),
+    AwsStorageModule,
+    AwsGrpcModule,
   ],
 })
 export class StorageModule {}

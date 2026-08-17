@@ -5,6 +5,19 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@scarf/scarf",
+      "@swc/core",
+      "bcrypt",
+      "mongodb-memory-server",
+      "nx",
+      "protobufjs",
+      "sqlite3",
+      "unrs-resolver"
+    ]
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",

@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Snap, SnapSchema } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { JwtModule } from '@nestjs/jwt';
 import {
   MICROSERVICES,
   STORAGE_GRPC,
@@ -19,6 +20,7 @@ import {
 
 @Module({
   imports: [
+    JwtModule.register({}),
     ClientsModule.register([
       {
         name: STORAGE_GRPC,

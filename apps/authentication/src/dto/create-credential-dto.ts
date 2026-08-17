@@ -1,4 +1,4 @@
-import { Roles } from 'apps/authentication/src/entities/user-credentials-entity';
+import { Roles } from '../entities/user-credentials-entity';
 import {
   IsDate,
   IsEmail,
