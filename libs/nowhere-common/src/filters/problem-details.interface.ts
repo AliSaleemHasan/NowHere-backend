@@ -1,9 +1,9 @@
 export interface ProblemDetails {
-  // Request for comment error response format
+  // RFC 9457 Problem Details error response format
   type: string;
   title: string;
   status: number;
-  detail: string | string[] | Record<string, any>;
+  detail: string;
   instance: string;
   timestamp: string;
   [key: string]: unknown;

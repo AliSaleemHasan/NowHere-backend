@@ -9,20 +9,26 @@ export class HttpExceptionMapper implements ExceptionMapper<HttpException> {
   map(exception: HttpException, requestUrl: string): ProblemDetails {
     const status = exception.getStatus();
     const response = exception.getResponse();
-    let detail: string | string[] | Record<string, any> =
-      'An Http error occurred';
+    let detail = 'An HTTP error occurred';
+    let errors: unknown = undefined;
+
     if (typeof response === 'string') {
       detail = response;
     } else if (typeof response === 'object' && response !== null) {
       const resObj = response as Record<string, unknown>;
-      const message =
-        typeof resObj.message === 'string' || Array.isArray(resObj.message)
-          ? resObj.message
-          : undefined;
-      const error = typeof resObj.error === 'string' ? resObj.error : undefined;
-      detail = message || error || JSON.stringify(resObj);
+      if (Array.isArray(resObj.message)) {
+        detail = 'Validation failed';
+        errors = resObj.message;
+      } else if (typeof resObj.message === 'string') {
+        detail = resObj.message;
+      } else if (typeof resObj.error === 'string') {
+        detail = resObj.error;
+      } else {
+        detail = JSON.stringify(resObj);
+      }
     }
-    return {
+
+    const problem: ProblemDetails = {
       type: 'about:blank',
       title: exception.name.replace(/Exception$/, ''),
       status: status,
@@ -30,5 +36,11 @@ export class HttpExceptionMapper implements ExceptionMapper<HttpException> {
       instance: requestUrl,
       timestamp: new Date().toISOString(),
     };
+
+    if (errors !== undefined) {
+      problem.errors = errors;
+    }
+
+    return problem;
   }
 }

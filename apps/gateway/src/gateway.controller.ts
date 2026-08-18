@@ -20,8 +20,8 @@ export class GatewayController {
   constructor(private readonly gatewayService: GatewayService) {}
 
   @Get()
-  getHello(): string {
-    return this.gatewayService.getHello();
+  getHello(): { message: string } {
+    return { message: this.gatewayService.getHello() };
   }
 
   @Post('auth/login')
