@@ -19,7 +19,6 @@ export class AuthenticationController {
   }
 
   @Post('signup')
-  @GrpcMethod('Credentials', 'signup')
   async signup(@Body('user') createUserDTO: CreateCredentialDTO) {
     const data = await this.authService.signup(createUserDTO);
     return data;

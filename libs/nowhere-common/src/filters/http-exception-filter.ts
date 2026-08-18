@@ -1,6 +1,6 @@
 import { ExceptionFilter, Catch, ArgumentsHost } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { NowHereLogger } from 'nowhere-common/loggers';
+import { NowHereLogger } from '../loggers';
 import { ExceptionMapperRegistry } from './exception-mapper.registry';
 
 @Catch()
