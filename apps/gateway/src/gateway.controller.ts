@@ -10,8 +10,10 @@ import {
 import { GatewayService } from './gateway.service';
 import { AuthGuard } from './guards/auth.guard';
 import { Request } from 'express';
-
-import { extractTokenFromHeader } from 'nowhere-common';
+import { User } from 'proto';
+import { extractTokenFromHeader, ReqUser } from 'nowhere-common';
+import { SigninDTO } from 'apps/authentication/src/dto/signin.dto';
+import { CreateCredentialDTO } from 'apps/authentication/src/dto/create-credential-dto';
 
 @Controller()
 export class GatewayController {
@@ -23,12 +25,12 @@ export class GatewayController {
   }
 
   @Post('auth/login')
-  async login(@Body() body: any) {
+  async login(@Body() body: SigninDTO) {
     return await this.gatewayService.login(body);
   }
 
   @Post('auth/signup')
-  async signup(@Body() body: any) {
+  async signup(@Body() body: CreateCredentialDTO) {
     return await this.gatewayService.signup(body);
   }
 
@@ -45,7 +47,7 @@ export class GatewayController {
 
   @Get('users/me')
   @UseGuards(AuthGuard)
-  async getMe(@Req() request: any) {
-    return request.user;
+  getMe(@ReqUser() user: User) {
+    return user;
   }
 }
