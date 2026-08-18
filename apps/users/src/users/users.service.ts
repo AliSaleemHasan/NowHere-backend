@@ -69,11 +69,11 @@ export class UsersService implements OnModuleInit {
 
   async seedAdmin() {
     // Check if admin user profile (User Entity) already exists
-    let email = this.configService.get<string>('ADMIN_EMAIL') as string;
-    let password = this.configService.get<string>('ADMIN_PASSWORD') as string;
+    const email = this.configService.get<string>('ADMIN_EMAIL') as string;
+    const password = this.configService.get<string>('ADMIN_PASSWORD') as string;
 
     // first check if admin credentials exist
-    let { error, data: adminCredentials } = await tryCatch(
+    const { error, data: adminCredentials } = await tryCatch(
       firstValueFrom(
         this.credentialsService.validateAuthUser({ email, password }),
       ),
@@ -86,7 +86,7 @@ export class UsersService implements OnModuleInit {
       return;
     }
 
-    let { error: SignupError, data: adminUser } = await tryCatch(
+    const { error: SignupError, data: adminUser } = await tryCatch(
       firstValueFrom(
         this.credentialsService.signup({
           email,
@@ -143,7 +143,7 @@ export class UsersService implements OnModuleInit {
 
   async setUserPhoto(imageFile: Buffer, userId: string) {
     // first try to upload it to the s3 bucket
-    let imageKey = await firstValueFrom(
+    const imageKey = await firstValueFrom(
       this.storageService.uploadPhoto({
         image: imageFile,
         userId,
@@ -157,7 +157,7 @@ export class UsersService implements OnModuleInit {
     // NOTE: yes this takes too much time, however the user will not change profile image every day!
     // so it is ok if it takes some time..
 
-    let signedURL = await firstValueFrom(
+    const signedURL = await firstValueFrom(
       this.storageService.getSignedUrl(imageKey),
     );
 
@@ -183,7 +183,7 @@ export class UsersService implements OnModuleInit {
     });
 
     if (userSettings) {
-      let { user, ...settings } = userSettings;
+      const { user, ...settings } = userSettings;
       return { ...settings };
     }
 
@@ -205,12 +205,12 @@ export class UsersService implements OnModuleInit {
   // handle seen operations
 
   async addSeen(seenObject: UserSeenObject) {
-    let seen = this.snapSeenRepo.create({
+    const seen = this.snapSeenRepo.create({
       snapId: seenObject.snapId,
       userId: seenObject.userId,
     });
 
-    let savedSeen = await this.snapSeenRepo.save(seen);
+    const savedSeen = await this.snapSeenRepo.save(seen);
 
     return savedSeen;
   }

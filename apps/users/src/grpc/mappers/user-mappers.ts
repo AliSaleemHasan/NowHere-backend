@@ -28,7 +28,7 @@ export function mapProtoToEntityDto(
   };
 }
 
-export let emptyProtoUser: ProtoUser = {
+export const emptyProtoUser: ProtoUser = {
   firstName: '',
   lastName: '',
   email: '',

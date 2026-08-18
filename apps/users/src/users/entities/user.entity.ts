@@ -23,9 +23,6 @@ export class User {
   @Column({ nullable: true })
   bio: string;
 
-
   @Column({ nullable: true, type: 'text' })
   image: string;
 }
-
-

@@ -37,4 +37,4 @@ import { AuthEnvVariables } from './utils/auth-env-variables';
   ],
   controllers: [],
 })
-export class AuthModule { }
+export class AuthModule {}

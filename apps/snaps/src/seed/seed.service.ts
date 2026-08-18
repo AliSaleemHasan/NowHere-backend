@@ -96,7 +96,7 @@ export class SeedService implements OnModuleInit {
    */
 
   generateNames(numOfUsers: number = 100): string[] {
-    let names = [
+    const names = [
       'ali',
       'yara',
       'yousef',
@@ -122,7 +122,7 @@ export class SeedService implements OnModuleInit {
       'zakaraia',
     ];
 
-    let usersNames: string[] = [];
+    const usersNames: string[] = [];
 
     for (let i = 0; i < numOfUsers; i++) {
       usersNames[i] =
@@ -134,10 +134,10 @@ export class SeedService implements OnModuleInit {
 
   async seed() {
     // first create users
-    let user_names = this.generateNames();
+    const user_names = this.generateNames();
 
     for (let i = 0; i < user_names.length; i++) {
-      let name = user_names[i];
+      const name = user_names[i];
       try {
         // adding new user
         await firstValueFrom(
@@ -156,24 +156,24 @@ export class SeedService implements OnModuleInit {
     }
 
     // get users from users service (after inserting)
-    let users = (await firstValueFrom(this.authUsersService.getAllUsers({})))
+    const users = (await firstValueFrom(this.authUsersService.getAllUsers({})))
       .users;
 
     // now creating snaps for each user
-    let locations = this.generateLocations();
+    const locations = this.generateLocations();
 
     const uploadedSnaps = readdirSync(
       join(__dirname, '..', '..', '..', 'uploads'),
     );
 
-    let new_snaps: Snap[] = [];
+    const new_snaps: Snap[] = [];
     for (let i = 0; i < locations.length; i++) {
       try {
-        let current_user = users[i % users.length];
+        const current_user = users[i % users.length];
         if (!current_user.id) {
           continue;
         }
-        let newSnap = await this.SnapsModel.create({
+        const newSnap = await this.SnapsModel.create({
           _userId: current_user.id,
           description: `This is a small description for snap posted by a user with name ${current_user.firstName} ${current_user.lastName} and email ${current_user.email}`,
           snaps: new Array(Math.floor(Math.random() * 4) || 1)

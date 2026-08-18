@@ -21,7 +21,7 @@ export class AwsGrpcService {
   // save profile photos
 
   async uploadPhoto(image: Buffer, userId: string) {
-    let key = `profile/${userId}`;
+    const key = `profile/${userId}`;
     return await this.storageService.uploadFile(image, key);
   }
 
@@ -38,7 +38,7 @@ export class AwsGrpcService {
   // get multiple photos
 
   async getSignedUrLs(keys: string[]) {
-    let outputs: string[] = [];
+    const outputs: string[] = [];
     for (const key of keys) {
       outputs.push((await this.getSignedUrl(key)) as string);
     }

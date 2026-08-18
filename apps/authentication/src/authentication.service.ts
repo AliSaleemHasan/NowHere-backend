@@ -78,7 +78,7 @@ export class AuthenticationService implements OnModuleInit {
         createUserDto.role === AuthUserRole.ADMIN ? Roles.ADMIN : Roles.USER;
     }
 
-    let { error: createUserError, data: newUser } = await tryCatch(
+    const { error: createUserError, data: newUser } = await tryCatch(
       this.createUserCredentials(createUserDto),
     );
 
@@ -115,7 +115,7 @@ export class AuthenticationService implements OnModuleInit {
 
     // validate the recieved refresh token
 
-    let { error: jwtError, data: payload } = await tryCatch(
+    const { error: jwtError, data: payload } = await tryCatch(
       this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       }),
@@ -123,7 +123,7 @@ export class AuthenticationService implements OnModuleInit {
 
     if (jwtError) throw new UnauthorizedException(jwtError.message);
 
-    let { error, data } = await tryCatch(
+    const { error, data } = await tryCatch(
       this.generateTokens(payload.user, payload.sub),
     );
 

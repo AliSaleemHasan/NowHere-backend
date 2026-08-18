@@ -15,14 +15,18 @@ describe('AuthenticationController (e2e)', () => {
   beforeEach(async () => {
     repoMock = {
       create: jest.fn().mockImplementation((dto) => dto),
-      save: jest.fn().mockImplementation((user) => Promise.resolve({ ...user, Id: 'e2e-id' })),
+      save: jest
+        .fn()
+        .mockImplementation((user) =>
+          Promise.resolve({ ...user, Id: 'e2e-id' }),
+        ),
       findOneBy: jest.fn().mockImplementation(({ email }) => {
         if (email === 'e2e@example.com') {
           return Promise.resolve({
             Id: 'e2e-id',
             email,
             password: '$2b$10$hashedpassword', // mock bcrypt hash
-            role: 'USER'
+            role: 'USER',
           });
         }
         return null;
@@ -37,8 +41,8 @@ describe('AuthenticationController (e2e)', () => {
       .overrideProvider(USERS_GRPC)
       .useValue({
         getService: jest.fn().mockReturnValue({
-          CreateUserInfo: jest.fn().mockReturnValue(of({ success: true }))
-        })
+          CreateUserInfo: jest.fn().mockReturnValue(of({ success: true })),
+        }),
       })
       .overrideProvider(DataSource)
       .useValue({
@@ -58,7 +62,7 @@ describe('AuthenticationController (e2e)', () => {
   const newUser = {
     email: 'new@example.com',
     password: 'Password123!',
-    role: 1
+    role: 1,
   };
 
   it('/auth/signup (POST)', () => {
@@ -74,7 +78,7 @@ describe('AuthenticationController (e2e)', () => {
 
   it('/auth/login (POST)', async () => {
     // We need a real hash for 'Password123!'
-    // Since we can't easily import bcrypt here (it might not be in devDependencies of root?), 
+    // Since we can't easily import bcrypt here (it might not be in devDependencies of root?),
     // actually it is in package.json.
     const bcrypt = require('bcrypt'); // Dynamic require to avoid TS issues if types missing
     const pass = 'Password123!';
@@ -85,7 +89,7 @@ describe('AuthenticationController (e2e)', () => {
         Id: 'e2e-id',
         email,
         password: hash,
-        role: 'USER'
+        role: 'USER',
       });
     });
 
@@ -107,6 +111,4 @@ describe('AuthenticationController (e2e)', () => {
   // If we return a REAL hash compatible with 'Password123!' in our mock for findOneBy, it will work.
   // Let's rely on standard bcrypt behavior or skip login E2E if too flaky without real DB.
   // Wait, I can perform a real hash in the test setup and put it in the mock return!
-
-
 });

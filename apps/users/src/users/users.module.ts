@@ -21,7 +21,7 @@ import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
         name: CREDENTIALS_GRPC,
         transport: Transport.GRPC,
         options: credentialsProtoOptions,
-      }
+      },
     ]),
     TypeOrmModule.forFeature([User, Settings, SnapSeen]),
   ],
@@ -30,7 +30,7 @@ import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
   exports: [UsersService],
 })
 export class UsersModule implements OnModuleInit {
-  constructor(private userService: UsersService) { }
+  constructor(private userService: UsersService) {}
   async onModuleInit() {
     await this.userService.seedAdmin();
   }

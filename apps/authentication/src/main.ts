@@ -3,7 +3,6 @@ import { AuthenticationModule } from './authentication.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { credentialsProtoLocalOptions } from '../../../libs/proto/proto-options';
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AuthenticationModule);
   app.connectMicroservice<MicroserviceOptions>({

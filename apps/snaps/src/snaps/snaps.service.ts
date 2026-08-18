@@ -73,7 +73,7 @@ export class SnapsService implements OnModuleInit {
       throw new BadRequestException(data.error);
     }
 
-    let updateStatus = await this.updateSnapImages(data.snapId, data.keys);
+    const updateStatus = await this.updateSnapImages(data.snapId, data.keys);
 
     this.logger.log(
       'Snap service added the uploaded keys with upload status: ',
@@ -94,7 +94,7 @@ export class SnapsService implements OnModuleInit {
     if (typeof location === 'string') location = JSON.parse(location);
     createSnapDto.location = location;
 
-    let params = await this.getNearParams({ _userId });
+    const params = await this.getNearParams({ _userId });
 
     console.log(params, location);
 
@@ -161,9 +161,9 @@ export class SnapsService implements OnModuleInit {
         this.usersService.getSettings({ id: input._userId }),
       );
 
-    let visionDistance = user_settings?.maxDistance || maxDistance_TO_SEE;
+    const visionDistance = user_settings?.maxDistance || maxDistance_TO_SEE;
 
-    let allowedPostDistance =
+    const allowedPostDistance =
       user_settings?.newSnapDistance || MIN_DISTANCE_TO_POST;
 
     const queryTime = new Date();
@@ -200,11 +200,11 @@ export class SnapsService implements OnModuleInit {
     tags,
     _userId,
   }: {
-    location: [Number, Number];
+    location: [number, number];
     tags: Tags[];
     _userId: string;
   }) {
-    let params = await this.getNearParams({ _userId });
+    const params = await this.getNearParams({ _userId });
 
     return await this.snapModel
       .find({
@@ -237,24 +237,28 @@ export class SnapsService implements OnModuleInit {
   }
   async findOne(id: string, userID: string) {
     try {
-      let snap = await this.snapModel.findById(id).exec();
+      const snap = await this.snapModel.findById(id).exec();
       if (!snap) throw new NotFoundException('Snap not found for id: ' + id);
 
       // now return snap with images Data
-      let imageKeys = await firstValueFrom(
+      const imageKeys = await firstValueFrom(
         this.storageService.getSignedUrLs({ keys: snap.snaps }),
       );
 
       // first get seen (to know if it is seen or not)
 
-      let seen = await firstValueFrom(
-        this.usersService.notSeenSnaps({ seen: true, userId: userID, snapIds: [] }),
+      const seen = await firstValueFrom(
+        this.usersService.notSeenSnaps({
+          seen: true,
+          userId: userID,
+          snapIds: [],
+        }),
       );
 
       // now set it as seen
 
       if (!Object.keys(seen).length) {
-        let { success } = await firstValueFrom(
+        const { success } = await firstValueFrom(
           this.usersService.setSeenSnap({ snapId: id, userId: userID }),
         );
 
@@ -287,7 +291,7 @@ export class SnapsService implements OnModuleInit {
   ) {
     // first get the near snap (snaps that users can see)
 
-    let nearSnaps = await this.findNear({ ...getSnapDTO, _userId: userID });
+    const nearSnaps = await this.findNear({ ...getSnapDTO, _userId: userID });
 
     if (!userID || nearSnaps.length === 0) return nearSnaps;
 
