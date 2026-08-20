@@ -12,8 +12,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { Request } from 'express';
 import { User } from 'proto';
 import { extractTokenFromHeader, ReqUser } from 'nowhere-common';
-import { SigninDTO } from 'apps/authentication/src/dto/signin.dto';
-import { CreateCredentialDTO } from 'apps/authentication/src/dto/create-credential-dto';
+import { SigninDTO, CreateCredentialDTO } from './dto';
 
 @Controller()
 export class GatewayController {
