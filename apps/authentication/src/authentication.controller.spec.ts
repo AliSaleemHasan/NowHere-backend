@@ -61,7 +61,12 @@ describe('AuthenticationController', () => {
 
   describe('signup', () => {
     it('should call service.signup', async () => {
-      const dto: CreateCredentialDTO = { email: 't@e.com', password: 'p' };
+      const dto: CreateCredentialDTO = {
+        email: 't@e.com',
+        password: 'p',
+        firstName: 'John',
+        lastName: 'Doe',
+      };
       const result = await controller.signup(dto);
       expect(service.signup).toHaveBeenCalledWith(dto);
       expect(result).toEqual({ user: mockUser, tokens: mockTokens });

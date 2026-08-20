@@ -74,6 +74,9 @@ describe('GatewayController', () => {
       const signupDto = {
         email: 'test@example.com',
         password: 'Password123!',
+        firstName: 'John',
+        lastName: 'Doe',
+        username: 'John Doe',
       };
 
       const result = await gatewayController.signup(signupDto);

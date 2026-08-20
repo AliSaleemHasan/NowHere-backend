@@ -41,6 +41,9 @@ message CreateCredentialDto {
     string email = 1;
     string password = 2;
     AuthUserRole role = 3;
+    string firstName = 4;
+    string lastName = 5;
+    string username = 6;
 }
 
 message Tokens {

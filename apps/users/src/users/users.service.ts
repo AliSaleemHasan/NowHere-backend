@@ -92,6 +92,9 @@ export class UsersService implements OnModuleInit {
           email,
           password,
           role: AuthUserRole.ADMIN,
+          firstName: 'admin',
+          lastName: 'admin',
+          username: 'admin',
         }),
       ),
     );

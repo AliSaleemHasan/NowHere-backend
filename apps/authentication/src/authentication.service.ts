@@ -93,6 +93,9 @@ export class AuthenticationService implements OnModuleInit {
         this.authUsersService.CreateUserInfo({
           email: createUserDto.email,
           authId: newUser.id,
+          firstName: createUserDto.firstName,
+          lastName: createUserDto.lastName,
+          bio: '',
         }),
       );
     } catch (e) {

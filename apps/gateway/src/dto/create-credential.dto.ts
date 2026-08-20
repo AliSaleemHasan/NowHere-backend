@@ -29,6 +29,18 @@ export class CreateCredentialDTO {
   @IsNotEmpty({ message: 'Password is required' })
   password: string;
 
+  @IsString()
+  @IsNotEmpty({ message: 'First name is required' })
+  firstName: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Last name is required' })
+  lastName: string;
+
+  @IsString()
+  @IsOptional()
+  username?: string;
+
   @IsOptional()
   @IsEnum(AuthUserRole, { message: 'Invalid user role' })
   role?: AuthUserRole;
