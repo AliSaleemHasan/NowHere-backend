@@ -56,7 +56,9 @@ export class UsersService implements OnModuleInit {
         CREDENTIALS_SERVICE_NAME,
       );
 
-    this.seedAdmin();
+    // Fire-and-forget: don't block startup — authentication gRPC server
+    // may not be ready yet when both services start simultaneously.
+    this.seedAdminWithRetry();
   }
 
   async createUser(createUserDto: CreateUserDTO) {
@@ -65,6 +67,29 @@ export class UsersService implements OnModuleInit {
       id: createUserDto.id, // Ensure Explicit ID assignment
     });
     return this.userRepository.save(user);
+  }
+
+  private async seedAdminWithRetry(
+    retries = 5,
+    delayMs = 5000,
+  ): Promise<void> {
+    // Wait before the first attempt so both services finish bootstrapping
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        await this.seedAdmin();
+        return;
+      } catch (err) {
+        this.logger.warn(
+          `seedAdmin attempt ${attempt}/${retries} failed: ${err?.message}. ` +
+            (attempt < retries ? `Retrying in ${delayMs}ms...` : 'Giving up.'),
+        );
+        if (attempt < retries) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+      }
+    }
   }
 
   async seedAdmin() {
@@ -78,8 +103,6 @@ export class UsersService implements OnModuleInit {
         this.credentialsService.validateAuthUser({ email, password }),
       ),
     );
-
-    // if (error) { this.logger.error(error.message); return; }
 
     if (adminCredentials) {
       this.logger.log('Admin user already exists, skipping seeding.');
@@ -100,8 +123,7 @@ export class UsersService implements OnModuleInit {
     );
 
     if (SignupError || !adminUser) {
-      this.logger.error(SignupError?.message || 'Admin User Signup Failed');
-      return;
+      throw new Error(SignupError?.message || 'Admin User Signup Failed');
     }
 
     await this.createUser({

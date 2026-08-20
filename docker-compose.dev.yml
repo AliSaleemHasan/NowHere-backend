@@ -104,6 +104,8 @@ services:
     ports:
       - "3004:3004"
       - "50052:50052"
+    depends_on:
+      - mysql
 
   nowhere-gateway:
     container_name: nowhere-gateway-dev
