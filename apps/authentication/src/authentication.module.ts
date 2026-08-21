@@ -52,4 +52,4 @@ import { USERS_GRPC, CREDENTIALS_GRPC } from 'nowhere-common';
   providers: [AuthenticationService],
   exports: [AuthenticationService],
 })
-export class AuthenticationModule { }
+export class AuthenticationModule {}

@@ -1,36 +1,52 @@
-import { Controller, Get, Post, Body, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { GatewayService } from './gateway.service';
 import { AuthGuard } from './guards/auth.guard';
 import { Request } from 'express';
+import { User } from 'proto';
+import { extractTokenFromHeader, ReqUser } from 'nowhere-common';
+import { SigninDTO, CreateCredentialDTO } from './dto';
 
 @Controller()
 export class GatewayController {
   constructor(private readonly gatewayService: GatewayService) {}
 
   @Get()
-  getHello(): string {
-    return this.gatewayService.getHello();
+  getHello(): { message: string } {
+    return { message: this.gatewayService.getHello() };
   }
 
   @Post('auth/login')
-  async login(@Body() body: any) {
+  async login(@Body() body: SigninDTO) {
     return await this.gatewayService.login(body);
   }
 
   @Post('auth/signup')
-  async signup(@Body() body: any) {
+  async signup(@Body() body: CreateCredentialDTO) {
     return await this.gatewayService.signup(body);
   }
 
   @Get('auth/refresh')
   async refresh(@Req() request: Request) {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    const token = extractTokenFromHeader(request);
+    if (!token) {
+      throw new UnauthorizedException(
+        'Missing or invalid Authorization header',
+      );
+    }
     return await this.gatewayService.refresh(token);
   }
 
   @Get('users/me')
   @UseGuards(AuthGuard)
-  async getMe(@Req() request: any) {
-    return request.user;
+  getMe(@ReqUser() user: User) {
+    return user;
   }
 }

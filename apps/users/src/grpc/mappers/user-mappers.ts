@@ -28,11 +28,11 @@ export function mapProtoToEntityDto(
   };
 }
 
-export let emptyProtoUser: ProtoUser = {
+export const emptyProtoUser: ProtoUser = {
   firstName: '',
   lastName: '',
   email: '',
-  Id: '',
+  id: '',
   bio: '',
   image: '',
 };
@@ -40,7 +40,7 @@ export let emptyProtoUser: ProtoUser = {
 export function mapUserToProto(user: Partial<User>): ProtoUser {
   if (!user) return emptyProtoUser;
   return {
-    Id: user?.Id ?? '',
+    id: user?.id ?? '',
     firstName: user.firstName ?? '',
     lastName: user.lastName ?? '',
     bio: user.bio ?? '',

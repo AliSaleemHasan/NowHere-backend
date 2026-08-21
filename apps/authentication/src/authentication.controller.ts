@@ -8,20 +8,18 @@ import { GrpcMethod } from '@nestjs/microservices';
 
 @Controller('auth')
 export class AuthenticationController {
-  constructor(private readonly authService: AuthenticationService) { }
+  constructor(private readonly authService: AuthenticationService) {}
 
   @Post('login')
   async login(
-    @Body('user')
-    singinDTO: SigninDTO,
+    @Body()
+    signinDTO: SigninDTO,
   ) {
-    return await this.authService.login(singinDTO.email, singinDTO.password);
+    return await this.authService.login(signinDTO.email, signinDTO.password);
   }
 
   @Post('signup')
-  @GrpcMethod('Credentials', 'signup')
-
-  async signup(@Body('user') createUserDTO: CreateCredentialDTO) {
+  async signup(@Body() createUserDTO: CreateCredentialDTO) {
     const data = await this.authService.signup(createUserDTO);
     return data;
   }
@@ -35,12 +33,11 @@ export class AuthenticationController {
   @Get('validate')
   @UseGuards(JwtGuard)
   async validate(@ReqUser('Id') id: string) {
-    return 'valid!';
+    return { valid: true, userId: id };
   }
 
   @GrpcMethod('Credentials', 'validateAuthUser')
   async validateAuthUser(data: SigninDTO) {
-
     const { user, tokens } = await this.authService.login(
       data.email,
       data.password,
@@ -51,9 +48,9 @@ export class AuthenticationController {
         ...user,
         lastLoginAt: user.lastLoginAt
           ? {
-            seconds: Math.floor(new Date(user.lastLoginAt).getTime() / 1000),
-            nanos: (new Date(user.lastLoginAt).getTime() % 1000) * 1000000,
-          }
+              seconds: Math.floor(new Date(user.lastLoginAt).getTime() / 1000),
+              nanos: (new Date(user.lastLoginAt).getTime() % 1000) * 1000000,
+            }
           : undefined,
       },
       tokens,

@@ -9,12 +9,13 @@ import { getValidateFn } from 'nowhere-common';
 import { AuthEnvVariables } from './utils/auth-env-variables';
 @Module({
   imports: [
-    GrpcModule,
     ConfigModule.forRoot({
       validate: getValidateFn(AuthEnvVariables),
       isGlobal: true,
       envFilePath: [path.resolve(process.cwd(), '.env')],
     }),
+    JwtModule.register({ global: true }),
+    GrpcModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -33,8 +34,7 @@ import { AuthEnvVariables } from './utils/auth-env-variables';
     }),
     UsersModule,
     // SeedService,
-    JwtModule.register({ global: true }),
   ],
   controllers: [],
 })
-export class AuthModule { }
+export class AuthModule {}

@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import { InjectModel } from '@nestjs/mongoose';
-import { Snap, Tags } from '../snaps/snaps/schemas/snap.schema';
+import { Snap, Tags } from '../snaps/schemas/snap.schema';
 import { Model } from 'mongoose';
 import { ClientGrpc } from '@nestjs/microservices';
 import { USERS_SERVICE_NAME, AuthUsersClient, UserRole } from 'proto';
@@ -16,12 +16,11 @@ export class SeedService implements OnModuleInit {
   constructor(
     @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
     @Inject(USERS_GRPC) private client: ClientGrpc,
-  ) { }
+  ) {}
 
   onModuleInit() {
-    this.authUsersService = this.client.getService<AuthUsersClient>(
-      USERS_SERVICE_NAME,
-    );
+    this.authUsersService =
+      this.client.getService<AuthUsersClient>(USERS_SERVICE_NAME);
   }
 
   /**
@@ -55,7 +54,7 @@ export class SeedService implements OnModuleInit {
 
       const lat2 = Math.asin(
         Math.sin(lat1) * Math.cos(distance) +
-        Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
+          Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
       );
 
       const lng2 =
@@ -97,7 +96,7 @@ export class SeedService implements OnModuleInit {
    */
 
   generateNames(numOfUsers: number = 100): string[] {
-    let names = [
+    const names = [
       'ali',
       'yara',
       'yousef',
@@ -123,7 +122,7 @@ export class SeedService implements OnModuleInit {
       'zakaraia',
     ];
 
-    let usersNames: string[] = [];
+    const usersNames: string[] = [];
 
     for (let i = 0; i < numOfUsers; i++) {
       usersNames[i] =
@@ -135,14 +134,14 @@ export class SeedService implements OnModuleInit {
 
   async seed() {
     // first create users
-    let user_names = this.generateNames();
+    const user_names = this.generateNames();
 
     for (let i = 0; i < user_names.length; i++) {
-      let name = user_names[i];
+      const name = user_names[i];
       try {
         // adding new user
         await firstValueFrom(
-          await this.authUsersService.createUser({
+          this.authUsersService.createUser({
             bio: `Hey There I am ${name} Welcome to my NowHere profile Page`,
             email: `${name.split(' ').join('_')}@test.com`,
             password: 'Qqqqq1!',
@@ -157,25 +156,25 @@ export class SeedService implements OnModuleInit {
     }
 
     // get users from users service (after inserting)
-    let users = (await firstValueFrom(this.authUsersService.getAllUsers({})))
+    const users = (await firstValueFrom(this.authUsersService.getAllUsers({})))
       .users;
 
     // now creating snaps for each user
-    let locations = this.generateLocations();
+    const locations = this.generateLocations();
 
     const uploadedSnaps = readdirSync(
       join(__dirname, '..', '..', '..', 'uploads'),
     );
 
-    let new_snaps: Snap[] = [];
+    const new_snaps: Snap[] = [];
     for (let i = 0; i < locations.length; i++) {
       try {
-        let current_user = users[i % users.length];
-        if (!current_user.Id) {
+        const current_user = users[i % users.length];
+        if (!current_user.id) {
           continue;
         }
-        let newSnap = await this.SnapsModel.create({
-          _userId: current_user.Id,
+        const newSnap = await this.SnapsModel.create({
+          _userId: current_user.id,
           description: `This is a small description for snap posted by a user with name ${current_user.firstName} ${current_user.lastName} and email ${current_user.email}`,
           snaps: new Array(Math.floor(Math.random() * 4) || 1)
             .fill(null)
@@ -186,7 +185,7 @@ export class SeedService implements OnModuleInit {
           },
           tag: Tags[
             Object.keys(Tags)[
-            Math.floor(Math.random() * Object.keys(Tags).length)
+              Math.floor(Math.random() * Object.keys(Tags).length)
             ]
           ],
         });

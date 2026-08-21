@@ -67,10 +67,10 @@ describe('Users (e2e)', () => {
   it('/users/id/:id (GET) returns by id without password', async () => {
     const created = await service.getUserByEmail('john@doe.com');
     const res = await request(app.getHttpServer())
-      .get(`/users/id/${(created as any).Id}`)
+      .get(`/users/id/${(created as any).id}`)
       .expect(200);
 
-    expect(res.body.Id).toBe((created as any).Id);
+    expect(res.body.id).toBe((created as any).id);
     expect(res.body.password).toBeUndefined();
   });
 });

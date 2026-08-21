@@ -11,7 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { tryCatch, USERS_GRPC } from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Credential } from 'apps/authentication/src/entities/user-credentials-entity';
+import { Credential } from './entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { CreateCredentialDTO } from './dto/create-credential-dto';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -32,15 +32,13 @@ export class AuthenticationService implements OnModuleInit {
     private userRepository: Repository<Credential>,
     private configService: ConfigService,
     @Inject(USERS_GRPC) private client: ClientGrpc,
-  ) { }
+  ) {}
 
   onModuleInit() {
     this.authUsersService = this.client.getService(USERS_SERVICE_NAME);
   }
 
-
-
-  async craeteUserCredentials(createUserDto: CreateCredentialDTO) {
+  async createUserCredentials(createUserDto: CreateCredentialDTO) {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
@@ -50,7 +48,7 @@ export class AuthenticationService implements OnModuleInit {
       this.userRepository.findOneBy({ email }),
     );
 
-    console.log(user)
+    console.log(user);
 
     if (error) {
       throw new QueryFailedError('get user by email', undefined, error);
@@ -65,7 +63,7 @@ export class AuthenticationService implements OnModuleInit {
 
     this.userRepository.save({ ...user, lastLoginAt: new Date() });
 
-    const tokens = await this.generateTokens(user, user.Id);
+    const tokens = await this.generateTokens(user, user.id);
     return { user, tokens };
   }
 
@@ -80,8 +78,8 @@ export class AuthenticationService implements OnModuleInit {
         createUserDto.role === AuthUserRole.ADMIN ? Roles.ADMIN : Roles.USER;
     }
 
-    let { error: createUserError, data: newUser } = await tryCatch(
-      this.craeteUserCredentials(createUserDto),
+    const { error: createUserError, data: newUser } = await tryCatch(
+      this.createUserCredentials(createUserDto),
     );
 
     if (createUserError || !newUser)
@@ -89,21 +87,28 @@ export class AuthenticationService implements OnModuleInit {
         createUserError?.message || 'User Not Found',
       );
 
-
     // Call Users service to create profile
     try {
-      await lastValueFrom(this.authUsersService.CreateUserInfo({
-        email: createUserDto.email,
-        authID: newUser.Id,
-      }));
+      await lastValueFrom(
+        this.authUsersService.CreateUserInfo({
+          email: createUserDto.email,
+          authId: newUser.id,
+          firstName: createUserDto.firstName,
+          lastName: createUserDto.lastName,
+          bio: '',
+        }),
+      );
     } catch (e) {
-      // Rollback credential creation if user creation fails?
-      // For now just log error
       this.logger.error('Failed to create user profile in Users service', e);
-      // throw new BadRequestException('Failed to create user profile');
+      await this.userRepository.delete(newUser.id);
+
+      // Reject the signup request
+      throw new BadRequestException(
+        'Failed to complete user registration. Please try again.',
+      );
     }
 
-    const tokens = await this.generateTokens(newUser, newUser.Id);
+    const tokens = await this.generateTokens(newUser, newUser.id);
     return { user: newUser, tokens };
   }
 
@@ -113,7 +118,7 @@ export class AuthenticationService implements OnModuleInit {
 
     // validate the recieved refresh token
 
-    let { error: jwtError, data: payload } = await tryCatch(
+    const { error: jwtError, data: payload } = await tryCatch(
       this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       }),
@@ -121,7 +126,7 @@ export class AuthenticationService implements OnModuleInit {
 
     if (jwtError) throw new UnauthorizedException(jwtError.message);
 
-    let { error, data } = await tryCatch(
+    const { error, data } = await tryCatch(
       this.generateTokens(payload.user, payload.sub),
     );
 

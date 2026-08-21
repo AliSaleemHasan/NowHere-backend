@@ -12,7 +12,7 @@ import { CreateSnapDto } from './dto/create-snap.dto';
 import { Snap, SnapStatus, Tags } from './schemas/snap.schema';
 import { DeleteResult, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
-import { SnapsGetaway } from '../getaway';
+import { SnapsGateway } from './gateway';
 import {
   maxDistance_TO_SEE,
   MIN_DISTANCE_TO_POST,
@@ -48,13 +48,11 @@ export class SnapsService implements OnModuleInit {
     @Inject(STORAGE_GRPC) private storageClient: ClientGrpc,
     @Inject(USERS_GRPC) private client: ClientGrpc,
 
-    private snapsGateaway: SnapsGetaway,
-  ) { }
+    private snapsGateaway: SnapsGateway,
+  ) {}
 
   onModuleInit() {
-    this.usersService = this.client.getService<UsersClient>(
-      USERS_SERVICE_NAME,
-    );
+    this.usersService = this.client.getService<UsersClient>(USERS_SERVICE_NAME);
 
     this.storageService = this.storageClient.getService<AwsStorageClient>(
       AWS_STORAGE_SERVICE_NAME,
@@ -75,7 +73,7 @@ export class SnapsService implements OnModuleInit {
       throw new BadRequestException(data.error);
     }
 
-    let updateStatus = await this.updateSnapImages(data.snapId, data.keys);
+    const updateStatus = await this.updateSnapImages(data.snapId, data.keys);
 
     this.logger.log(
       'Snap service added the uploaded keys with upload status: ',
@@ -96,7 +94,7 @@ export class SnapsService implements OnModuleInit {
     if (typeof location === 'string') location = JSON.parse(location);
     createSnapDto.location = location;
 
-    let params = await this.getNearParams({ _userId });
+    const params = await this.getNearParams({ _userId });
 
     console.log(params, location);
 
@@ -163,9 +161,9 @@ export class SnapsService implements OnModuleInit {
         this.usersService.getSettings({ id: input._userId }),
       );
 
-    let visionDistance = user_settings?.maxDistance || maxDistance_TO_SEE;
+    const visionDistance = user_settings?.maxDistance || maxDistance_TO_SEE;
 
-    let allowedPostDistance =
+    const allowedPostDistance =
       user_settings?.newSnapDistance || MIN_DISTANCE_TO_POST;
 
     const queryTime = new Date();
@@ -202,11 +200,11 @@ export class SnapsService implements OnModuleInit {
     tags,
     _userId,
   }: {
-    location: [Number, Number];
+    location: [number, number];
     tags: Tags[];
     _userId: string;
   }) {
-    let params = await this.getNearParams({ _userId });
+    const params = await this.getNearParams({ _userId });
 
     return await this.snapModel
       .find({
@@ -239,25 +237,29 @@ export class SnapsService implements OnModuleInit {
   }
   async findOne(id: string, userID: string) {
     try {
-      let snap = await this.snapModel.findById(id).exec();
+      const snap = await this.snapModel.findById(id).exec();
       if (!snap) throw new NotFoundException('Snap not found for id: ' + id);
 
       // now return snap with images Data
-      let imageKeys = await firstValueFrom(
+      const imageKeys = await firstValueFrom(
         this.storageService.getSignedUrLs({ keys: snap.snaps }),
       );
 
       // first get seen (to know if it is seen or not)
 
-      let seen = await firstValueFrom(
-        this.usersService.notSeenSnaps({ seen: true, userID }),
+      const seen = await firstValueFrom(
+        this.usersService.notSeenSnaps({
+          seen: true,
+          userId: userID,
+          snapIds: [],
+        }),
       );
 
       // now set it as seen
 
       if (!Object.keys(seen).length) {
-        let { success } = await firstValueFrom(
-          this.usersService.setSeenSnap({ snapID: id, userID }),
+        const { success } = await firstValueFrom(
+          this.usersService.setSeenSnap({ snapId: id, userId: userID }),
         );
 
         if (!success) this.logger.error('Seen is not being set correctly!!');
@@ -289,20 +291,22 @@ export class SnapsService implements OnModuleInit {
   ) {
     // first get the near snap (snaps that users can see)
 
-    let nearSnaps = await this.findNear({ ...getSnapDTO, _userId: userID });
+    const nearSnaps = await this.findNear({ ...getSnapDTO, _userId: userID });
 
-    if (!userID) return nearSnaps;
+    if (!userID || nearSnaps.length === 0) return nearSnaps;
 
-    let seenSnaps: typeof nearSnaps = [];
+    const snapIds = nearSnaps.map((s) => s.id);
 
-    for (const snap of nearSnaps) {
-      let seenSnap = await firstValueFrom(
-        this.usersService.notSeenSnaps({ userID, seen, snapID: snap.id }),
-      );
+    const response = await firstValueFrom(
+      this.usersService.notSeenSnaps({
+        userId: userID,
+        seen,
+        snapIds,
+      }),
+    );
 
-      if (Object.keys(seenSnap).length > 0) seenSnaps.push(snap);
-    }
+    const seenSnapIdsSet = new Set((response.seen || []).map((s) => s.snapId));
 
-    return seenSnaps;
+    return nearSnaps.filter((snap) => seenSnapIdsSet.has(snap.id));
   }
 }

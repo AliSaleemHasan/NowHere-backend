@@ -8,11 +8,8 @@ import {
 import { Roles } from '../entities/user.entity';
 
 export class CreateUserDTO {
-
   @IsOptional()
-  Id?: string;
-
-
+  id?: string;
 
   @IsString()
   @IsOptional()
@@ -26,6 +23,4 @@ export class CreateUserDTO {
 
   @IsString()
   lastName: string;
-
-
 }

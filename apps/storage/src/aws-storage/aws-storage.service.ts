@@ -33,7 +33,7 @@ export class AwsStorageService {
   async uploadFile(file: Buffer, key: string) {
     this.logger.log(`Uploading ${key} to S3...`);
 
-    let { data, error } = await tryCatch(
+    const { data, error } = await tryCatch(
       this.client.send(
         new PutObjectCommand({
           Bucket: this.bucket,
@@ -93,14 +93,14 @@ export class AwsStorageService {
   ) {
     // files will be in memory
 
-    let notSaved: Array<Express.Multer.File> = [];
+    const notSaved: Array<Express.Multer.File> = [];
 
-    let keys: string[] = [];
+    const keys: string[] = [];
 
     for (let i = 0; i < files.length; i++) {
-      let fileName = files[i].filename;
+      const fileName = files[i].filename;
 
-      let { data: file, error: fetchError } = await tryCatch(
+      const { data: file, error: fetchError } = await tryCatch(
         fetch(
           `${process.env.SNAPS_URL}/${process.env.STATIC_TMP_FILES}/${fileName}`,
         ),
@@ -123,7 +123,7 @@ export class AwsStorageService {
       const today = new Date().toISOString().split('T')[0]; // safer format
       const key = `${today}/${userId}/${fileName}`;
 
-      let { data: fileKey, error } = await tryCatch(
+      const { data: fileKey, error } = await tryCatch(
         this.uploadFile(Buffer.from(await file.arrayBuffer()), key),
       );
       if (error) {

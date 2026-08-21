@@ -1,4 +1,4 @@
-import { Module, OnModuleInit } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -21,7 +21,7 @@ import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
         name: CREDENTIALS_GRPC,
         transport: Transport.GRPC,
         options: credentialsProtoOptions,
-      }
+      },
     ]),
     TypeOrmModule.forFeature([User, Settings, SnapSeen]),
   ],
@@ -29,9 +29,4 @@ import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
   controllers: [UsersController],
   exports: [UsersService],
 })
-export class UsersModule implements OnModuleInit {
-  constructor(private userService: UsersService) { }
-  async onModuleInit() {
-    await this.userService.seedAdmin();
-  }
-}
+export class UsersModule {}

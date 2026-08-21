@@ -1,8 +1,8 @@
-import { Roles } from 'apps/authentication/src/entities/user-credentials-entity';
+import { Roles } from '../entities/user-credentials-entity';
 import {
-  IsDate,
   IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsStrongPassword,
@@ -19,7 +19,20 @@ export class CreateCredentialDTO {
   password: string;
 
   @IsEmail()
+  @IsNotEmpty()
   email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  firstName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
+
+  @IsString()
+  @IsOptional()
+  username?: string;
 
   @IsOptional()
   @IsEnum(Roles)

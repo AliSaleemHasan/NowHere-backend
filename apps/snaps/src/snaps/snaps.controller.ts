@@ -12,6 +12,9 @@ import {
   ValidationPipe,
   Query,
   Logger,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { SnapsService } from './snaps.service';
 import { Snap } from './schemas/snap.schema';
@@ -30,6 +33,13 @@ import { diskStorage } from 'multer';
 import { DeleteResult } from 'mongoose';
 import { join } from 'path';
 import { SnapUploadedDto } from './dto/snap-uploaded-dto';
+
+import { Request } from 'express';
+import { User } from 'proto';
+
+interface RequestWithUser extends Request {
+  user?: User & { id?: string };
+}
 
 @Controller('snaps')
 export class SnapsController {
@@ -53,17 +63,29 @@ export class SnapsController {
     FilesInterceptor('snaps', 4, {
       storage: diskStorage({
         destination: join(__dirname, '..', '..', '..', 'tmp'),
-        filename: (req: any, file, cb) => {
+        filename: (
+          req: RequestWithUser,
+          file: Express.Multer.File,
+          cb: (error: Error | null, filename: string) => void,
+        ) => {
           const fileName =
-            (req.user?.Id || 'unkown') + Date.now() + file.originalname;
+            (req.user?.id || 'unknown') + Date.now() + file.originalname;
           cb(null, fileName);
         },
       }),
     }),
   )
   create(
-    @ReqUser('Id') id: string,
-    @UploadedFiles() snaps: Array<Express.Multer.File>,
+    @ReqUser('id') id: string,
+    @UploadedFiles(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }), // 5MB
+          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png|webp)$/ }),
+        ],
+      }),
+    )
+    snaps: Array<Express.Multer.File>,
     @Body() createSnapDto: CreateSnapDto,
   ) {
     return this.snapsService.create(id, snaps, createSnapDto);

@@ -5,13 +5,13 @@ FROM node:24 AS base
 WORKDIR /usr/src
 
 # Enable corepack and install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
 
 
 
 
 # Copy workspace metadata (do not copy source yet)
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json jest.config.base.js nx.json  ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json jest.config.base.js nx.json .npmrc ./
 
 
 RUN apt-get update \
@@ -23,19 +23,20 @@ RUN apt-get update \
 RUN pnpm fetch -r
 
 # =======================
-# Development Stage (kept unchanged)
+# Development Stage
 # =======================
 FROM base AS dev
 WORKDIR /usr/src
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json jest.config.base.js nx.json  ./
+COPY apps/users ./apps/users
+COPY libs ./libs
 
 # Install all dependencies including dev for ts-node
-RUN pnpm install --filter users -r --workspace-root
-
+RUN pnpm install --filter users...
 
 WORKDIR /usr/src/apps/users
-EXPOSE 3000
+EXPOSE 3001
+EXPOSE 50051
 
 # Use ts-node for live dev
 CMD ["pnpm", "nx", "start"]

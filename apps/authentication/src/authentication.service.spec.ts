@@ -1,4 +1,3 @@
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthenticationService } from './authentication.service';
 import { JwtService } from '@nestjs/jwt';
@@ -19,7 +18,7 @@ describe('AuthenticationService', () => {
   let authUsersServiceMock: any;
 
   const mockUser: Credential = {
-    Id: 'user-id',
+    id: 'user-id',
     email: 'test@example.com',
     password: 'hashedPassword',
     role: 'USER',
@@ -39,7 +38,9 @@ describe('AuthenticationService', () => {
           provide: JwtService,
           useValue: {
             signAsync: jest.fn().mockResolvedValue('token'),
-            verifyAsync: jest.fn().mockResolvedValue({ sub: 'user-id', user: mockUser }),
+            verifyAsync: jest
+              .fn()
+              .mockResolvedValue({ sub: 'user-id', user: mockUser }),
           },
         },
         {
@@ -80,10 +81,18 @@ describe('AuthenticationService', () => {
 
   describe('signup', () => {
     it('should create user and return tokens', async () => {
-      jest.spyOn(bcrypt, 'genSalt').mockImplementation(() => Promise.resolve('salt'));
-      jest.spyOn(bcrypt, 'hash').mockImplementation(() => Promise.resolve('hashedPassword'));
+      jest
+        .spyOn(bcrypt, 'genSalt')
+        .mockImplementation(() => Promise.resolve('salt'));
+      jest
+        .spyOn(bcrypt, 'hash')
+        .mockImplementation(() => Promise.resolve('hashedPassword'));
 
-      const dto = { email: 'test@example.com', password: 'password', role: AuthUserRole.USER };
+      const dto = {
+        email: 'test@example.com',
+        password: 'password',
+        role: AuthUserRole.USER,
+      };
       const result = await service.signup(dto as any); // cast as any for loose DTO compliance in tests
 
       expect(result.user).toBeDefined();
@@ -93,28 +102,44 @@ describe('AuthenticationService', () => {
     });
 
     it('should throw BadRequestException if DB fails', async () => {
-      jest.spyOn(service, 'craeteUserCredentials').mockRejectedValue(new Error('DB error'));
-      const dto = { email: 'test@example.com', password: 'password', role: AuthUserRole.USER };
-      await expect(service.signup(dto as any)).rejects.toThrow(BadRequestException);
+      jest
+        .spyOn(service, 'createUserCredentials')
+        .mockRejectedValue(new Error('DB error'));
+      const dto = {
+        email: 'test@example.com',
+        password: 'password',
+        role: AuthUserRole.USER,
+      };
+      await expect(service.signup(dto as any)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
   describe('login', () => {
     it('should return user and tokens', async () => {
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(true));
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(true));
       const result = await service.login('test@example.com', 'password');
       expect(result.user).toEqual(mockUser);
       expect(result.tokens).toBeDefined();
     });
 
     it('should throw UnauthorizedException if password wrong', async () => {
-      jest.spyOn(bcrypt, 'compare').mockImplementation(() => Promise.resolve(false));
-      await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
+      jest
+        .spyOn(bcrypt, 'compare')
+        .mockImplementation(() => Promise.resolve(false));
+      await expect(
+        service.login('test@example.com', 'password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
       repo.findOneBy = jest.fn().mockResolvedValue(null);
-      await expect(service.login('test@example.com', 'password')).rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.login('test@example.com', 'password'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -126,8 +151,12 @@ describe('AuthenticationService', () => {
     });
 
     it('should throw UnauthorizedException if invalid token', async () => {
-      jest.spyOn(jwtService, 'verifyAsync').mockRejectedValue(new Error('Invalid'));
-      await expect(service.refreshToken('bad-token')).rejects.toThrow(UnauthorizedException);
+      jest
+        .spyOn(jwtService, 'verifyAsync')
+        .mockRejectedValue(new Error('Invalid'));
+      await expect(service.refreshToken('bad-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

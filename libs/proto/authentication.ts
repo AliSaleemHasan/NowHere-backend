@@ -18,7 +18,7 @@ export enum AuthUserRole {
 }
 
 export interface AuthUser {
-  Id: string;
+  id: string;
   password: string;
   email: string;
   isActive: boolean;
@@ -39,6 +39,9 @@ export interface CreateCredentialDto {
   email: string;
   password: string;
   role: AuthUserRole;
+  firstName: string;
+  lastName: string;
+  username: string;
 }
 
 export interface Tokens {
@@ -52,13 +55,13 @@ export interface AuthResponse {
 }
 
 function createBaseAuthUser(): AuthUser {
-  return { Id: "", password: "", email: "", isActive: false, role: "", lastLoginAt: undefined };
+  return { id: "", password: "", email: "", isActive: false, role: "", lastLoginAt: undefined };
 }
 
 export const AuthUser: MessageFns<AuthUser> = {
   encode(message: AuthUser, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.Id !== "") {
-      writer.uint32(10).string(message.Id);
+    if (message.id !== "") {
+      writer.uint32(10).string(message.id);
     }
     if (message.password !== "") {
       writer.uint32(18).string(message.password);
@@ -90,7 +93,7 @@ export const AuthUser: MessageFns<AuthUser> = {
             break;
           }
 
-          message.Id = reader.string();
+          message.id = reader.string();
           continue;
         }
         case 2: {
@@ -229,7 +232,7 @@ export const ValidateTokenAuthDto: MessageFns<ValidateTokenAuthDto> = {
 };
 
 function createBaseCreateCredentialDto(): CreateCredentialDto {
-  return { email: "", password: "", role: 0 };
+  return { email: "", password: "", role: 0, firstName: "", lastName: "", username: "" };
 }
 
 export const CreateCredentialDto: MessageFns<CreateCredentialDto> = {
@@ -242,6 +245,15 @@ export const CreateCredentialDto: MessageFns<CreateCredentialDto> = {
     }
     if (message.role !== 0) {
       writer.uint32(24).int32(message.role);
+    }
+    if (message.firstName !== "") {
+      writer.uint32(34).string(message.firstName);
+    }
+    if (message.lastName !== "") {
+      writer.uint32(42).string(message.lastName);
+    }
+    if (message.username !== "") {
+      writer.uint32(50).string(message.username);
     }
     return writer;
   },
@@ -275,6 +287,30 @@ export const CreateCredentialDto: MessageFns<CreateCredentialDto> = {
           }
 
           message.role = reader.int32() as any;
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.firstName = reader.string();
+          continue;
+        }
+        case 5: {
+          if (tag !== 42) {
+            break;
+          }
+
+          message.lastName = reader.string();
+          continue;
+        }
+        case 6: {
+          if (tag !== 50) {
+            break;
+          }
+
+          message.username = reader.string();
           continue;
         }
       }

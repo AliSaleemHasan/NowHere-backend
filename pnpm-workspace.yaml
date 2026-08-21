@@ -3,4 +3,13 @@ packages:
   - libs/*
 
 onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@scarf/scarf'
+  - '@swc/core'
+  - bcrypt
+  - mongodb-memory-server
+  - nx
+  - protobufjs
   - sqlite3
+  - unrs-resolver
+

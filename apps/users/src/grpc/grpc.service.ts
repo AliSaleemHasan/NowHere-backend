@@ -7,9 +7,9 @@ import { mapProtoToEntityDto } from './mappers/user-mappers';
 import {
   CreateUserDTO,
   UserSetting,
-  SeenObject,
-  NotSeenDto,
+  UserSeenObject,
   CreateUser,
+  UserNotSeenObject,
 } from 'proto';
 import { tryCatch } from 'nowhere-common';
 
@@ -19,18 +19,18 @@ export class GrpcService {
     private usersService: UsersService,
     private configService: ConfigService,
     private jwt: JwtService,
-  ) { }
+  ) {}
 
   async getAllUsers() {
     return await this.usersService.getAllUsers();
   }
 
   async createUser(createUserDto: CreateUser) {
-    let { error, data } = await tryCatch(
+    const { error, data } = await tryCatch(
       this.usersService.createUser(createUserDto),
     );
     if (error) return {};
-    return data as User;
+    return data;
   }
 
   //TODO: This should be implemented in auth or gateway service
@@ -52,7 +52,7 @@ export class GrpcService {
   async validateToken(token?: string): Promise<User> {
     if (!token) throw new UnauthorizedException('User is not loggedin/found');
 
-    let { error: JwtError, data: payload } = await tryCatch(
+    const { error: JwtError, data: payload } = await tryCatch(
       this.jwt.verifyAsync<any>(token, {
         secret: this.configService.get('ACCESS_SECRET'),
       }),
@@ -61,7 +61,7 @@ export class GrpcService {
     if (JwtError || !payload.user)
       throw new Error('User is not found in the token');
 
-    let { error, data: user } = await tryCatch(
+    const { error, data: user } = await tryCatch(
       this.usersService.getUserByEmail(payload.user.email),
     );
     if (error) throw new UnauthorizedException(error.message);
@@ -81,10 +81,10 @@ export class GrpcService {
 
   // handle seen functionality
 
-  async notSeen(notSeenDto: NotSeenDto) {
+  async notSeen(notSeenDto: UserNotSeenObject) {
     return { seen: await this.usersService.getSeen(notSeenDto) };
   }
-  async setSeen(seenObject: SeenObject) {
+  async setSeen(seenObject: UserSeenObject) {
     return { success: await !!this.usersService.addSeen(seenObject) };
   }
 }

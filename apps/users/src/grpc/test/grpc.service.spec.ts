@@ -111,8 +111,8 @@ describe('Grpc Service (Unit)', () => {
 
     it('should throw when verify returns payload without user', async () => {
       const token = 'tok';
-      (jwtService.verifyAsync as jest.Mock).mockResolvedValue({});
-      (configService.get as jest.Mock).mockReturnValue('secret');
+      jwtService.verifyAsync.mockResolvedValue({});
+      configService.get.mockReturnValue('secret');
 
       await expect(service.validateToken(token)).rejects.toThrow(
         UnauthorizedException,
@@ -128,10 +128,10 @@ describe('Grpc Service (Unit)', () => {
     it('should return payload.user when token valid and user exists', async () => {
       const token = 'tok';
       const payloadUser = { email: 'a' } as any;
-      (jwtService.verifyAsync as jest.Mock).mockResolvedValue({
+      jwtService.verifyAsync.mockResolvedValue({
         user: payloadUser,
       });
-      (configService.get as jest.Mock).mockReturnValue('secret');
+      configService.get.mockReturnValue('secret');
       usersService.getUserByEmail.mockResolvedValue({ email: 'a' } as any);
 
       const res = await service.validateToken(token);
@@ -147,10 +147,8 @@ describe('Grpc Service (Unit)', () => {
 
     it('should throw UnauthorizedException when verifyAsync throws', async () => {
       const token = 'tok';
-      (jwtService.verifyAsync as jest.Mock).mockRejectedValue(
-        new Error('invalid'),
-      );
-      (configService.get as jest.Mock).mockReturnValue('secret');
+      jwtService.verifyAsync.mockRejectedValue(new Error('invalid'));
+      configService.get.mockReturnValue('secret');
 
       await expect(service.validateToken(token)).rejects.toThrow(
         UnauthorizedException,
@@ -189,7 +187,7 @@ describe('Grpc Service (Unit)', () => {
     it('should create and save settings for a user', async () => {
       const userId = 'u1';
       const user = { Id: userId, email: 'x' } as any;
-      (usersService.getUserById as jest.Mock).mockResolvedValue(user);
+      usersService.getUserById.mockResolvedValue(user);
       const created = { user } as any;
       (settingsRepo.create as jest.Mock).mockReturnValue(created);
       (settingsRepo.save as jest.Mock).mockResolvedValue(created);
@@ -197,7 +195,7 @@ describe('Grpc Service (Unit)', () => {
       const res = await service.createUserSettings(userId);
 
       expect(usersService.getUserById).toHaveBeenCalledWith(userId);
-      expect(settingsRepo.create).toHaveBeenCalledWith({ user: user as any });
+      expect(settingsRepo.create).toHaveBeenCalledWith({ user: user });
       expect(settingsRepo.save).toHaveBeenCalledWith(created);
       expect(res).toEqual(created);
     });

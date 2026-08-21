@@ -51,13 +51,13 @@ export class AwsStorageController {
       `Storage service recieved a message from chanel : ${context.getChannel()} `,
     );
 
-    let { keys, notSaved } = await this.storageService.saveLocalFiles(
+    const { keys, notSaved } = await this.storageService.saveLocalFiles(
       data.files,
       data.userId,
     );
 
     if (notSaved.length > 0) {
-      let errorMessage = `Some files are not saved correctly : \n ******************************* ${JSON.stringify(notSaved)}  \n *************`;
+      const errorMessage = `Some files are not saved correctly : \n ******************************* ${JSON.stringify(notSaved)}  \n *************`;
 
       this.logger.error(errorMessage);
 

@@ -18,7 +18,6 @@ export const storageProtoLocalOptions = {
   url: '0.0.0.0:50053',
 };
 
-
 export const storageProtoOptions = {
   package: 'STORAGE',
   protoPath: join(__dirname, 'storage.proto'),

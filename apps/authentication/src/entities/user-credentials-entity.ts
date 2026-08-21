@@ -8,7 +8,7 @@ export enum Roles {
 @Entity('credentials')
 export class Credential {
   @PrimaryGeneratedColumn('uuid')
-  Id: string;
+  id: string;
 
   @Column({ nullable: false })
   @IsStrongPassword({

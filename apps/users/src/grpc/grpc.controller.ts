@@ -31,21 +31,19 @@ import { Observable } from 'rxjs';
 
 @Controller()
 export class GrpcController implements UsersController {
-  constructor(private readonly grpcService: GrpcService) { }
+  constructor(private readonly grpcService: GrpcService) {}
 
-
-  @GrpcMethod(USERS_SERVICE_NAME, "CreateUserInfo")
+  @GrpcMethod(USERS_SERVICE_NAME, 'CreateUserInfo')
   async createUserInfo(request: CreateUser): Promise<User> {
     return mapUserToProto(await this.grpcService.createUser(request));
-
   }
   async getAllUsersInfo(request: EmptyUserInfo): Promise<UsersObject> {
     return { users: await this.grpcService.getAllUsers() };
   }
 
-  @GrpcMethod(USERS_SERVICE_NAME, "getSettings")
+  @GrpcMethod(USERS_SERVICE_NAME, 'getSettings')
   async getSettings(request: UserSettingFetchDTO): Promise<UserSetting> {
-    return await this.grpcService.getUserSetting(request.id) as UserSetting;
+    return (await this.grpcService.getUserSetting(request.id)) as UserSetting;
   }
   // @GrpcMethod(USERS_SERVICE_NAME)
   // async validateUser(validateUserDto: ValidateUserDto): Promise<User> {
@@ -56,7 +54,6 @@ export class GrpcController implements UsersController {
   // async validateToken(request: ValidateTokenDto): Promise<User> {
   //   return await this.grpcService.validateToken(request.token);
   // }
-
 
   async notSeenSnaps(request: UserNotSeenObject): Promise<UserSeenObjects> {
     return await this.grpcService.notSeen(request);

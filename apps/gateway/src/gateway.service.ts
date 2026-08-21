@@ -6,9 +6,7 @@ import { lastValueFrom } from 'rxjs';
 export class GatewayService implements OnModuleInit {
   private credentialsService: any;
 
-  constructor(
-    @Inject('CREDENTIALS_PACKAGE') private client: ClientGrpc,
-  ) {}
+  constructor(@Inject('CREDENTIALS_PACKAGE') private client: ClientGrpc) {}
 
   onModuleInit() {
     this.credentialsService = this.client.getService('Credentials');
@@ -27,8 +25,6 @@ export class GatewayService implements OnModuleInit {
   }
 
   async refresh(token: string) {
-    return await lastValueFrom(
-      this.credentialsService.refreshToken({ token }),
-    );
+    return await lastValueFrom(this.credentialsService.refreshToken({ token }));
   }
 }
