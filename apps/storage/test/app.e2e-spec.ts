@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { StorageModule } from './../src/storage.module';
 
-describe('AwsStorageController (e2e)', () => {
+describe('StorageController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {

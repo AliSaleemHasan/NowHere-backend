@@ -2,14 +2,12 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
-  IsEnum,
-  IsNumber,
   IsNumberString,
   IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 
 export class GeoPointDto {
   @IsOptional()
@@ -25,6 +23,7 @@ export class GeoPointDto {
   @IsNumberString({}, { each: true, message: 'coordinates must be numbers' })
   coordinates: [number, number];
 }
+
 export class CreateSnapStorageDTO {
   @IsString()
   @IsOptional()

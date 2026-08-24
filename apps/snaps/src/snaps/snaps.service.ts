@@ -24,8 +24,8 @@ import {
 } from 'nowhere-common';
 import {
   USERS_SERVICE_NAME,
-  AWS_STORAGE_SERVICE_NAME,
-  AwsStorageClient,
+  STORAGE_SERVICE_NAME,
+  StorageServiceClient,
   UserSetting,
   UsersClient,
 } from 'proto';
@@ -40,7 +40,7 @@ import { FindSnapDTO } from './dto/find-snap.dto';
 export class SnapsService implements OnModuleInit {
   private logger: Logger = new Logger(SnapsService.name);
   private usersService: UsersClient;
-  private storageService: AwsStorageClient;
+  private storageService: StorageServiceClient;
 
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
@@ -54,8 +54,8 @@ export class SnapsService implements OnModuleInit {
   onModuleInit() {
     this.usersService = this.client.getService<UsersClient>(USERS_SERVICE_NAME);
 
-    this.storageService = this.storageClient.getService<AwsStorageClient>(
-      AWS_STORAGE_SERVICE_NAME,
+    this.storageService = this.storageClient.getService<StorageServiceClient>(
+      STORAGE_SERVICE_NAME,
     );
   }
 

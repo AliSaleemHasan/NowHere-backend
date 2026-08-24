@@ -10,6 +10,17 @@ import type { handleUnaryCall, UntypedServiceImplementation } from "@grpc/grpc-j
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
 
+export interface PresignedUploadRequest {
+  key: string;
+  contentType: string;
+  expiresIn: number;
+}
+
+export interface PresignedUploadResponse {
+  uploadUrl: string;
+  key: string;
+}
+
 export interface SignedURL {
   signed: string;
 }
@@ -39,6 +50,113 @@ export interface GetSignedURLDTO {
 export interface GetSignedURLReturn {
   url: string;
 }
+
+function createBasePresignedUploadRequest(): PresignedUploadRequest {
+  return { key: "", contentType: "", expiresIn: 0 };
+}
+
+export const PresignedUploadRequest: MessageFns<PresignedUploadRequest> = {
+  encode(message: PresignedUploadRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.contentType !== "") {
+      writer.uint32(18).string(message.contentType);
+    }
+    if (message.expiresIn !== 0) {
+      writer.uint32(24).int32(message.expiresIn);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PresignedUploadRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePresignedUploadRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.contentType = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.expiresIn = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
+
+function createBasePresignedUploadResponse(): PresignedUploadResponse {
+  return { uploadUrl: "", key: "" };
+}
+
+export const PresignedUploadResponse: MessageFns<PresignedUploadResponse> = {
+  encode(message: PresignedUploadResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.uploadUrl !== "") {
+      writer.uint32(10).string(message.uploadUrl);
+    }
+    if (message.key !== "") {
+      writer.uint32(18).string(message.key);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PresignedUploadResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePresignedUploadResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.uploadUrl = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+};
 
 function createBaseSignedURL(): SignedURL {
   return { signed: "" };
@@ -321,43 +439,49 @@ export const GetSignedURLReturn: MessageFns<GetSignedURLReturn> = {
   },
 };
 
-export interface AwsStorageClient {
+export interface StorageServiceClient {
   uploadPhoto(request: UploadImageDto): Observable<Key>;
 
   getSignedUrl(request: Key): Observable<SignedURL>;
 
   getSignedUrLs(request: Keys): Observable<SignedURLs>;
+
+  getPresignedUploadUrl(request: PresignedUploadRequest): Observable<PresignedUploadResponse>;
 }
 
-export interface AwsStorageController {
+export interface StorageServiceController {
   uploadPhoto(request: UploadImageDto): Promise<Key> | Observable<Key> | Key;
 
   getSignedUrl(request: Key): Promise<SignedURL> | Observable<SignedURL> | SignedURL;
 
   getSignedUrLs(request: Keys): Promise<SignedURLs> | Observable<SignedURLs> | SignedURLs;
+
+  getPresignedUploadUrl(
+    request: PresignedUploadRequest,
+  ): Promise<PresignedUploadResponse> | Observable<PresignedUploadResponse> | PresignedUploadResponse;
 }
 
-export function AwsStorageControllerMethods() {
+export function StorageServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["uploadPhoto", "getSignedUrl", "getSignedUrLs"];
+    const grpcMethods: string[] = ["uploadPhoto", "getSignedUrl", "getSignedUrLs", "getPresignedUploadUrl"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("AwsStorage", method)(constructor.prototype[method], method, descriptor);
+      GrpcMethod("StorageService", method)(constructor.prototype[method], method, descriptor);
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("AwsStorage", method)(constructor.prototype[method], method, descriptor);
+      GrpcStreamMethod("StorageService", method)(constructor.prototype[method], method, descriptor);
     }
   };
 }
 
-export const AWS_STORAGE_SERVICE_NAME = "AwsStorage";
+export const STORAGE_SERVICE_NAME = "StorageService";
 
-export type AwsStorageService = typeof AwsStorageService;
-export const AwsStorageService = {
+export type StorageServiceService = typeof StorageServiceService;
+export const StorageServiceService = {
   uploadPhoto: {
-    path: "/STORAGE.AwsStorage/uploadPhoto",
+    path: "/STORAGE.StorageService/uploadPhoto",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: UploadImageDto): Buffer => Buffer.from(UploadImageDto.encode(value).finish()),
@@ -366,7 +490,7 @@ export const AwsStorageService = {
     responseDeserialize: (value: Buffer): Key => Key.decode(value),
   },
   getSignedUrl: {
-    path: "/STORAGE.AwsStorage/getSignedURL",
+    path: "/STORAGE.StorageService/getSignedURL",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: Key): Buffer => Buffer.from(Key.encode(value).finish()),
@@ -375,7 +499,7 @@ export const AwsStorageService = {
     responseDeserialize: (value: Buffer): SignedURL => SignedURL.decode(value),
   },
   getSignedUrLs: {
-    path: "/STORAGE.AwsStorage/getSignedURLs",
+    path: "/STORAGE.StorageService/getSignedURLs",
     requestStream: false,
     responseStream: false,
     requestSerialize: (value: Keys): Buffer => Buffer.from(Keys.encode(value).finish()),
@@ -383,12 +507,24 @@ export const AwsStorageService = {
     responseSerialize: (value: SignedURLs): Buffer => Buffer.from(SignedURLs.encode(value).finish()),
     responseDeserialize: (value: Buffer): SignedURLs => SignedURLs.decode(value),
   },
+  getPresignedUploadUrl: {
+    path: "/STORAGE.StorageService/getPresignedUploadURL",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: PresignedUploadRequest): Buffer =>
+      Buffer.from(PresignedUploadRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): PresignedUploadRequest => PresignedUploadRequest.decode(value),
+    responseSerialize: (value: PresignedUploadResponse): Buffer =>
+      Buffer.from(PresignedUploadResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): PresignedUploadResponse => PresignedUploadResponse.decode(value),
+  },
 } as const;
 
-export interface AwsStorageServer extends UntypedServiceImplementation {
+export interface StorageServiceServer extends UntypedServiceImplementation {
   uploadPhoto: handleUnaryCall<UploadImageDto, Key>;
   getSignedUrl: handleUnaryCall<Key, SignedURL>;
   getSignedUrLs: handleUnaryCall<Keys, SignedURLs>;
+  getPresignedUploadUrl: handleUnaryCall<PresignedUploadRequest, PresignedUploadResponse>;
 }
 
 interface MessageFns<T> {

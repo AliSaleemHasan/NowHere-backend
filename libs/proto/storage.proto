@@ -2,10 +2,22 @@ syntax = "proto3";
 
 package STORAGE;
 
-service AwsStorage {
+service StorageService {
   rpc uploadPhoto (UploadImageDto) returns (Key);
   rpc getSignedURL (Key) returns (SignedURL);
   rpc getSignedURLs (Keys) returns (SignedURLs);
+  rpc getPresignedUploadURL (PresignedUploadRequest) returns (PresignedUploadResponse);
+}
+
+message PresignedUploadRequest {
+  string key = 1;
+  string contentType = 2;
+  int32 expiresIn = 3;
+}
+
+message PresignedUploadResponse {
+  string uploadUrl = 1;
+  string key = 2;
 }
 
 message SignedURL {

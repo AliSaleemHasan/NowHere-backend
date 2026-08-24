@@ -1,4 +1,4 @@
-import { IsNumber, IsString, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class StroageEnvVariables {
   @IsNumber()
@@ -25,6 +25,10 @@ export class StroageEnvVariables {
       'Folder PATH to get uploded temporary file from (USED in STROAGE too)',
   })
   STATIC_TMP_FILES!: string;
+
+  @IsOptional()
+  @IsString()
+  INTERNAL_API_SECRET?: string;
 
   @IsString()
   SNAPS_URL!: string;

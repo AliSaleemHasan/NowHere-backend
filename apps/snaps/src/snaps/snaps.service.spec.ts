@@ -9,7 +9,7 @@ import {
   USERS_GRPC,
   handleMongoError,
 } from 'nowhere-common';
-import { USERS_SERVICE_NAME, AWS_STORAGE_SERVICE_NAME } from 'proto';
+import { USERS_SERVICE_NAME, STORAGE_SERVICE_NAME } from 'proto';
 import {
   BadRequestException,
   ForbiddenException,
@@ -119,7 +119,7 @@ describe('SnapsService', () => {
       service.onModuleInit();
       expect(usersClient.getService).toHaveBeenCalledWith(USERS_SERVICE_NAME);
       expect(storageClient.getService).toHaveBeenCalledWith(
-        AWS_STORAGE_SERVICE_NAME,
+        STORAGE_SERVICE_NAME,
       );
     });
   });

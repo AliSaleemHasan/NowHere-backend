@@ -15,8 +15,8 @@ import { STORAGE_GRPC, CREDENTIALS_GRPC, tryCatch } from 'nowhere-common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
   AuthUserRole,
-  AWS_STORAGE_SERVICE_NAME,
-  AwsStorageClient,
+  STORAGE_SERVICE_NAME,
+  StorageServiceClient,
   CREDENTIALS_SERVICE_NAME,
   CredentialsClient,
   UserNotSeenObject,
@@ -31,7 +31,7 @@ import { ConfigService } from '@nestjs/config';
 export class UsersService implements OnModuleInit {
   private readonly logger = new Logger(UsersService.name);
 
-  private storageService: AwsStorageClient;
+  private storageService: StorageServiceClient;
   private credentialsService: CredentialsClient;
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
@@ -47,8 +47,8 @@ export class UsersService implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.storageService = this.storageClient.getService<AwsStorageClient>(
-      AWS_STORAGE_SERVICE_NAME,
+    this.storageService = this.storageClient.getService<StorageServiceClient>(
+      STORAGE_SERVICE_NAME,
     );
 
     this.credentialsService =
