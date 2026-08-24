@@ -86,6 +86,5 @@ COPY --from=build /usr/src /usr/src/
 
 ENV NODE_ENV=production
 EXPOSE 3005
-EXPOSE 50051
 
 CMD ["dumb-init","node", "apps/gateway/dist/apps/gateway/src/main.js"]
