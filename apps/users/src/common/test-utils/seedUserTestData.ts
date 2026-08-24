@@ -1,4 +1,4 @@
-import { User } from 'apps/users/src/users/entities/user.entity';
+import { User } from '../../users/entities/user.entity';
 import { Repository } from 'typeorm';
 export const seedUserTestData = async (repo: Repository<User>) => {
   //  create multiple users

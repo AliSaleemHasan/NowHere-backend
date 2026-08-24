@@ -58,8 +58,8 @@ export class GrpcService {
       }),
     );
 
-    if (JwtError || !payload.user)
-      throw new Error('User is not found in the token');
+    if (JwtError || !payload?.user)
+      throw new UnauthorizedException('User is not found in the token');
 
     const { error, data: user } = await tryCatch(
       this.usersService.getUserByEmail(payload.user.email),

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
 import { SnapsModule } from './snaps/snaps.module';
@@ -8,6 +8,8 @@ import { join } from 'path';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedModule } from './seed/seed.module';
 import { SnapsEnvVariables } from './utils/snaps-env-variables';
+import { InternalAuthMiddleware } from './middlewares/internal-auth.middleware';
+
 @Module({
   imports: [
     JwtModule.register({
@@ -35,4 +37,9 @@ import { SnapsEnvVariables } from './utils/snaps-env-variables';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    const tmpPath = process.env.STATIC_TMP_FILES || 'tmp';
+    consumer.apply(InternalAuthMiddleware).forRoutes(`/${tmpPath}/*`);
+  }
+}

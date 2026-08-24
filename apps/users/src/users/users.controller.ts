@@ -19,6 +19,7 @@ import { JwtGuard, ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AddUsersPhotoDocs } from './docs/add-user-image.doc';
 import { Roles } from './entities/user.entity';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
 @ApiTags('users')
 @Controller('users')
@@ -41,7 +42,8 @@ export class UsersController {
 
   @Put('image')
   @AddUsersPhotoDocs()
-  @UseGuards(JwtGuard)
+  @UseGuards(JwtGuard, ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 3600000 } })
   @UseInterceptors(FileInterceptor('photo', {}))
   async updateUserImage(
     @ReqUser('Id') id: string,

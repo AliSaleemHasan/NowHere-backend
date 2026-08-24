@@ -2,9 +2,10 @@
 import { Test } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { UsersController } from '../users.controller';
-import { JwtGuard, MockJwtGuard } from 'nowhere-common';
+import { JwtGuard, MockJwtGuard, RoleGuard } from 'nowhere-common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 describe('UsersController (unit)', () => {
   let controller: UsersController;
@@ -28,6 +29,10 @@ describe('UsersController (unit)', () => {
     })
       .overrideGuard(JwtGuard)
       .useClass(MockJwtGuard)
+      .overrideGuard(RoleGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get(UsersController);

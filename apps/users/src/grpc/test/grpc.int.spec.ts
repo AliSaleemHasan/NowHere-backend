@@ -4,21 +4,22 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { User } from '../../users/entities/user.entity';
 import { GrpcController } from '../grpc.controller';
 import { Settings } from '../../settings/entities/settings.entity';
+import { SnapSeen } from '../../users/entities/snaps-seen.entity';
 import { UsersService } from '../../users/users.service';
 import { GrpcService } from '../grpc.service';
+import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
 
-// 👇 Use fake data helpers
 const makeUser = (overrides?: Partial<User>): User =>
   ({
-    Id: 'u1',
+    id: 'u1',
     email: 'jacob@test.com',
-    password: 'hashedpass',
     firstName: 'Jacob',
     lastName: 'test',
+    bio: '',
+    isActive: true,
     ...overrides,
   }) as User;
 
@@ -29,6 +30,13 @@ describe('GrpcModule (integration)', () => {
   let moduleRef: TestingModule;
 
   beforeEach(async () => {
+    const mockGrpcClient = {
+      getService: jest.fn().mockReturnValue({
+        validateAuthUser: jest.fn(),
+        signup: jest.fn(),
+      }),
+    };
+
     moduleRef = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
@@ -36,9 +44,9 @@ describe('GrpcModule (integration)', () => {
           database: ':memory:',
           dropSchema: true,
           synchronize: true,
-          entities: [User, Settings],
+          entities: [User, Settings, SnapSeen],
         }),
-        TypeOrmModule.forFeature([User, Settings]),
+        TypeOrmModule.forFeature([User, Settings, SnapSeen]),
       ],
       controllers: [GrpcController],
       providers: [
@@ -52,6 +60,14 @@ describe('GrpcModule (integration)', () => {
           provide: ConfigService,
           useValue: { get: jest.fn(() => 'secret') },
         },
+        {
+          provide: STORAGE_GRPC,
+          useValue: mockGrpcClient,
+        },
+        {
+          provide: CREDENTIALS_GRPC,
+          useValue: mockGrpcClient,
+        },
       ],
     }).compile();
 
@@ -63,79 +79,56 @@ describe('GrpcModule (integration)', () => {
 
     // Seed a test user
     const user = makeUser();
-    await userRepo.save(user);
-
-    // Mock bcrypt globally
-    jest.spyOn(bcrypt, 'compare').mockImplementation(async (pw, hash) => {
-      return pw === 'plaintext' && hash === 'hashedpass';
-    });
+    await userRepo.save(userRepo.create(user));
   });
 
   afterEach(() => {
     jest.resetAllMocks();
   });
 
-  describe('validateUser', () => {
-    it('should return user when credentials are correct', async () => {
-      const result = await controller.validateUser({
-        email: 'jacob@test.com',
-        password: 'plaintext',
+  describe('createUserInfo', () => {
+    it('should create user info in db and return proto user', async () => {
+      const result = await controller.createUserInfo({
+        email: 'alice@test.com',
+        firstName: 'Alice',
+        lastName: 'Smith',
+        bio: 'Hello world',
+        authId: 'auth-456',
       });
 
-      expect(result.email).toBe('jacob@test.com');
-    });
-
-    it('should throw when password wrong', async () => {
-      await expect(
-        controller.validateUser({ email: 'jacob@test.com', password: 'wrong' }),
-      ).rejects.toThrow();
+      expect(result.email).toBe('alice@test.com');
+      const savedUser = await userRepo.findOneBy({ email: 'alice@test.com' });
+      expect(savedUser).toBeDefined();
+      expect(savedUser?.firstName).toBe('Alice');
     });
   });
 
-  describe('validateToken', () => {
-    it('should return user from valid token', async () => {
-      const mockJwt = moduleRef.get<JwtService>(JwtService);
-      (mockJwt.verifyAsync as jest.Mock).mockResolvedValue({
-        user: { email: 'jacob@test.com' },
-      });
-
-      const result = await controller.validateToken({ token: 'tok' });
-
-      expect(result.email).toBe('jacob@test.com');
-    });
-
-    it('should throw when jwt invalid', async () => {
-      const mockJwt = moduleRef.get<JwtService>(JwtService);
-      (mockJwt.verifyAsync as jest.Mock).mockRejectedValue(
-        new Error('bad token'),
-      );
-
-      await expect(
-        controller.validateToken({ token: 'tok' }),
-      ).rejects.toThrow();
+  describe('getAllUsersInfo', () => {
+    it('should return all users in the system', async () => {
+      const result = await controller.getAllUsersInfo({});
+      expect(result.users).toHaveLength(1);
+      expect(result.users[0].email).toBe('jacob@test.com');
     });
   });
 
-  describe('getUserSetting', () => {
+  describe('getSettings', () => {
     it('should create settings if none exist', async () => {
-      const res = await controller.getUserSetting({ id: 'u1' });
+      const res = await controller.getSettings({ id: 'u1' });
       expect(res).toBeDefined();
       expect(await settingsRepo.find()).toHaveLength(1);
     });
 
     it('should return existing settings without creating new', async () => {
-      // pre-create settings
+      const existingUser = await userRepo.findOneBy({ id: 'u1' });
       await settingsRepo.save(
         settingsRepo.create({
-          user: { Id: 'u1' } as any,
+          user: existingUser as User,
           maxDistance: 100000,
         }),
       );
 
-      const res = await controller.getUserSetting({ id: 'u1' });
+      const res = await controller.getSettings({ id: 'u1' });
       expect(res).toMatchObject({ maxDistance: 100000 });
-
-      // still only 1 settings in db
       expect(await settingsRepo.find()).toHaveLength(1);
     });
   });

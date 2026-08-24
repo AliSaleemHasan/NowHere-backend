@@ -7,6 +7,7 @@ import { GrpcModule } from './grpc/grpc.module';
 import * as path from 'path';
 import { getValidateFn } from 'nowhere-common';
 import { AuthEnvVariables } from './utils/auth-env-variables';
+import { ThrottlerModule } from '@nestjs/throttler';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -14,6 +15,12 @@ import { AuthEnvVariables } from './utils/auth-env-variables';
       isGlobal: true,
       envFilePath: [path.resolve(process.cwd(), '.env')],
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 3600000, // 1 hour
+        limit: 10, // 10 requests per hour
+      },
+    ]),
     JwtModule.register({ global: true }),
     GrpcModule,
     TypeOrmModule.forRootAsync({

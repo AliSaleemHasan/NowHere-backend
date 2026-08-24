@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { UsersController } from '../users.controller';
 import { UsersService } from '../users.service';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
@@ -9,10 +10,22 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { seedUserTestData } from '../../common/test-utils/seedUserTestData';
 
+import { SnapSeen } from '../entities/snaps-seen.entity';
+import { Settings } from '../../settings/entities/settings.entity';
+import { CREDENTIALS_GRPC, STORAGE_GRPC, RoleGuard } from 'nowhere-common';
+import { ThrottlerGuard } from '@nestjs/throttler';
+
 describe('UserController (integration)', () => {
   let controller: UsersController;
 
   beforeEach(async () => {
+    const mockGrpcClient = {
+      getService: jest.fn().mockReturnValue({
+        validateAuthUser: jest.fn(),
+        signup: jest.fn(),
+      }),
+    };
+
     const module = await Test.createTestingModule({
       controllers: [UsersController],
       imports: [
@@ -20,19 +33,25 @@ describe('UserController (integration)', () => {
           type: 'sqlite',
           database: ':memory:',
           dropSchema: true,
-          entities: [User],
+          entities: [User, Settings, SnapSeen],
           synchronize: true,
         }),
-        TypeOrmModule.forFeature([User]),
+        TypeOrmModule.forFeature([User, Settings, SnapSeen]),
       ],
       providers: [
         UsersService,
         { provide: JwtService, useValue: {} },
-        { provide: ConfigService, useValue: {} },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
+        { provide: STORAGE_GRPC, useValue: mockGrpcClient },
+        { provide: CREDENTIALS_GRPC, useValue: mockGrpcClient },
       ],
     })
       .overrideGuard(JwtGuard)
       .useClass(MockJwtGuard)
+      .overrideGuard(RoleGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<UsersController>(UsersController);
@@ -47,9 +66,10 @@ describe('UserController (integration)', () => {
       expect(user?.email).toBe('Jacob@test.com');
     });
 
-    it('Should return null when not found ', async () => {
-      const user = await controller.getByEmail('tes@test.com');
-      expect(user).toBeNull();
+    it('Should throw NotFoundException when not found ', async () => {
+      await expect(controller.getByEmail('tes@test.com')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

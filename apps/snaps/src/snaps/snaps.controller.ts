@@ -120,30 +120,34 @@ export class SnapsController {
   }
 
   @Get('near/:lng/:lat')
+  @UseGuards(JwtGuard)
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   @FindNearSnapsDocs()
   async findNear(
+    @ReqUser('id') userId: string,
     @Param() location: FindLocationNear,
     @Query() query: FindSnapDTO,
   ) {
     return await this.snapsService.getSeenSnaps(
       {
         ...query,
-        location: [location.lng, location.lat],
+        location: [Number(location.lng), Number(location.lat)],
       },
-      query.id,
+      userId || query.id,
       false,
     );
   }
 
   @Get('seen/:lng/:lat')
   @UseGuards(JwtGuard)
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
   async getSeenSnaps(
-    @ReqUser('Id') _userId: string,
+    @ReqUser('id') _userId: string,
     @Param() location: FindLocationNear,
     @Query() query: FindSnapDTO,
   ) {
     return await this.snapsService.getSeenSnaps(
-      { ...query, location: [location.lng, location.lat] },
+      { ...query, location: [Number(location.lng), Number(location.lat)] },
       _userId,
       false,
     );

@@ -1,4 +1,4 @@
-import { IsNumber, IsString, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class SnapsEnvVariables {
   @IsNumber()
@@ -31,6 +31,10 @@ export class SnapsEnvVariables {
       'Folder PATH to get uploded temporary file from (USED in STROAGE too)',
   })
   STATIC_TMP_FILES!: string;
+
+  @IsOptional()
+  @IsString()
+  INTERNAL_API_SECRET?: string;
 
   @IsString()
   GATEWAY_URL!: string;

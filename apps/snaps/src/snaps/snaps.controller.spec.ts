@@ -90,7 +90,7 @@ describe('SnapsController', () => {
     it('should call service.getSeenSnaps', async () => {
       const location: any = { lng: 1, lat: 2 };
       const query: any = { id: 'u1' };
-      await controller.findNear(location, query);
+      await controller.findNear('u1', location, query);
       expect(service.getSeenSnaps).toHaveBeenCalledWith(
         expect.objectContaining({
           location: [1, 2],
