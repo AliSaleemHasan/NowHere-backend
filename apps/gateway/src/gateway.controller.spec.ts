@@ -83,5 +83,16 @@ describe('GatewayController', () => {
       expect(signupSpy).toHaveBeenCalledWith(signupDto);
       expect(result).toEqual({ success: true });
     });
+
+    it('should return user payload for auth/me', () => {
+      const mockUser = {
+        id: '123',
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+      };
+      const result = gatewayController.getMe(mockUser as any);
+      expect(result).toEqual(mockUser);
+    });
   });
 });

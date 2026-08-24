@@ -44,7 +44,7 @@ export class GatewayController {
     return await this.gatewayService.refresh(token);
   }
 
-  @Get('users/me')
+  @Get('auth/me')
   @UseGuards(AuthGuard)
   getMe(@ReqUser() user: User) {
     return user;
