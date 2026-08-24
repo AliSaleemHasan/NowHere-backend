@@ -11,6 +11,8 @@
   "author": "Ali Hasan",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.1116.0",
+    "@google-cloud/secret-manager": "^7.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/mapped-types": "*",
