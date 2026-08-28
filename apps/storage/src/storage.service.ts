@@ -21,6 +21,21 @@ export class StorageService {
   ) {}
 
   /**
+   * Generates a unique key for presigned uploads
+   */
+  generatePresignedUploadKey(
+    userId: string,
+    options?: { filename?: string; prefix?: string },
+  ): string {
+    const today = new Date().toISOString().split('T')[0];
+    const uniqueSuffix =
+      Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+    const ext = options?.filename ? options.filename.split('.').pop() : 'jpg';
+    const folder = options?.prefix || 'snaps';
+    return `${folder}/${today}/${userId || 'user'}/${uniqueSuffix}.${ext}`;
+  }
+
+  /**
    * Generates a presigned upload URL for direct client upload
    */
   async getPresignedUploadUrl(

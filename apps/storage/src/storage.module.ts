@@ -1,16 +1,13 @@
 import { Module } from '@nestjs/common';
 import { StorageService } from './storage.service';
-import { StorageController } from './storage.controller';
-import { StorageGrpcController } from './storage.grpc.controller';
+import { StorageNatsController } from './controllers/storage.nats.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { JwtModule } from '@nestjs/jwt';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import {
-  MICROSERVICES,
   configuration,
   getValidateFn,
+  NatsClientModule,
 } from 'nowhere-common';
 import { StroageEnvVariables } from './utils/storage-env-variables';
 import {
@@ -21,7 +18,7 @@ import {
 
 @Module({
   imports: [
-    JwtModule.register({}),
+    NatsClientModule.register('NATS_CLIENT'),
     ConfigModule.forRoot({
       validate: getValidateFn(StroageEnvVariables),
       isGlobal: true,
@@ -30,23 +27,13 @@ import {
     CacheModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        ttl: configService.get('CACHE_TTL'),
-        stores: [new KeyvRedis('redis://redis:6379')],
+        ttl: configService.get('CACHE_TTL') || 3600,
+        stores: [new KeyvRedis(configService.get('REDIS_URL') || 'redis://redis:6379')],
       }),
       inject: [ConfigService],
     }),
-    ClientsModule.register([
-      {
-        name: MICROSERVICES.STORAGE.redis?.package || 'STORAGE_REDIS',
-        transport: Transport.REDIS,
-        options: {
-          host: 'redis',
-          port: Number(MICROSERVICES.STORAGE.redis?.redisPort) || 6379,
-        },
-      },
-    ]),
   ],
-  controllers: [StorageController, StorageGrpcController],
+  controllers: [StorageNatsController],
   providers: [
     {
       provide: STORAGE_STRATEGY,
