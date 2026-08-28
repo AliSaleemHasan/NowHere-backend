@@ -6,7 +6,11 @@ import {
   IsString,
   IsStrongPassword,
 } from 'class-validator';
-import { AuthUserRole } from 'proto';
+
+export enum AuthUserRole {
+  ADMIN = 'ADMIN',
+  USER = 'USER',
+}
 
 export class CreateCredentialDTO {
   @IsEmail({}, { message: 'Invalid email address format' })
@@ -42,6 +46,5 @@ export class CreateCredentialDTO {
   username?: string;
 
   @IsOptional()
-  @IsEnum(AuthUserRole, { message: 'Invalid user role' })
-  role?: AuthUserRole;
+  role?: string;
 }

@@ -9,27 +9,40 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class GatewayAuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<Request>();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Missing Authorization token');
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
         secret: this.configService.get('ACCESS_SECRET'),
       });
-      // 💡 We're assigning the payload to the request object here
-      // so that we can access it in our route handlers
-      request['user'] = payload;
+
+      const user = payload.user || payload;
+      const userId = user.id || user.Id || payload.sub;
+
+      // Inject identity headers for downstream service calls
+      request.headers['x-user-id'] = userId;
+      request.headers['x-user-email'] = user.email || '';
+      request.headers['x-user-role'] = user.role || 'USER';
+
+      request['user'] = {
+        id: userId,
+        Id: userId,
+        _id: userId,
+        email: user.email,
+        role: user.role,
+      };
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid or expired token');
     }
     return true;
   }
@@ -39,3 +52,6 @@ export class AuthGuard implements CanActivate {
     return type === 'Bearer' ? token : undefined;
   }
 }
+
+// Keep backward compatibility export
+export { GatewayAuthGuard as AuthGuard };

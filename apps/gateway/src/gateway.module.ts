@@ -1,16 +1,15 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { GatewayController } from './gateway.controller';
-import { GatewayService } from './gateway.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { credentialsProtoOptions } from 'proto';
+import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import * as path from 'path';
-import {
-  SnapsProxyMiddleware,
-  UsersProxyMiddleware,
-  StorageProxyMiddleware,
-} from './proxy/service-proxy.middleware';
+import { NatsClientModule } from 'nowhere-common';
+import { TerminusModule } from '@nestjs/terminus';
+import { GatewayAuthController } from './controllers/gateway-auth.controller';
+import { GatewayUsersController } from './controllers/gateway-users.controller';
+import { GatewaySnapsController } from './controllers/gateway-snaps.controller';
+import { GatewayStorageController } from './controllers/gateway-storage.controller';
+import { HealthController } from './health.controller';
+import { GatewayAuthGuard } from './guards/auth.guard';
 
 @Module({
   imports: [
@@ -21,25 +20,17 @@ import {
     JwtModule.register({
       global: true,
     }),
-    // Only the Authentication gRPC client — needed for login/signup/refresh.
-    // All other services are reached via HTTP reverse proxy.
-    ClientsModule.register([
-      {
-        name: 'CREDENTIALS_PACKAGE',
-        transport: Transport.GRPC,
-        options: credentialsProtoOptions,
-      },
-    ]),
+    NatsClientModule.register('NATS_CLIENT'),
+    TerminusModule,
   ],
-  controllers: [GatewayController],
-  providers: [GatewayService],
+  controllers: [
+    GatewayAuthController,
+    GatewayUsersController,
+    GatewaySnapsController,
+    GatewayStorageController,
+    HealthController,
+  ],
+  providers: [GatewayAuthGuard],
+  exports: [GatewayAuthGuard],
 })
-export class GatewayModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    // Proxy all non-auth traffic to downstream services.
-    // Auth endpoints (auth/*) are handled natively by GatewayController.
-    consumer.apply(SnapsProxyMiddleware).forRoutes('snaps');
-    consumer.apply(UsersProxyMiddleware).forRoutes('users');
-    consumer.apply(StorageProxyMiddleware).forRoutes('storage');
-  }
-}
+export class GatewayModule {}
