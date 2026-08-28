@@ -8,3 +8,4 @@ export * from './loggers';
 export * from './env-validation';
 export * from './utils';
 export * from './secrets';
+export * from './nats';
