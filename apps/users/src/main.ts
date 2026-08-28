@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { AuthModule } from './app.module';
+import { UsersAppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import {
   setupSwagger,
@@ -8,12 +8,10 @@ import {
 } from 'nowhere-common';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
-
 import helmet from 'helmet';
-import { usersProtoOptions } from 'proto';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AuthModule);
+  const app = await NestFactory.create(UsersAppModule);
   app.use(helmet());
 
   setupSwagger(app, { port: 3001, name: 'users' });
@@ -33,8 +31,10 @@ async function bootstrap() {
     }),
   );
   app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.GRPC,
-    options: usersProtoOptions,
+    transport: Transport.NATS,
+    options: {
+      servers: [process.env.NATS_URL || 'nats://nats:4222'],
+    },
   });
   await app.startAllMicroservices();
 

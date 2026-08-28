@@ -4,143 +4,48 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Roles, User } from './entities/user.entity';
+import { User } from './entities/user.entity';
 import { In, Not, Repository } from 'typeorm';
-import { CreateUserDTO } from './dto/create-user.dto';
 import { Settings } from '../settings/entities/settings.entity';
-import { STORAGE_GRPC, CREDENTIALS_GRPC, tryCatch } from 'nowhere-common';
-import { ClientGrpc } from '@nestjs/microservices';
-import {
-  AuthUserRole,
-  STORAGE_SERVICE_NAME,
-  StorageServiceClient,
-  CREDENTIALS_SERVICE_NAME,
-  CredentialsClient,
-  UserNotSeenObject,
-  UserSeenObject,
-} from 'proto';
-import { firstValueFrom } from 'rxjs';
+import { ClientProxy } from '@nestjs/microservices';
 import { SnapSeen } from './entities/snaps-seen.entity';
-
-import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+import {
+  StoragePatterns,
+  UploadPhotoPayload,
+  SignedUrlPayload,
+} from 'contracts';
+import { CreateUserDTO } from 'nowhere-common/dto/users/create-user.dto';
 
 @Injectable()
-export class UsersService implements OnModuleInit {
+export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
-  private storageService: StorageServiceClient;
-  private credentialsService: CredentialsClient;
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(SnapSeen) private snapSeenRepo: Repository<SnapSeen>,
-
-    @Inject(STORAGE_GRPC)
-    private storageClient: ClientGrpc,
-    @Inject(CREDENTIALS_GRPC)
-    private credentialsClient: ClientGrpc,
     @InjectRepository(Settings)
     private settingsRepository: Repository<Settings>,
-    private configService: ConfigService,
+    @Inject('NATS_CLIENT') private natsClient: ClientProxy,
   ) {}
 
-  onModuleInit() {
-    this.storageService = this.storageClient.getService<StorageServiceClient>(
-      STORAGE_SERVICE_NAME,
-    );
-
-    this.credentialsService =
-      this.credentialsClient.getService<CredentialsClient>(
-        CREDENTIALS_SERVICE_NAME,
-      );
-
-    // Fire-and-forget: don't block startup — authentication gRPC server
-    // may not be ready yet when both services start simultaneously.
-    this.seedAdminWithRetry();
-  }
-
-  async createUser(createUserDto: CreateUserDTO) {
+  async createUser(
+    createUserDto: Partial<CreateUserDTO> & {
+      id?: string;
+      bio?: string;
+      authId?: string;
+    },
+  ) {
+    const userId = createUserDto.id || createUserDto.authId;
     const user = this.userRepository.create({
       ...createUserDto,
-      id: createUserDto.id, // Ensure Explicit ID assignment
+      id: userId,
     });
     return this.userRepository.save(user);
   }
 
-  private async seedAdminWithRetry(
-    retries = 5,
-    delayMs = 5000,
-  ): Promise<void> {
-    // Wait before the first attempt so both services finish bootstrapping
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        await this.seedAdmin();
-        return;
-      } catch (err) {
-        this.logger.warn(
-          `seedAdmin attempt ${attempt}/${retries} failed: ${err?.message}. ` +
-            (attempt < retries ? `Retrying in ${delayMs}ms...` : 'Giving up.'),
-        );
-        if (attempt < retries) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
-    }
-  }
-
-  async seedAdmin() {
-    // Check if admin user profile (User Entity) already exists
-    const email = this.configService.get<string>('ADMIN_EMAIL') as string;
-    const password = this.configService.get<string>('ADMIN_PASSWORD') as string;
-
-    // first check if admin credentials exist
-    const { error, data: adminCredentials } = await tryCatch(
-      firstValueFrom(
-        this.credentialsService.validateAuthUser({ email, password }),
-      ),
-    );
-
-    if (adminCredentials) {
-      this.logger.log('Admin user already exists, skipping seeding.');
-      return;
-    }
-
-    const { error: SignupError, data: adminUser } = await tryCatch(
-      firstValueFrom(
-        this.credentialsService.signup({
-          email,
-          password,
-          role: AuthUserRole.ADMIN,
-          firstName: 'admin',
-          lastName: 'admin',
-          username: 'admin',
-        }),
-      ),
-    );
-
-    if (SignupError || !adminUser) {
-      throw new Error(SignupError?.message || 'Admin User Signup Failed');
-    }
-
-    await this.createUser({
-      id: adminUser.user?.id,
-      bio: '',
-      email,
-      firstName: 'admin',
-      lastName: 'admin',
-    });
-
-    this.logger.log(
-      `Admin user seeded successfully with ID: ${adminUser.user?.id}`,
-    );
-  }
-  //   getUsers() just for admin (to be created when adding authorization)
-
-  // implement getUserByEmail
   async getUserByEmail(email: string) {
     const user = await this.userRepository.findOne({ where: { email } });
     if (!user) throw new NotFoundException('User not found!');
@@ -148,18 +53,31 @@ export class UsersService implements OnModuleInit {
   }
 
   async getUserById(id: string) {
-    // each time get user is performed, aws call must be done to get the image
-
     const user = await this.userRepository.findOne({ where: { id } });
-
     if (!user) throw new NotFoundException('User not found!');
-    let userImage = { signed: '' };
+    return user;
+  }
+
+  async getUserWithImage(id: string) {
+    const user = await this.getUserById(id);
+
+    let signedUrl = '';
     if (user.image) {
-      userImage = await firstValueFrom(
-        this.storageService.getSignedUrl({ key: user.image }),
-      );
+      try {
+        const res = await firstValueFrom(
+          this.natsClient.send<{ signed: string }, SignedUrlPayload>(
+            StoragePatterns.GET_SIGNED_URL,
+            { key: user.image },
+          ),
+        );
+        signedUrl = res?.signed || '';
+      } catch (err) {
+        this.logger.warn(
+          `Failed to fetch signed url for user ${id}: ${err?.message}`,
+        );
+      }
     }
-    return { user, userImage: userImage.signed };
+    return { user, userImage: signedUrl };
   }
 
   async getAllUsers() {
@@ -167,23 +85,24 @@ export class UsersService implements OnModuleInit {
   }
 
   async setUserPhoto(imageFile: Buffer, userId: string) {
-    // first try to upload it to the s3 bucket
     const imageKey = await firstValueFrom(
-      this.storageService.uploadPhoto({
-        image: imageFile,
-        userId,
-      }),
+      this.natsClient.send<{ key: string }, UploadPhotoPayload>(
+        StoragePatterns.UPLOAD_PHOTO,
+        {
+          image: imageFile,
+          userId,
+        },
+      ),
     );
 
-    if (!imageKey.key)
-      throw new BadRequestException('Error loading Image to AWS s3');
-
-    // now get the signedURL
-    // NOTE: yes this takes too much time, however the user will not change profile image every day!
-    // so it is ok if it takes some time..
+    if (!imageKey?.key)
+      throw new BadRequestException('Error loading Image to storage');
 
     const signedURL = await firstValueFrom(
-      this.storageService.getSignedUrl(imageKey),
+      this.natsClient.send<{ signed: string }, SignedUrlPayload>(
+        StoragePatterns.GET_SIGNED_URL,
+        { key: imageKey.key },
+      ),
     );
 
     if (!signedURL)
@@ -196,8 +115,6 @@ export class UsersService implements OnModuleInit {
     if (!user) throw new NotFoundException('User not found');
 
     const updatedUser = await this.userRepository.save(user);
-
-    // remove sensitive field
     return { user: updatedUser, userImage: signedURL.signed };
   }
 
@@ -213,12 +130,10 @@ export class UsersService implements OnModuleInit {
     }
 
     return this.createUserSettings(id);
-
-    // create user settings
   }
 
   async createUserSettings(userId: string) {
-    const { user, userImage } = await this.getUserById(userId);
+    const user = await this.getUserById(userId);
 
     const settings = this.settingsRepository.create({
       user,
@@ -227,20 +142,20 @@ export class UsersService implements OnModuleInit {
     return await this.settingsRepository.save(settings);
   }
 
-  // handle seen operations
-
-  async addSeen(seenObject: UserSeenObject) {
+  async addSeen(seenObject: { snapId: string; userId: string }) {
     const seen = this.snapSeenRepo.create({
       snapId: seenObject.snapId,
       userId: seenObject.userId,
     });
 
-    const savedSeen = await this.snapSeenRepo.save(seen);
-
-    return savedSeen;
+    return await this.snapSeenRepo.save(seen);
   }
 
-  async getSeen(notSeenDTO: UserNotSeenObject) {
+  async getSeen(notSeenDTO: {
+    seen: boolean;
+    userId: string;
+    snapIds?: string[];
+  }) {
     const { seen, userId, snapIds } = notSeenDTO;
 
     return await this.snapSeenRepo.find({

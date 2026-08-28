@@ -6,7 +6,6 @@ import { Repository } from 'typeorm';
 import { SnapSeen } from '../entities/snaps-seen.entity';
 import { Settings } from '../../settings/entities/settings.entity';
 import { ConfigService } from '@nestjs/config';
-import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
 import { NotFoundException } from '@nestjs/common';
 
 describe('UsersService (unit)', () => {
@@ -16,17 +15,9 @@ describe('UsersService (unit)', () => {
   let settingsRepo: jest.Mocked<Repository<Settings>>;
 
   beforeEach(async () => {
-    const mockGrpcClient = {
-      getService: jest.fn().mockReturnValue({
-        validateAuthUser: jest.fn(),
-        signup: jest.fn(),
-        getSignedUrl: jest.fn(),
-        uploadPhoto: jest.fn(),
-      }),
-    };
-
     const module = await Test.createTestingModule({
       providers: [
+        { provide: "NATS_CLIENT", useValue: { send: jest.fn(), emit: jest.fn() } },
         UsersService,
         {
           provide: getRepositoryToken(User),
@@ -59,14 +50,6 @@ describe('UsersService (unit)', () => {
           provide: ConfigService,
           useValue: { get: jest.fn() },
         },
-        {
-          provide: STORAGE_GRPC,
-          useValue: mockGrpcClient,
-        },
-        {
-          provide: CREDENTIALS_GRPC,
-          useValue: mockGrpcClient,
-        },
       ],
     }).compile();
 
@@ -90,12 +73,12 @@ describe('UsersService (unit)', () => {
     userRepo.save.mockResolvedValue(entity);
 
     const result = await service.createUser(dto);
-    expect(userRepo.create).toHaveBeenCalledWith(dto);
+    expect(userRepo.create).toHaveBeenCalledWith({ ...dto, id: dto.id || dto.authId });
     expect(userRepo.save).toHaveBeenCalledWith(entity);
     expect(result).toEqual(entity);
   });
 
-  it('getUserById returns user and userImage', async () => {
+  it('getUserById returns user', async () => {
     const user = {
       id: 'u1',
       email: 'a@a.com',
@@ -108,10 +91,7 @@ describe('UsersService (unit)', () => {
 
     const result = await service.getUserById('u1');
     expect(userRepo.findOne).toHaveBeenCalledWith({ where: { id: 'u1' } });
-    expect(result).toEqual({
-      user,
-      userImage: '',
-    });
+    expect(result).toEqual(user);
   });
 
   it('getUserById throws NotFoundException when not found', async () => {
@@ -125,7 +105,9 @@ describe('UsersService (unit)', () => {
     const user = { id: 'u1', email: 'a@a.com' } as User;
     userRepo.findOne.mockResolvedValue(user);
     const found = await service.getUserByEmail('a@a.com');
-    expect(userRepo.findOne).toHaveBeenCalledWith({ where: { email: 'a@a.com' } });
+    expect(userRepo.findOne).toHaveBeenCalledWith({
+      where: { email: 'a@a.com' },
+    });
     expect(found).toEqual(user);
   });
 

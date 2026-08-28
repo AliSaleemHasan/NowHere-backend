@@ -3,7 +3,7 @@ import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as request from 'supertest';
-import { UsersController } from '../src/users/users.controller';
+import { UsersController } from '../src/users/controllers/users.http.controller';
 import { UsersService } from '../src/users/users.service';
 import { User } from '../src/users/entities/user.entity';
 

@@ -3,13 +3,17 @@ import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GrpcModule } from './grpc/grpc.module';
 import * as path from 'path';
-import { getValidateFn } from 'nowhere-common';
+import { getValidateFn, NatsClientModule } from 'nowhere-common';
 import { AuthEnvVariables } from './utils/auth-env-variables';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { TerminusModule } from '@nestjs/terminus';
+import { HealthController } from './health.controller';
+
 @Module({
   imports: [
+    NatsClientModule.register('NATS_CLIENT'),
+    TerminusModule,
     ConfigModule.forRoot({
       validate: getValidateFn(AuthEnvVariables),
       isGlobal: true,
@@ -22,26 +26,24 @@ import { ThrottlerModule } from '@nestjs/throttler';
       },
     ]),
     JwtModule.register({ global: true }),
-    GrpcModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
-        host: configService.get('MYSQL_HOST'),
-        port: Number(configService.get('MYSQL_PORT')),
-        username: configService.get('MYSQL_USER'),
-        password: configService.get('MYSQL_PASS'),
-        database: configService.get('MYSQL_DATABASE'),
+        host: configService.get('MYSQL_HOST', 'mysql'),
+        port: Number(configService.get('MYSQL_PORT', 3306)),
+        username: configService.get('MYSQL_USER', 'root'),
+        password: configService.get('MYSQL_PASS', 'root'),
+        database: configService.get('MYSQL_DATABASE', 'users'),
         entities: [],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         autoLoadEntities: true,
-        synchronize: true, //TODO: handle this in production
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),
     UsersModule,
-    // SeedService,
   ],
-  controllers: [],
+  controllers: [HealthController],
 })
-export class AuthModule {}
+export class UsersAppModule {}
