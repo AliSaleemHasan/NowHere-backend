@@ -5,11 +5,11 @@ services:
     env_file:
       - ./apps/snaps/.env
     ports:
-      - ${MONGO_PORT}:${MONGO_PORT}
+      - ${MONGO_PORT:-27017}:${MONGO_PORT:-27017}
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS}
-      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USER:-root}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASS:-root}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE:-snaps}
     volumes:
       - mongo-data:/data/db
 
@@ -17,17 +17,15 @@ services:
     image: quay.io/minio/minio
     command: server /data --console-address ":9001"
     container_name: minio-local
-
     ports:
-      - "9000:9000" #(S3 API)
-      - "9001:9001" #(Web Console)
-
+      - '9000:9000' #(S3 API)
+      - '9001:9001' #(Web Console)
     environment:
       MINIO_ROOT_USER: minio_admin_user
       MINIO_ROOT_PASSWORD: minio_secure_dev_pass_2026!
-
     volumes:
       - minio-data:/data
+
   mysql:
     image: mysql:9.4.0
     restart: always
@@ -41,16 +39,33 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=root
 
+  nats:
+    image: nats:latest
+    command: ['--jetstream', '--store_dir=/data']
+    ports:
+      - '4222:4222'
+      - '8222:8222'
+    volumes:
+      - nats_data:/data
+
+  redis:
+    image: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+
   nowhere-snaps:
+    container_name: nowhere-snaps-dev
     env_file:
       - ./apps/snaps/.env
-    container_name: nest-dev
     build:
       context: .
       dockerfile: ./apps/snaps/Dockerfile
       target: dev
     environment:
       - NODE_ENV=development
+      - NATS_URL=nats://nats:4222
     volumes:
       - ./apps/snaps:/usr/src/apps/snaps
       - ./libs:/usr/src/libs
@@ -58,9 +73,9 @@ services:
       - /usr/src/node_modules
     depends_on:
       - mongodb
-
+      - nats
     ports:
-      - "3000:3000"
+      - '3000:3000'
     command: pnpm nx start snaps
 
   nowhere-users:
@@ -73,17 +88,17 @@ services:
       target: dev
     environment:
       - NODE_ENV=development
+      - NATS_URL=nats://nats:4222
     volumes:
       - ./apps/users:/usr/src/apps/users
       - ./libs:/usr/src/libs
       - /usr/src/node_modules
     command: pnpm nx start users
     ports:
-      - "3001:3001"
-      - "50051:50051"
+      - '3001:3001'
     depends_on:
       - mysql
-      - authentication
+      - nats
 
   authentication:
     container_name: nowhere-authentication-dev
@@ -96,16 +111,40 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3004
+      - NATS_URL=nats://nats:4222
     volumes:
       - ./apps/authentication:/usr/src/apps/authentication
       - ./libs:/usr/src/libs
       - /usr/src/node_modules
     command: pnpm nx start authentication
     ports:
-      - "3004:3004"
-      - "50052:50052"
+      - '3004:3004'
     depends_on:
       - mysql
+      - nats
+
+  nowhere-storage:
+    container_name: nowhere-storage-dev
+    env_file:
+      - ./apps/storage/.env
+    build:
+      context: .
+      dockerfile: ./apps/storage/Dockerfile
+      target: dev
+    environment:
+      - NODE_ENV=development
+      - NATS_URL=nats://nats:4222
+    volumes:
+      - ./apps/storage:/usr/src/apps/storage
+      - ./libs:/usr/src/libs
+      - /usr/src/node_modules
+    command: pnpm nx start storage
+    ports:
+      - '3002:3002'
+    depends_on:
+      - minio
+      - nats
+      - redis
 
   nowhere-gateway:
     container_name: nowhere-gateway-dev
@@ -118,41 +157,20 @@ services:
     environment:
       - NODE_ENV=development
       - PORT=3005
+      - NATS_URL=nats://nats:4222
     volumes:
       - ./apps/gateway:/usr/src/apps/gateway
       - ./libs:/usr/src/libs
       - /usr/src/node_modules
     command: pnpm nx start gateway
     ports:
-      - "3005:3005"
-
-  nowhere-storage:
-    env_file:
-      - ./apps/storage/.env
-    container_name: nowhere-storage-dev
-
-    build:
-      context: .
-      dockerfile: ./apps/storage/Dockerfile
-      target: dev
-    volumes:
-      - ./apps/storage:/usr/src/apps/storage
-      - ./libs:/usr/src/libs
-      - /usr/src/node_modules
-    command: pnpm nx start storage
-    ports:
-      - "3002:3002"
-      - "50053:50052"
-
-  redis:
-    image: redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+      - '3005:3005'
+    depends_on:
+      - nats
 
 volumes:
   redis_data:
   mongo-data:
   minio-data:
   sql_data:
+  nats_data:

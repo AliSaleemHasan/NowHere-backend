@@ -33,8 +33,6 @@
     "@aws-sdk/client-secrets-manager": "^3.1116.0",
     "@google-cloud/secret-manager": "^7.0.0",
     "@google-cloud/storage": "^8.0.1",
-    "@grpc/grpc-js": "^1.13.4",
-    "@grpc/proto-loader": "^0.8.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
@@ -46,6 +44,7 @@
     "@nestjs/platform-socket.io": "^11.1.6",
     "@nestjs/serve-static": "^5.0.3",
     "@nestjs/swagger": "^11.2.0",
+    "@nestjs/terminus": "^11.1.1",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.6",
@@ -53,14 +52,13 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "helmet": "^8.1.0",
-    "http-proxy-middleware": "^4.2.0",
     "ioredis": "^5.7.0",
     "multer": "^2.0.2",
-    "proto": "^1.0.19",
+    "nats": "^2.29.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "ts-proto": "^2.7.7",
-    "typeorm": "^0.3.26"
+    "typeorm": "^0.3.26",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -118,7 +116,11 @@
     ],
     "moduleNameMapper": {
       "^@app/nowhere-common(|/.*)$": "<rootDir>/libs/nowhere-common/src/$1",
-      "^@app/test(|/.*)$": "<rootDir>/libs/test/src/$1"
+      "^@app/test(|/.*)$": "<rootDir>/libs/test/src/$1",
+      "^contracts(|/.*)$": "<rootDir>/libs/contracts/src/$1",
+      "^contracts$": "<rootDir>/libs/contracts/src",
+      "^nowhere-common$": "<rootDir>/libs/nowhere-common/src",
+      "^nowhere-common(|/.*)$": "<rootDir>/libs/nowhere-common/src/$1"
     }
   }
 }

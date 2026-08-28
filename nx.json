@@ -2,9 +2,6 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "parallel": 3,
   "targetDefaults": {
-    "start": {
-      "dependsOn": [{ "projects": ["proto"], "target": "proto:gen" }]
-    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["{projectRoot}/dist"],
@@ -12,10 +9,6 @@
     },
     "test:cov": {
       "outputs": ["{projectRoot}/coverage"],
-      "cache": true
-    },
-    "proto:build": {
-      "outputs": ["{projectRoot}/lib/proto"],
       "cache": true
     },
 
