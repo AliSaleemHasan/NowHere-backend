@@ -1,33 +1,19 @@
 import { Module } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
-import { AuthenticationController } from './authentication.controller';
+import { AuthNatsController } from './controllers/auth.nats.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { Credential } from './entities/user-credentials-entity';
 import { JwtModule } from '@nestjs/jwt';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { credentialsProtoOptions, usersProtoOptions } from 'proto';
-import { USERS_GRPC, CREDENTIALS_GRPC } from 'nowhere-common';
+import { NatsClientModule } from 'nowhere-common';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: CREDENTIALS_GRPC,
-        transport: Transport.GRPC,
-        options: credentialsProtoOptions,
-      },
-      {
-        name: USERS_GRPC,
-        transport: Transport.GRPC,
-        options: usersProtoOptions,
-      },
-    ]),
+    NatsClientModule.register('NATS_CLIENT'),
     TypeOrmModule.forFeature([Credential]),
     JwtModule.register({ global: true }),
     ConfigModule.forRoot({
-      // validate: getValidateFn(AuthEnvVariables),
       isGlobal: true,
       envFilePath: [path.resolve(process.cwd(), '.env')],
     }),
@@ -35,20 +21,20 @@ import { USERS_GRPC, CREDENTIALS_GRPC } from 'nowhere-common';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
-        host: configService.get('MYSQL_HOST'),
-        port: Number(configService.get('MYSQL_PORT')),
-        username: configService.get('MYSQL_USER'),
-        password: configService.get('MYSQL_PASS'),
-        database: configService.get('MYSQL_DATABASE'),
+        host: configService.get('MYSQL_HOST', 'mysql'),
+        port: Number(configService.get('MYSQL_PORT', 3306)),
+        username: configService.get('MYSQL_USER', 'root'),
+        password: configService.get('MYSQL_PASS', 'root'),
+        database: configService.get('MYSQL_DATABASE', 'users'),
         entities: [Credential],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         autoLoadEntities: true,
-        synchronize: true, //TODO: handle this in production
+        synchronize: false,
       }),
       inject: [ConfigService],
     }),
   ],
-  controllers: [AuthenticationController],
+  controllers: [AuthNatsController],
   providers: [AuthenticationService],
   exports: [AuthenticationService],
 })

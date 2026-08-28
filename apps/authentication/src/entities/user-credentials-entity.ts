@@ -1,10 +1,7 @@
 import { IsEmail, IsStrongPassword } from 'class-validator';
+import { ROLES } from 'contracts';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-export enum Roles {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-}
 @Entity('credentials')
 export class Credential {
   @PrimaryGeneratedColumn('uuid')
@@ -27,8 +24,8 @@ export class Credential {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'simple-enum', enum: Roles, default: Roles.USER })
-  role: string;
+  @Column({ type: 'simple-enum', enum: ROLES, default: ROLES.USER })
+  role: ROLES;
 
   @Column({ type: 'date', nullable: true })
   lastLoginAt: Date;

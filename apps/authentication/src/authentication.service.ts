@@ -1,3 +1,4 @@
+import { AuthResponse, ROLES } from 'contracts';
 import {
   BadRequestException,
   Inject,
@@ -9,46 +10,98 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { tryCatch, USERS_GRPC } from 'nowhere-common';
+import { tryCatch } from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Credential } from './entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
-import { CreateCredentialDTO } from './dto/create-credential-dto';
-import { ClientGrpc } from '@nestjs/microservices';
-import { lastValueFrom } from 'rxjs';
-import { AuthUserRole, USERS_SERVICE_NAME } from 'proto';
-import { Roles } from './entities/user-credentials-entity';
+import { ClientProxy } from '@nestjs/microservices';
+import { AuthPatterns, UserCredentialsCreatedEvent } from 'contracts';
+import { CreateCredentialDTO } from 'nowhere-common/dto/authentication/create-credential-dto';
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
   private readonly logger = new Logger(AuthenticationService.name, {
     timestamp: true,
   });
-  private authUsersService: any;
 
   constructor(
     private jwt: JwtService,
     @InjectRepository(Credential)
     private userRepository: Repository<Credential>,
     private configService: ConfigService,
-    @Inject(USERS_GRPC) private client: ClientGrpc,
+    @Inject('NATS_CLIENT') private natsClient: ClientProxy,
   ) {}
 
-  onModuleInit() {
-    this.authUsersService = this.client.getService(USERS_SERVICE_NAME);
+  async onModuleInit() {
+    await this.seedAdmin();
+  }
+
+  async seedAdmin() {
+    const email = this.configService.get<string>('ADMIN_EMAIL');
+    const password = this.configService.get<string>('ADMIN_PASSWORD');
+
+    if (!email || !password) {
+      this.logger.log(
+        'Admin email and password are not provided , continuing without admin!',
+      );
+      return;
+    }
+
+    const existingAdmin = await this.userRepository.findOneBy({ email });
+    if (existingAdmin) {
+      this.logger.log('Admin credentials already exist, skipping seeding.');
+      return;
+    }
+
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const admin = this.userRepository.create({
+      email,
+      password: hashedPassword,
+      role: ROLES.ADMIN,
+    });
+
+    const savedAdmin = await this.userRepository.save(admin);
+    this.logger.log(`Admin credentials seeded with ID: ${savedAdmin.id}`);
+
+    // Emit event so Users service creates the user profile asynchronously
+    this.natsClient.emit<void, UserCredentialsCreatedEvent>(
+      AuthPatterns.USER_CREDENTIALS_CREATED,
+      {
+        authId: savedAdmin.id,
+        email: savedAdmin.email,
+        firstName: 'admin',
+        lastName: 'admin',
+      },
+    );
   }
 
   async createUserCredentials(createUserDto: CreateCredentialDTO) {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
+
+  private toAuthResponse(result: {
+    user: Partial<Credential>;
+    tokens: { accessToken: string; refreshToken: string };
+  }): AuthResponse {
+    return {
+      user: {
+        id: result.user.id as string,
+        email: result.user.email as string,
+        role: result.user.role as any,
+        isActive: result.user.isActive as boolean,
+        lastLoginAt: result.user.lastLoginAt,
+      },
+      tokens: result.tokens,
+    };
+  }
+
   async login(email: string, password: string) {
-    // first getting the user from the data base
     const { error, data: user } = await tryCatch(
       this.userRepository.findOneBy({ email }),
     );
-
-    console.log(user);
 
     if (error) {
       throw new QueryFailedError('get user by email', undefined, error);
@@ -61,10 +114,10 @@ export class AuthenticationService implements OnModuleInit {
       throw new UnauthorizedException('Wrong password');
     }
 
-    this.userRepository.save({ ...user, lastLoginAt: new Date() });
+    await this.userRepository.save({ ...user, lastLoginAt: new Date() });
 
     const tokens = await this.generateTokens(user, user.id);
-    return { user, tokens };
+    return this.toAuthResponse({ user, tokens });
   }
 
   async signup(createUserDto: CreateCredentialDTO) {
@@ -72,10 +125,8 @@ export class AuthenticationService implements OnModuleInit {
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
     createUserDto.password = hashedPassword;
 
-    // Map gRPC role (number) to Entity role (string) if necessary
     if (typeof createUserDto.role === 'number') {
-      createUserDto.role =
-        createUserDto.role === AuthUserRole.ADMIN ? Roles.ADMIN : Roles.USER;
+      createUserDto.role = createUserDto.role === 0 ? ROLES.ADMIN : ROLES.USER;
     }
 
     const { error: createUserError, data: newUser } = await tryCatch(
@@ -84,39 +135,26 @@ export class AuthenticationService implements OnModuleInit {
 
     if (createUserError || !newUser)
       throw new BadRequestException(
-        createUserError?.message || 'User Not Found',
+        createUserError?.message || 'Failed to create user credentials',
       );
 
-    // Call Users service to create profile
-    try {
-      await lastValueFrom(
-        this.authUsersService.CreateUserInfo({
-          email: createUserDto.email,
-          authId: newUser.id,
-          firstName: createUserDto.firstName,
-          lastName: createUserDto.lastName,
-          bio: '',
-        }),
-      );
-    } catch (e) {
-      this.logger.error('Failed to create user profile in Users service', e);
-      await this.userRepository.delete(newUser.id);
-
-      // Reject the signup request
-      throw new BadRequestException(
-        'Failed to complete user registration. Please try again.',
-      );
-    }
+    // Decoupled: Emit event via NATS JetStream instead of direct gRPC to Users
+    this.natsClient.emit<void, UserCredentialsCreatedEvent>(
+      AuthPatterns.USER_CREDENTIALS_CREATED,
+      {
+        authId: newUser.id,
+        email: newUser.email,
+        firstName: createUserDto.firstName,
+        lastName: createUserDto.lastName,
+      },
+    );
 
     const tokens = await this.generateTokens(newUser, newUser.id);
-    return { user: newUser, tokens };
+    return this.toAuthResponse({ user: newUser, tokens });
   }
 
-  // this function is for refreshing the token if
   async refreshToken(token?: string) {
     if (!token) throw new UnauthorizedException('No refresh token provided!');
-
-    // validate the recieved refresh token
 
     const { error: jwtError, data: payload } = await tryCatch(
       this.jwt.verifyAsync<any>(token, {
@@ -131,7 +169,7 @@ export class AuthenticationService implements OnModuleInit {
     );
 
     if (error) throw new UnauthorizedException(error.message);
-    return { user: payload.user, tokens: data };
+    return this.toAuthResponse({ user: payload.user, tokens: data });
   }
 
   async generateTokens(user: Partial<Credential>, Id: string) {
@@ -139,12 +177,12 @@ export class AuthenticationService implements OnModuleInit {
 
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('ACCESS_SECRET'),
-      expiresIn: this.configService.get('ACCESS_EXP'),
+      expiresIn: this.configService.get('ACCESS_EXP') || '15m',
     });
 
     const refreshToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('REFRESH_SECRET'),
-      expiresIn: this.configService.get('REFRESH_EXP'),
+      expiresIn: this.configService.get('REFRESH_EXP') || '7d',
     });
 
     return { accessToken, refreshToken };
