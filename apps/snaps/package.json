@@ -17,7 +17,7 @@
     "@aws-sdk/s3-request-presigner": "^3.873.0",
     "mongodb-memory-server": "^10.2.0",
     "nowhere-common": "workspace:*",
-    "proto": "workspace:*",
+    "contracts": "workspace:*",
     "socket.io": "^4.8.1"
   },
   "author": "Ali Hasan",

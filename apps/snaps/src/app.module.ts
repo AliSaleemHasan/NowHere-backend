@@ -1,45 +1,38 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from '@nestjs/common';
 import { SnapsModule } from './snaps/snaps.module';
-import { configuration, getValidateFn } from 'nowhere-common';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
-import { JwtModule } from '@nestjs/jwt';
-import { SeedModule } from './seed/seed.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import {
+  configuration,
+  getValidateFn,
+  NatsClientModule,
+} from 'nowhere-common';
 import { SnapsEnvVariables } from './utils/snaps-env-variables';
-import { InternalAuthMiddleware } from './middlewares/internal-auth.middleware';
+import { SeedModule } from './seed/seed.module';
+import { TerminusModule } from '@nestjs/terminus';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
-    JwtModule.register({
-      global: true,
-    }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'tmp'),
-      serveRoot: `/${process.env.STATIC_TMP_FILES}/`,
-      serveStaticOptions: { index: false },
-    }),
+    NatsClientModule.register('NATS_CLIENT'),
+    TerminusModule,
     ConfigModule.forRoot({
       validate: getValidateFn(SnapsEnvVariables),
-
       isGlobal: true,
       load: [configuration],
     }),
-
-    MongooseModule.forRoot(
-      `mongodb://${process.env.MONGO_ROOT_USER}:${process.env.MONGO_ROOT_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
-      { authSource: 'admin' },
-    ),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        uri:
+          configService.get<string>('MONGO_URI') ||
+          `mongodb://${configService.get<string>('MONGO_ROOT_USER', 'root')}:${configService.get<string>('MONGO_ROOT_PASS', 'root')}@${configService.get<string>('MONGO_HOST', 'mongodb')}:${configService.get<number>('MONGO_PORT', 27017)}/${configService.get<string>('MONGO_DATABASE', 'snaps')}?authSource=admin`,
+      }),
+      inject: [ConfigService],
+    }),
     SnapsModule,
-    // SeedModule,
+    SeedModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [HealthController],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    const tmpPath = process.env.STATIC_TMP_FILES || 'tmp';
-    consumer.apply(InternalAuthMiddleware).forRoutes(`/${tmpPath}/*`);
-  }
-}
+export class AppModule {}

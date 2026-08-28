@@ -1,51 +1,43 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import { InjectModel } from '@nestjs/mongoose';
-import { Snap, Tags } from '../snaps/schemas/snap.schema';
+import { Snap } from '../snaps/schemas/snap.schema';
 import { Model } from 'mongoose';
-import { ClientGrpc } from '@nestjs/microservices';
-import { USERS_SERVICE_NAME, AuthUsersClient, UserRole } from 'proto';
+import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { USERS_GRPC } from 'nowhere-common';
+import {
+  UsersPatterns,
+  AuthPatterns,
+  AuthResponse,
+  SignupPayload,
+} from 'contracts';
+import { Tags } from 'nowhere-common/types/common-types';
 
 @Injectable()
-export class SeedService implements OnModuleInit {
+export class SeedService {
   private readonly logger: Logger = new Logger(SeedService.name);
-  authUsersService: AuthUsersClient;
+
   constructor(
     @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
-    @Inject(USERS_GRPC) private client: ClientGrpc,
+    @Inject('NATS_CLIENT') private natsClient: ClientProxy,
   ) {}
 
-  onModuleInit() {
-    this.authUsersService =
-      this.client.getService<AuthUsersClient>(USERS_SERVICE_NAME);
-  }
-
-  /**
-   *
-   * @returns numer[][] (list of locations of type [lng,lat]) in 5 countries (Syria,Hungary,Netherlands,Italy and Germany)
-   *
-   */
   generateLocations = () => {
     const regions = {
-      hungary: [17.650397, 47.687457], // Budapest
-      netherlands: [4.904138, 52.367573], // Amsterdam
-      syria: [36.2765, 33.5138], // Damascus
-      italy: [12.496366, 41.902782], // Rome
-      germany: [13.404954, 52.520008], // Berlin
+      hungary: [17.650397, 47.687457],
+      netherlands: [4.904138, 52.367573],
+      syria: [36.2765, 33.5138],
+      italy: [12.496366, 41.902782],
+      germany: [13.404954, 52.520008],
     };
 
-    const EARTH_RADIUS = 6371; // km
-    const radiusKm = 20; // 20 km radius
-    const pointsPerRegion = 400; // 5 × 400 = 2000
+    const EARTH_RADIUS = 6371;
+    const radiusKm = 20;
+    const pointsPerRegion = 400;
 
     function generateRandomPoint(centerLng, centerLat, radiusKm) {
-      // Convert radius from km to radians
       const radiusInRad = radiusKm / EARTH_RADIUS;
-
-      // Random bearing and distance
       const bearing = Math.random() * 2 * Math.PI;
       const distance = Math.random() * radiusInRad;
 
@@ -77,23 +69,16 @@ export class SeedService implements OnModuleInit {
 
     function generateAllLocations() {
       const allPoints: number[][] = [];
-
       for (const [region, [lng, lat]] of Object.entries(regions)) {
         for (let i = 0; i < pointsPerRegion; i++) {
           allPoints.push(generateRandomPoint(lng, lat, radiusKm));
         }
       }
-
       return allPoints;
     }
 
     return generateAllLocations();
   };
-  /**
-   * @description Seeding new Users to the system with different locations for testing purposes
-   * @async
-   *
-   */
 
   generateNames(numOfUsers: number = 100): string[] {
     const names = [
@@ -123,62 +108,71 @@ export class SeedService implements OnModuleInit {
     ];
 
     const usersNames: string[] = [];
-
     for (let i = 0; i < numOfUsers; i++) {
       usersNames[i] =
         `${names[Math.floor(Math.random() * names.length)]} ${names[Math.floor(Math.random() * names.length)]}`;
     }
-
     return usersNames;
   }
 
   async seed() {
-    // first create users
     const user_names = this.generateNames();
 
     for (let i = 0; i < user_names.length; i++) {
       const name = user_names[i];
       try {
-        // adding new user
         await firstValueFrom(
-          this.authUsersService.createUser({
-            bio: `Hey There I am ${name} Welcome to my NowHere profile Page`,
-            email: `${name.split(' ').join('_')}@test.com`,
-            password: 'Qqqqq1!',
-            firstName: name.split(' ')[0],
-            lastName: name.split(' ')[1],
-            role: UserRole.USER,
-          }),
+          this.natsClient.send<AuthResponse, SignupPayload>(
+            AuthPatterns.SIGNUP,
+            {
+              email: `${name.split(' ').join('_')}@test.com`,
+              password: 'Password123!',
+              firstName: name.split(' ')[0],
+              lastName: name.split(' ')[1],
+              role: 1 as any,
+            },
+          ),
         );
       } catch (e) {
-        // this.logger.error(`Error seeding user ${name} , `);
+        // user may already exist
       }
     }
 
-    // get users from users service (after inserting)
-    const users = (await firstValueFrom(this.authUsersService.getAllUsers({})))
-      .users;
-
-    // now creating snaps for each user
-    const locations = this.generateLocations();
-
-    const uploadedSnaps = readdirSync(
-      join(__dirname, '..', '..', '..', 'uploads'),
+    const usersRes = await firstValueFrom(
+      this.natsClient.send<{
+        users: Array<{
+          id: string;
+          firstName: string;
+          lastName: string;
+          email: string;
+        }>;
+      }>(UsersPatterns.GET_ALL_USERS_INFO, {}),
     );
+    const users = usersRes?.users || [];
+
+    const locations = this.generateLocations();
+    let uploadedSnaps: string[] = [];
+    try {
+      uploadedSnaps = readdirSync(join(__dirname, '..', '..', '..', 'uploads'));
+    } catch {
+      uploadedSnaps = ['default_snap.jpg'];
+    }
 
     const new_snaps: Snap[] = [];
     for (let i = 0; i < locations.length; i++) {
       try {
         const current_user = users[i % users.length];
-        if (!current_user.id) {
-          continue;
-        }
+        if (!current_user?.id) continue;
+
         const newSnap = await this.SnapsModel.create({
           _userId: current_user.id,
           description: `This is a small description for snap posted by a user with name ${current_user.firstName} ${current_user.lastName} and email ${current_user.email}`,
           snaps: new Array(Math.floor(Math.random() * 4) || 1)
             .fill(null)
-            .map((_, index) => `uploads/${uploadedSnaps[index]}`),
+            .map(
+              (_, index) =>
+                `uploads/${uploadedSnaps[index % uploadedSnaps.length]}`,
+            ),
           location: {
             type: 'Point',
             coordinates: locations[i],
@@ -189,7 +183,6 @@ export class SeedService implements OnModuleInit {
             ]
           ],
         });
-        newSnap.save();
         new_snaps.push(newSnap);
       } catch (e) {
         this.logger.error(e.message);

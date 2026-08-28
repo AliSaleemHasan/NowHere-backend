@@ -1,26 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { GeoPointType, Tags } from 'nowhere-common/types/common-types';
 
 export type SnapDocument = HydratedDocument<Snap>;
-
-export enum Tags {
-  PROOMOTION = 'PROOMOTION',
-  INTERESTING = 'INTERESTING',
-  FINDINGS = 'FINDINGS',
-  LOST = 'LOST',
-  HIDDEN_GEM = 'HIDDEN_GEM',
-  SOCIAL = 'SOCIAL',
-}
 
 export enum SnapStatus {
   UPLOADING = 'UPLOADING',
   FAILED = 'FAILED',
   SUCCESS = 'SUCCESS',
   PROCESSING = 'PROCESSING',
-}
-
-export enum GeoPointType {
-  Point = 'Point',
 }
 
 @Schema({ timestamps: true }) // auto-adds createdAt and updatedAt

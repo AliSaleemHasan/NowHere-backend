@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SnapsGateway } from './gateway';
-import { CreateSnapDto } from './dto/create-snap.dto';
+import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
 
 describe('SnapsGateway', () => {
   let gateway: SnapsGateway;

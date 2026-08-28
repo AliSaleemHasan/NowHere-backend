@@ -3,16 +3,11 @@ import { SeedService } from './seed.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SeedController } from './seed.controller';
 import { Snap, SnapSchema } from '../snaps/schemas/snap.schema';
-import { ClientsModule } from '@nestjs/microservices';
-
-import { USERS_GRPC } from 'nowhere-common';
-import { credentialsProtoOptions } from 'proto';
+import { NatsClientModule } from 'nowhere-common';
 
 @Module({
   imports: [
-    ClientsModule.register({
-      clients: [{ name: USERS_GRPC, options: credentialsProtoOptions }],
-    }),
+    NatsClientModule.register('NATS_CLIENT'),
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],
   providers: [SeedService],

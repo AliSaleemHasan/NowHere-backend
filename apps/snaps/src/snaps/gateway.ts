@@ -8,9 +8,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CreateSnapDto } from './dto/create-snap.dto';
-import { BadRequestException, Body, Logger } from '@nestjs/common';
-import { tryCatch } from 'nowhere-common';
+import { Logger } from '@nestjs/common';
+import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
 
 type UserSocket = {
   socketId: string;
