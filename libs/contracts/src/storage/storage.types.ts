@@ -1,17 +1,3 @@
-import { z } from 'zod';
-
-// ── Message Patterns ──
-export const StoragePatterns = {
-  UPLOAD_PHOTO: 'storage.uploadPhoto',
-  GET_SIGNED_URL: 'storage.getSignedUrl',
-  GET_SIGNED_URLS: 'storage.getSignedUrls',
-  GET_PRESIGNED_UPLOAD: 'storage.getPresignedUpload',
-  LIST_FILES: 'storage.listFiles',
-  // Events (JetStream durable)
-  SNAP_UPLOAD: 'storage.snap.upload',
-  SNAP_UPLOADED: 'storage.snap.uploaded',
-} as const;
-
 export interface UploadPhotoPayload {
   image: Buffer | { type: string; data: number[] } | string;
   userId: string;

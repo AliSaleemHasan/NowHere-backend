@@ -2,9 +2,9 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import {
   UsersPatterns,
-  AuthPatterns,
   UserCredentialsCreatedEvent,
   CreateUserInfoPayload,
+  AuthEvents,
 } from 'contracts';
 import { UsersService } from '../users.service';
 
@@ -12,7 +12,7 @@ import { UsersService } from '../users.service';
 export class UsersEventsController {
   constructor(private usersService: UsersService) {}
 
-  @MessagePattern(AuthPatterns.USER_CREDENTIALS_CREATED)
+  @MessagePattern(AuthEvents.USER_CREDENTIALS_CREATED)
   async handleUserCreated(@Payload() data: UserCredentialsCreatedEvent) {
     await this.usersService.createUser({
       id: data.authId,

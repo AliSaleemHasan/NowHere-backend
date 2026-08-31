@@ -1,4 +1,4 @@
-import { AuthResponse, ROLES } from 'contracts';
+import { AuthEvents, AuthResponse, ROLES } from 'contracts';
 import {
   BadRequestException,
   Inject,
@@ -15,7 +15,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Credential } from './entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { ClientProxy } from '@nestjs/microservices';
-import { AuthPatterns, UserCredentialsCreatedEvent } from 'contracts';
+import { UserCredentialsCreatedEvent } from 'contracts';
 import { CreateCredentialDTO } from 'nowhere-common/dto/authentication/create-credential-dto';
 
 @Injectable()
@@ -67,7 +67,7 @@ export class AuthenticationService implements OnModuleInit {
 
     // Emit event so Users service creates the user profile asynchronously
     this.natsClient.emit<void, UserCredentialsCreatedEvent>(
-      AuthPatterns.USER_CREDENTIALS_CREATED,
+      AuthEvents.USER_CREDENTIALS_CREATED,
       {
         authId: savedAdmin.id,
         email: savedAdmin.email,
@@ -140,7 +140,7 @@ export class AuthenticationService implements OnModuleInit {
 
     // Decoupled: Emit event via NATS JetStream instead of direct gRPC to Users
     this.natsClient.emit<void, UserCredentialsCreatedEvent>(
-      AuthPatterns.USER_CREDENTIALS_CREATED,
+      AuthEvents.USER_CREDENTIALS_CREATED,
       {
         authId: newUser.id,
         email: newUser.email,

@@ -1,0 +1,7 @@
+export const StoragePatterns = {
+  UPLOAD_PHOTO: 'storage.uploadPhoto',
+  GET_SIGNED_URL: 'storage.getSignedUrl',
+  GET_SIGNED_URLS: 'storage.getSignedUrls',
+  GET_PRESIGNED_UPLOAD: 'storage.getPresignedUpload',
+  LIST_FILES: 'storage.listFiles',
+} as const;
