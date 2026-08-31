@@ -6,11 +6,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { Credential } from './entities/user-credentials-entity';
 import { JwtModule } from '@nestjs/jwt';
-import { NatsClientModule } from 'nowhere-common';
+import { JetStreamModule } from 'nowhere-common';
 
 @Module({
   imports: [
-    NatsClientModule.register('NATS_CLIENT'),
+    JetStreamModule.forRoot(),
     TypeOrmModule.forFeature([Credential]),
     JwtModule.register({ global: true }),
     ConfigModule.forRoot({

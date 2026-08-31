@@ -6,15 +6,15 @@ import { Settings } from '../settings/entities/settings.entity';
 import { SnapSeen } from './entities/snaps-seen.entity';
 import { NatsClientModule } from 'nowhere-common';
 import { UsersNatsController } from './controllers/users.nats.controller';
-import { UsersEventsController } from './controllers/users.events.controllers';
+import { UsersEventsHandler } from './controllers/users-events-handler';
 
 @Module({
   imports: [
     NatsClientModule.register('NATS_CLIENT'),
     TypeOrmModule.forFeature([User, Settings, SnapSeen]),
   ],
-  providers: [UsersService],
-  controllers: [UsersNatsController, UsersEventsController],
+  providers: [UsersService, UsersEventsHandler],
+  controllers: [UsersNatsController],
   exports: [UsersService],
 })
 export class UsersModule {}

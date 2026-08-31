@@ -1,7 +1,6 @@
 import { AuthEvents, AuthResponse, ROLES } from 'contracts';
 import {
   BadRequestException,
-  Inject,
   Injectable,
   Logger,
   OnModuleInit,
@@ -10,11 +9,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { tryCatch } from 'nowhere-common';
+import { JetStreamPublisher, tryCatch } from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Credential } from './entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
 import { UserCredentialsCreatedEvent } from 'contracts';
 import { CreateCredentialDTO } from 'nowhere-common/dto/authentication/create-credential-dto';
 
@@ -29,7 +27,7 @@ export class AuthenticationService implements OnModuleInit {
     @InjectRepository(Credential)
     private userRepository: Repository<Credential>,
     private configService: ConfigService,
-    @Inject('NATS_CLIENT') private natsClient: ClientProxy,
+    private jsPublisher: JetStreamPublisher,
   ) {}
 
   async onModuleInit() {
@@ -66,7 +64,7 @@ export class AuthenticationService implements OnModuleInit {
     this.logger.log(`Admin credentials seeded with ID: ${savedAdmin.id}`);
 
     // Emit event so Users service creates the user profile asynchronously
-    this.natsClient.emit<void, UserCredentialsCreatedEvent>(
+    await this.jsPublisher.publish(
       AuthEvents.USER_CREDENTIALS_CREATED,
       {
         authId: savedAdmin.id,
@@ -138,8 +136,8 @@ export class AuthenticationService implements OnModuleInit {
         createUserError?.message || 'Failed to create user credentials',
       );
 
-    // Decoupled: Emit event via NATS JetStream instead of direct gRPC to Users
-    this.natsClient.emit<void, UserCredentialsCreatedEvent>(
+    // Publish durable event via NATS JetStream
+    await this.jsPublisher.publish(
       AuthEvents.USER_CREDENTIALS_CREATED,
       {
         authId: newUser.id,

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { StorageEventsHandler } from './controllers/storage.events.handler';
 import { StorageService } from './storage.service';
 import { StorageNatsController } from './controllers/storage.nats.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -7,7 +8,7 @@ import KeyvRedis from '@keyv/redis';
 import {
   configuration,
   getValidateFn,
-  NatsClientModule,
+  JetStreamModule,
 } from 'nowhere-common';
 import { StroageEnvVariables } from './utils/storage-env-variables';
 import {
@@ -18,7 +19,7 @@ import {
 
 @Module({
   imports: [
-    NatsClientModule.register('NATS_CLIENT'),
+    JetStreamModule.forRoot(),
     ConfigModule.forRoot({
       validate: getValidateFn(StroageEnvVariables),
       isGlobal: true,
@@ -53,6 +54,7 @@ import {
       inject: [ConfigService],
     },
     StorageService,
+    StorageEventsHandler,
   ],
   exports: [StorageService, STORAGE_STRATEGY],
 })

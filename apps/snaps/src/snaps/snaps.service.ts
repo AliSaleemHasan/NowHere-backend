@@ -22,6 +22,7 @@ import { firstValueFrom } from 'rxjs';
 import { join } from 'path';
 import {
   StoragePatterns,
+  StorageEvents,
   UsersPatterns,
   SnapUploadPayload,
   SignedUrlsPayload,
@@ -33,6 +34,8 @@ import { FindSnapDTO } from 'nowhere-common/dto/snaps/find-snap.dto';
 import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
 import { Tags } from 'nowhere-common/types/common-types';
 
+import { JetStreamPublisher } from 'nowhere-common';
+
 @Injectable()
 export class SnapsService {
   private logger: Logger = new Logger(SnapsService.name);
@@ -41,6 +44,7 @@ export class SnapsService {
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
     @Inject('NATS_CLIENT') private natsClient: ClientProxy,
     private snapsGateaway: SnapsGateway,
+    private jsPublisher: JetStreamPublisher,
   ) {}
 
   async handleCreateSnap(data: SnapUploadedDto) {
@@ -105,9 +109,9 @@ export class SnapsService {
 
       const created = await createdSnap.save();
 
-      // Emit durable event to Storage service via NATS JetStream
-      this.natsClient.emit<void, SnapUploadPayload>(
-        StoragePatterns.SNAP_UPLOAD,
+      // Publish durable event to Storage service via NATS JetStream
+      await this.jsPublisher.publish<SnapUploadPayload>(
+        StorageEvents.SNAP_UPLOAD,
         {
           files: snaps,
           userId: _userId,

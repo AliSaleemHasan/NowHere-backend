@@ -1,14 +1,28 @@
-import { Controller } from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import { StoragePatterns, SnapUploadedEvent } from 'contracts';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { StorageEvents, SnapUploadedEvent } from 'contracts';
+import { JetStreamConsumerService } from 'nowhere-common';
 import { SnapsService } from '../snaps.service';
 
-@Controller()
-export class SnapsEventsController {
-  constructor(private readonly snapsService: SnapsService) {}
+@Injectable()
+export class SnapsEventsHandler implements OnModuleInit {
+  private readonly logger = new Logger(SnapsEventsHandler.name);
 
-  @MessagePattern(StoragePatterns.SNAP_UPLOADED)
-  async handleSnapUploaded(@Payload() data: SnapUploadedEvent) {
+  constructor(
+    private readonly snapsService: SnapsService,
+    private readonly jsConsumer: JetStreamConsumerService,
+  ) {}
+
+  async onModuleInit() {
+    await this.jsConsumer.subscribe({
+      stream: 'STORAGE_EVENTS',
+      consumer: 'snaps-snap-uploaded',
+      filterSubject: StorageEvents.SNAP_UPLOADED,
+      handler: this.handleSnapUploaded.bind(this),
+    });
+  }
+
+  private async handleSnapUploaded(data: SnapUploadedEvent) {
+    this.logger.log(`Handling snap uploaded for snapId=${data.snapId}`);
     await this.snapsService.handleCreateSnap(data as any);
   }
 }

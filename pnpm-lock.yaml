@@ -370,6 +370,9 @@ importers:
       mongoose:
         specifier: ^8.18.0
         version: 8.18.1(socks@2.8.7)
+      nats:
+        specifier: ^2.29.3
+        version: 2.29.3
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2

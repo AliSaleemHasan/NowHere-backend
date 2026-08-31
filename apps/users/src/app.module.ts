@@ -4,7 +4,11 @@ import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
-import { getValidateFn, NatsClientModule } from 'nowhere-common';
+import {
+  getValidateFn,
+  NatsClientModule,
+  JetStreamModule,
+} from 'nowhere-common';
 import { AuthEnvVariables } from './utils/auth-env-variables';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TerminusModule } from '@nestjs/terminus';
@@ -13,6 +17,7 @@ import { HealthController } from './health.controller';
 @Module({
   imports: [
     NatsClientModule.register('NATS_CLIENT'),
+    JetStreamModule.forRoot(),
     TerminusModule,
     ConfigModule.forRoot({
       validate: getValidateFn(AuthEnvVariables),
