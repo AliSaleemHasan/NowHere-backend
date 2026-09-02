@@ -73,11 +73,18 @@ export class SnapsService {
     createSnapDto: CreateSnapDto,
   ) {
     createSnapDto._userId = _userId;
-    createSnapDto.snaps = [];
 
     let location = createSnapDto.location;
     if (typeof location === 'string') location = JSON.parse(location);
     createSnapDto.location = location;
+
+    const hasPreuploadedKeys =
+      Array.isArray(createSnapDto.snaps) &&
+      createSnapDto.snaps.length > 0 &&
+      createSnapDto.snaps.every((k) => typeof k === 'string');
+
+    const snapKeys = hasPreuploadedKeys ? createSnapDto.snaps : [];
+    createSnapDto.snaps = snapKeys;
 
     const params = await this.getNearParams({ _userId });
 
@@ -104,20 +111,22 @@ export class SnapsService {
     try {
       const createdSnap = new this.snapModel({
         ...createSnapDto,
-        status: SnapStatus.PROCESSING,
+        status: hasPreuploadedKeys ? SnapStatus.SUCCESS : SnapStatus.PROCESSING,
       });
 
       const created = await createdSnap.save();
 
-      // Publish durable event to Storage service via NATS JetStream
-      await this.jsPublisher.publish<SnapUploadPayload>(
-        StorageEvents.SNAP_UPLOAD,
-        {
-          files: snaps,
-          userId: _userId,
-          snapId: created.id,
-        },
-      );
+      // Only publish binary file upload event if files were sent directly
+      if (!hasPreuploadedKeys && snaps && snaps.length > 0) {
+        await this.jsPublisher.publish<SnapUploadPayload>(
+          StorageEvents.SNAP_UPLOAD,
+          {
+            files: snaps,
+            userId: _userId,
+            snapId: created.id,
+          },
+        );
+      }
 
       this.snapsGateaway.handleNewSnap(created);
       return created;

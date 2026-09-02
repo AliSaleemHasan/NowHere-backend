@@ -119,10 +119,21 @@ export class GatewaySnapsController {
         fileIsRequired: false,
       }),
     )
-    snaps: Array<Express.Multer.File>,
+    snapsFiles: Array<Express.Multer.File>,
     @Body() body: any,
   ) {
-    const files = (snaps || []).map((f) => ({
+    let preuploadedKeys: string[] = [];
+    if (Array.isArray(body.snaps)) {
+      preuploadedKeys = body.snaps;
+    } else if (typeof body.snaps === 'string' && body.snaps.startsWith('[')) {
+      try {
+        preuploadedKeys = JSON.parse(body.snaps);
+      } catch {
+        preuploadedKeys = [body.snaps];
+      }
+    }
+
+    const files = (snapsFiles || []).map((f) => ({
       fieldname: f.fieldname,
       originalname: f.originalname,
       encoding: f.encoding,
@@ -136,7 +147,8 @@ export class GatewaySnapsController {
       this.natsClient.send(SnapsPatterns.CREATE, {
         userId,
         ...body,
-        files,
+        snaps: preuploadedKeys.length > 0 ? preuploadedKeys : undefined,
+        files: files.length > 0 ? files : undefined,
       }),
     );
   }
