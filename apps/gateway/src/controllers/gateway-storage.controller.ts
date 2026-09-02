@@ -38,13 +38,38 @@ export class GatewayStorageController {
   @UseGuards(GatewayAuthGuard)
   async getPresignedUploadURL(
     @ReqUser('id') userId: string,
-    @Body() body: { filename?: string; contentType?: string; prefix?: string },
+    @Body()
+    body: {
+      files?: Array<{ filename?: string; contentType?: string }>;
+      filename?: string;
+      contentType?: string;
+      prefix?: string;
+    },
   ) {
     const today = new Date().toISOString().split('T')[0];
+    const folder = body.prefix || 'snaps';
+
+    if (Array.isArray(body.files) && body.files.length > 0) {
+      const results = await Promise.all(
+        body.files.map(async (file) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+          const ext = file.filename ? file.filename.split('.').pop() : 'jpg';
+          const key = `${folder}/${today}/${userId || 'user'}/${uniqueSuffix}.${ext}`;
+          return await firstValueFrom(
+            this.natsClient.send(StoragePatterns.GET_PRESIGNED_UPLOAD, {
+              key,
+              contentType: file.contentType || 'image/jpeg',
+            }),
+          );
+        }),
+      );
+      return { uploads: results };
+    }
+
     const uniqueSuffix =
       Date.now() + '-' + Math.random().toString(36).substring(2, 8);
     const ext = body.filename ? body.filename.split('.').pop() : 'jpg';
-    const folder = body.prefix || 'snaps';
     const key = `${folder}/${today}/${userId || 'user'}/${uniqueSuffix}.${ext}`;
 
     return await firstValueFrom(
