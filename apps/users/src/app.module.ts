@@ -43,7 +43,9 @@ import { HealthController } from './health.controller';
         entities: [],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize:
+          configService.get('TYPEORM_SYNC') === 'true' ||
+          configService.get('NODE_ENV') !== 'production',
       }),
       inject: [ConfigService],
     }),
