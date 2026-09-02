@@ -60,8 +60,14 @@ export class JetStreamModule implements OnModuleInit, OnModuleDestroy {
 
     for (const stream of JETSTREAM_STREAMS) {
       try {
-        await jsm.streams.info(stream.name);
-        this.logger.log(`Stream "${stream.name}" already exists`);
+        const info = await jsm.streams.info(stream.name);
+        await jsm.streams.update(stream.name, {
+          ...info.config,
+          subjects: stream.subjects,
+        });
+        this.logger.log(
+          `Stream "${stream.name}" updated with subjects [${stream.subjects.join(', ')}]`,
+        );
       } catch {
         await jsm.streams.add({
           name: stream.name,

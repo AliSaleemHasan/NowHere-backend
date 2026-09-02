@@ -11,12 +11,12 @@ export interface StreamDefinition {
 export const JETSTREAM_STREAMS: StreamDefinition[] = [
   {
     name: 'AUTH_EVENTS',
-    subjects: ['auth.>'],
+    subjects: ['auth.user.>'],
     maxAgeDays: 7,
   },
   {
     name: 'STORAGE_EVENTS',
-    subjects: ['storage.>'],
+    subjects: ['storage.snap.>'],
     maxAgeDays: 7,
   },
 ];
