@@ -171,7 +171,12 @@ export class AuthenticationService implements OnModuleInit {
   }
 
   async generateTokens(user: Partial<Credential>, Id: string) {
-    const payload = { sub: Id, user };
+    const userPayload = {
+      id: Id,
+      email: user.email,
+      role: user.role,
+    };
+    const payload = { sub: Id, user: userPayload };
 
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('ACCESS_SECRET'),
