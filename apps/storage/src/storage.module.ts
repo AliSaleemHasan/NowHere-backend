@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common';
-import { StorageEventsHandler } from './controllers/storage.events.handler';
 import { StorageService } from './storage.service';
 import { StorageNatsController } from './controllers/storage.nats.controller';
+import { HealthController } from './health.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import { TerminusModule } from '@nestjs/terminus';
 import {
   configuration,
   getValidateFn,
-  JetStreamModule,
 } from 'nowhere-common';
 import { StroageEnvVariables } from './utils/storage-env-variables';
 import {
@@ -19,7 +19,7 @@ import {
 
 @Module({
   imports: [
-    JetStreamModule.forRoot(),
+    TerminusModule,
     ConfigModule.forRoot({
       validate: getValidateFn(StroageEnvVariables),
       isGlobal: true,
@@ -34,7 +34,7 @@ import {
       inject: [ConfigService],
     }),
   ],
-  controllers: [StorageNatsController],
+  controllers: [StorageNatsController, HealthController],
   providers: [
     {
       provide: STORAGE_STRATEGY,
@@ -54,7 +54,6 @@ import {
       inject: [ConfigService],
     },
     StorageService,
-    StorageEventsHandler,
   ],
   exports: [StorageService, STORAGE_STRATEGY],
 })

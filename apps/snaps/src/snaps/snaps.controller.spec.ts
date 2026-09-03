@@ -31,9 +31,13 @@ describe('SnapsNatsController', () => {
 
   describe('create', () => {
     it('should call service.create', async () => {
-      const dto: any = { userId: 'u1', location: [0, 0], files: [] };
+      const dto: any = {
+        userId: 'u1',
+        location: { type: 'Point', coordinates: [0, 0] },
+        snaps: ['snaps/2026-09-03/u1/a.jpg'],
+      };
       await controller.create(dto);
-      expect(service.create).toHaveBeenCalledWith('u1', [], dto);
+      expect(service.create).toHaveBeenCalledWith('u1', dto);
     });
   });
 
@@ -47,7 +51,11 @@ describe('SnapsNatsController', () => {
   describe('findNear', () => {
     it('should call service.getSeenSnaps with seen: false', async () => {
       await controller.findNear({ userId: 'u1', lng: 1, lat: 2 });
-      expect(service.getSeenSnaps).toHaveBeenCalledWith({ location: [1, 2] }, 'u1', false);
+      expect(service.getSeenSnaps).toHaveBeenCalledWith(
+        { tags: undefined, location: [1, 2] },
+        'u1',
+        false,
+      );
     });
   });
 });

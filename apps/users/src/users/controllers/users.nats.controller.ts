@@ -1,6 +1,14 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { UsersPatterns, NotSeenPayload, SetSeenPayload } from 'contracts';
+import {
+  UsersPatterns,
+  NotSeenPayload,
+  SetSeenPayload,
+  NotSeenSchema,
+  SetSeenSchema,
+  UserIdPayloadSchema,
+  validateSchema,
+} from 'contracts';
 import { UsersService } from '../users.service';
 
 @Controller()
@@ -9,7 +17,8 @@ export class UsersNatsController {
 
   @MessagePattern(UsersPatterns.GET_SETTINGS)
   async getSettings(@Payload() data: { id: string }) {
-    return await this.usersService.getUserSetting(data.id);
+    const payload = validateSchema(UserIdPayloadSchema, data);
+    return await this.usersService.getUserSetting(payload.id);
   }
 
   @MessagePattern(UsersPatterns.GET_ALL_USERS_INFO)
@@ -20,7 +29,8 @@ export class UsersNatsController {
 
   @MessagePattern(UsersPatterns.GET_USER_BY_ID)
   async getUserByIdNats(@Payload() data: { id: string }) {
-    return await this.usersService.getUserById(data.id);
+    const payload = validateSchema(UserIdPayloadSchema, data);
+    return await this.usersService.getUserById(payload.id);
   }
 
   @MessagePattern(UsersPatterns.GET_USER_BY_EMAIL)
@@ -30,13 +40,15 @@ export class UsersNatsController {
 
   @MessagePattern(UsersPatterns.NOT_SEEN_SNAPS)
   async notSeenSnaps(@Payload() data: NotSeenPayload) {
-    const seen = await this.usersService.getSeen(data);
+    const payload = validateSchema(NotSeenSchema, data);
+    const seen = await this.usersService.getSeen(payload);
     return { seen };
   }
 
   @MessagePattern(UsersPatterns.SET_SEEN_SNAP)
   async setSeenSnap(@Payload() data: SetSeenPayload) {
-    const saved = await this.usersService.addSeen(data);
+    const payload = validateSchema(SetSeenSchema, data);
+    const saved = await this.usersService.addSeen(payload);
     return { success: !!saved };
   }
 

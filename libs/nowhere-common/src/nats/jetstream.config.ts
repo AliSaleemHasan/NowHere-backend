@@ -14,9 +14,4 @@ export const JETSTREAM_STREAMS: StreamDefinition[] = [
     subjects: ['auth.user.>'],
     maxAgeDays: 7,
   },
-  {
-    name: 'STORAGE_EVENTS',
-    subjects: ['storage.snap.>'],
-    maxAgeDays: 7,
-  },
 ];

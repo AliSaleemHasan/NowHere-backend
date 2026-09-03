@@ -7,17 +7,17 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { In, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Settings } from '../settings/entities/settings.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { SnapSeen } from './entities/snaps-seen.entity';
-import { firstValueFrom } from 'rxjs';
 import {
   StoragePatterns,
   UploadPhotoPayload,
   SignedUrlPayload,
 } from 'contracts';
 import { CreateUserDTO } from 'nowhere-common/dto/users/create-user.dto';
+import { natsRequest } from 'nowhere-common';
 
 @Injectable()
 export class UsersService {
@@ -39,11 +39,36 @@ export class UsersService {
     },
   ) {
     const userId = createUserDto.id || createUserDto.authId;
-    const user = this.userRepository.create({
-      ...createUserDto,
-      id: userId,
+    const email = createUserDto.email;
+
+    const existing = await this.userRepository.findOne({
+      where: [
+        ...(userId ? [{ id: userId }] : []),
+        ...(email ? [{ email }] : []),
+      ],
     });
-    return this.userRepository.save(user);
+    if (existing) {
+      return existing;
+    }
+
+    try {
+      const user = this.userRepository.create({
+        ...createUserDto,
+        id: userId,
+      });
+      return await this.userRepository.save(user);
+    } catch (err) {
+      const raced = await this.userRepository.findOne({
+        where: [
+          ...(userId ? [{ id: userId }] : []),
+          ...(email ? [{ email }] : []),
+        ],
+      });
+      if (raced) {
+        return raced;
+      }
+      throw err;
+    }
   }
 
   async getUserByEmail(email: string) {
@@ -64,11 +89,10 @@ export class UsersService {
     let signedUrl = '';
     if (user.image) {
       try {
-        const res = await firstValueFrom(
-          this.natsClient.send<{ signed: string }, SignedUrlPayload>(
-            StoragePatterns.GET_SIGNED_URL,
-            { key: user.image },
-          ),
+        const res = await natsRequest<{ signed: string }, SignedUrlPayload>(
+          this.natsClient,
+          StoragePatterns.GET_SIGNED_URL,
+          { key: user.image },
         );
         signedUrl = res?.signed || '';
       } catch (err) {
@@ -85,24 +109,22 @@ export class UsersService {
   }
 
   async setUserPhoto(imageFile: Buffer, userId: string) {
-    const imageKey = await firstValueFrom(
-      this.natsClient.send<{ key: string }, UploadPhotoPayload>(
-        StoragePatterns.UPLOAD_PHOTO,
-        {
-          image: imageFile,
-          userId,
-        },
-      ),
+    const imageKey = await natsRequest<{ key: string }, UploadPhotoPayload>(
+      this.natsClient,
+      StoragePatterns.UPLOAD_PHOTO,
+      {
+        image: imageFile,
+        userId,
+      },
     );
 
     if (!imageKey?.key)
       throw new BadRequestException('Error loading Image to storage');
 
-    const signedURL = await firstValueFrom(
-      this.natsClient.send<{ signed: string }, SignedUrlPayload>(
-        StoragePatterns.GET_SIGNED_URL,
-        { key: imageKey.key },
-      ),
+    const signedURL = await natsRequest<{ signed: string }, SignedUrlPayload>(
+      this.natsClient,
+      StoragePatterns.GET_SIGNED_URL,
+      { key: imageKey.key },
     );
 
     if (!signedURL)
@@ -152,15 +174,15 @@ export class UsersService {
   }
 
   async getSeen(notSeenDTO: {
-    seen: boolean;
+    seen?: boolean;
     userId: string;
     snapIds?: string[];
   }) {
-    const { seen, userId, snapIds } = notSeenDTO;
+    const { userId, snapIds } = notSeenDTO;
 
     return await this.snapSeenRepo.find({
       where: {
-        userId: seen ? userId : Not(userId),
+        userId,
         ...(snapIds && snapIds.length > 0 && { snapId: In(snapIds) }),
       },
     });

@@ -72,6 +72,7 @@ describe('UsersService (unit)', () => {
     userRepo.create.mockReturnValue(entity);
     userRepo.save.mockResolvedValue(entity);
 
+    userRepo.findOne.mockResolvedValue(null);
     const result = await service.createUser(dto);
     expect(userRepo.create).toHaveBeenCalledWith({ ...dto, id: dto.id || dto.authId });
     expect(userRepo.save).toHaveBeenCalledWith(entity);
@@ -122,5 +123,34 @@ describe('UsersService (unit)', () => {
     userRepo.find.mockResolvedValue([{ id: 'u1' }] as any);
     const all = await service.getAllUsers();
     expect(all).toEqual([{ id: 'u1' }]);
+  });
+
+  it('getSeen always queries this user snap_seen rows', async () => {
+    snapSeenRepo.find.mockResolvedValue([]);
+    await service.getSeen({
+      seen: false,
+      userId: 'caller',
+      snapIds: ['s1', 's2'],
+    });
+    expect(snapSeenRepo.find).toHaveBeenCalledWith({
+      where: { userId: 'caller', snapId: expect.anything() },
+    });
+    const arg = snapSeenRepo.find.mock.calls[0][0] as {
+      where: { userId: string };
+    };
+    expect(arg.where.userId).toBe('caller');
+  });
+
+  it('createUser is idempotent on authId', async () => {
+    const existing = { id: 'auth-1', email: 'a@a.com' } as User;
+    userRepo.findOne.mockResolvedValue(existing);
+    const result = await service.createUser({
+      authId: 'auth-1',
+      email: 'a@a.com',
+      firstName: 'A',
+      lastName: 'B',
+    } as any);
+    expect(result).toEqual(existing);
+    expect(userRepo.save).not.toHaveBeenCalled();
   });
 });

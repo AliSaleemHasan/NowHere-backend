@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -15,26 +14,20 @@ import {
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
   handleMongoError,
-  deleteFromFolder,
+  natsRequest,
+  assertSnapImageKeys,
 } from 'nowhere-common';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
-import { join } from 'path';
 import {
   StoragePatterns,
-  StorageEvents,
   UsersPatterns,
-  SnapUploadPayload,
   SignedUrlsPayload,
   UserSettingsDto,
   SeenObjectsDto,
 } from 'contracts';
-import { SnapUploadedDto } from 'nowhere-common/dto/snaps/snap-uploaded-dto';
 import { FindSnapDTO } from 'nowhere-common/dto/snaps/find-snap.dto';
 import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
 import { Tags } from 'nowhere-common/types/common-types';
-
-import { JetStreamPublisher } from 'nowhere-common';
 
 @Injectable()
 export class SnapsService {
@@ -44,53 +37,26 @@ export class SnapsService {
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
     @Inject('NATS_CLIENT') private natsClient: ClientProxy,
     private snapsGateaway: SnapsGateway,
-    private jsPublisher: JetStreamPublisher,
   ) {}
 
-  async handleCreateSnap(data: SnapUploadedDto) {
-    await deleteFromFolder(
-      join(__dirname, '..', '..', '..', 'tmp'),
-      data.filesNames,
-    );
-
-    if (data.error) {
-      this.logger.log('Error uploading files!', data.error);
-      await this.deleteSnap(data.snapId);
-      throw new BadRequestException(data.error);
-    }
-
-    const updateStatus = await this.updateSnapImages(data.snapId, data.keys);
-
-    this.logger.log(
-      'Snap service added the uploaded keys with upload status: ',
-      JSON.stringify(updateStatus),
-    );
-  }
-
-  async create(
-    _userId: string,
-    snaps: Array<Express.Multer.File>,
-    createSnapDto: CreateSnapDto,
-  ) {
-    createSnapDto._userId = _userId;
+  async create(userId: string, createSnapDto: CreateSnapDto) {
+    createSnapDto._userId = userId;
 
     let location = createSnapDto.location;
     if (typeof location === 'string') location = JSON.parse(location);
     createSnapDto.location = location;
 
-    const hasPreuploadedKeys =
-      Array.isArray(createSnapDto.snaps) &&
-      createSnapDto.snaps.length > 0 &&
-      createSnapDto.snaps.every((k) => typeof k === 'string');
-
-    const snapKeys = hasPreuploadedKeys ? createSnapDto.snaps : [];
+    const snapKeys = Array.isArray(createSnapDto.snaps)
+      ? createSnapDto.snaps.filter((k) => typeof k === 'string' && k.length > 0)
+      : [];
+    assertSnapImageKeys(snapKeys, userId);
     createSnapDto.snaps = snapKeys;
 
-    const params = await this.getNearParams({ _userId });
+    const params = await this.getNearParams({ _userId: userId });
 
     const exists = await this.snapModel
       .findOne({
-        _userId,
+        _userId: userId,
         createdAt: { $gte: params.showBefore, $lte: params.showAfter },
         location: {
           $near: {
@@ -111,23 +77,10 @@ export class SnapsService {
     try {
       const createdSnap = new this.snapModel({
         ...createSnapDto,
-        status: hasPreuploadedKeys ? SnapStatus.SUCCESS : SnapStatus.PROCESSING,
+        status: SnapStatus.SUCCESS,
       });
 
       const created = await createdSnap.save();
-
-      // Only publish binary file upload event if files were sent directly
-      if (!hasPreuploadedKeys && snaps && snaps.length > 0) {
-        await this.jsPublisher.publish<SnapUploadPayload>(
-          StorageEvents.SNAP_UPLOAD,
-          {
-            files: snaps,
-            userId: _userId,
-            snapId: created.id,
-          },
-        );
-      }
-
       this.snapsGateaway.handleNewSnap(created);
       return created;
     } catch (err) {
@@ -143,11 +96,10 @@ export class SnapsService {
     let user_settings: UserSettingsDto | null = null;
     if (input._userId) {
       try {
-        user_settings = await firstValueFrom(
-          this.natsClient.send<UserSettingsDto, { id: string }>(
-            UsersPatterns.GET_SETTINGS,
-            { id: input._userId },
-          ),
+        user_settings = await natsRequest<UserSettingsDto, { id: string }>(
+          this.natsClient,
+          UsersPatterns.GET_SETTINGS,
+          { id: input._userId },
         );
       } catch (err) {
         this.logger.warn(
@@ -179,15 +131,15 @@ export class SnapsService {
     _userId,
   }: {
     location: [number, number];
-    tags: Tags[];
+    tags?: Tags[];
     _userId: string;
   }) {
     const params = await this.getNearParams({ _userId });
 
     return await this.snapModel
       .find({
-        ...(tags && tags?.length > 0 && { tag: { $in: tags } }),
-        ...(_userId && { _userId }),
+        status: SnapStatus.SUCCESS,
+        ...(tags && tags.length > 0 && { tag: { $in: tags } }),
         createdAt: { $gte: params.showBefore, $lte: params.showAfter },
         location: {
           $near: {
@@ -220,39 +172,39 @@ export class SnapsService {
 
       let signedUrls: string[] = [];
       if (snap.snaps && snap.snaps.length > 0) {
-        const imageKeys = await firstValueFrom(
-          this.natsClient.send<{ urls: string[] }, SignedUrlsPayload>(
-            StoragePatterns.GET_SIGNED_URLS,
-            { keys: snap.snaps },
-          ),
-        );
+        const imageKeys = await natsRequest<
+          { urls: string[] },
+          SignedUrlsPayload
+        >(this.natsClient, StoragePatterns.GET_SIGNED_URLS, {
+          keys: snap.snaps,
+        });
         signedUrls = imageKeys?.urls || [];
       }
 
       if (userID) {
-        const seenResponse = await firstValueFrom(
-          this.natsClient.send<
-            SeenObjectsDto,
-            { seen: boolean; userId: string; snapIds: string[] }
-          >(UsersPatterns.NOT_SEEN_SNAPS, {
-            seen: true,
-            userId: userID,
-            snapIds: [id],
-          }),
-        );
+        const seenResponse = await natsRequest<
+          SeenObjectsDto,
+          { seen: boolean; userId: string; snapIds: string[] }
+        >(this.natsClient, UsersPatterns.NOT_SEEN_SNAPS, {
+          seen: true,
+          userId: userID,
+          snapIds: [id],
+        });
 
         if (!seenResponse?.seen || seenResponse.seen.length === 0) {
-          await firstValueFrom(
-            this.natsClient.send<
-              { success: boolean },
-              { snapId: string; userId: string }
-            >(UsersPatterns.SET_SEEN_SNAP, { snapId: id, userId: userID }),
-          );
+          await natsRequest<
+            { success: boolean },
+            { snapId: string; userId: string }
+          >(this.natsClient, UsersPatterns.SET_SEEN_SNAP, {
+            snapId: id,
+            userId: userID,
+          });
         }
       }
 
       return { snap, imageKeys: signedUrls };
     } catch (e) {
+      if (e instanceof NotFoundException) throw e;
       throw new NotFoundException('Snap not found: ' + e.message);
     }
   }
@@ -280,18 +232,18 @@ export class SnapsService {
 
     const snapIds = nearSnaps.map((s) => s.id);
 
-    const response = await firstValueFrom(
-      this.natsClient.send<
-        SeenObjectsDto,
-        { seen: boolean; userId: string; snapIds: string[] }
-      >(UsersPatterns.NOT_SEEN_SNAPS, {
-        userId: userID,
-        seen,
-        snapIds,
-      }),
-    );
+    const response = await natsRequest<
+      SeenObjectsDto,
+      { seen: boolean; userId: string; snapIds: string[] }
+    >(this.natsClient, UsersPatterns.NOT_SEEN_SNAPS, {
+      userId: userID,
+      seen: true,
+      snapIds,
+    });
 
     const seenSnapIdsSet = new Set((response?.seen || []).map((s) => s.snapId));
-    return nearSnaps.filter((snap) => seenSnapIdsSet.has(snap.id));
+    return nearSnaps.filter((snap) =>
+      seen ? seenSnapIdsSet.has(snap.id) : !seenSnapIdsSet.has(snap.id),
+    );
   }
 }

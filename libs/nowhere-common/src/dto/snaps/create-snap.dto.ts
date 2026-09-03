@@ -3,7 +3,7 @@ import {
   ArrayMinSize,
   IsArray,
   IsEnum,
-  IsNumberString,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -22,7 +22,10 @@ export class GeoPointDto {
   @ArrayMaxSize(2, {
     message: 'coordinates must have exactly 2 values [lng, lat]',
   })
-  @IsNumberString({}, { each: true, message: 'coordinates must be numbers' })
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value.map((item) => Number(item)) : value,
+  )
+  @IsNumber({}, { each: true, message: 'coordinates must be numbers' })
   coordinates: [number, number];
 }
 export class CreateSnapDto {
@@ -37,6 +40,10 @@ export class CreateSnapDto {
   @Type(() => GeoPointDto)
   location: GeoPointDto;
 
+  @IsArray()
+  @ArrayMinSize(1, { message: 'Provide at least 1 uploaded image key' })
+  @ArrayMaxSize(4, { message: 'Maximum 4 images allowed' })
+  @IsString({ each: true })
   snaps: string[];
 
   @IsEnum(Tags, { each: true })

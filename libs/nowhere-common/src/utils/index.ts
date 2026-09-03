@@ -4,3 +4,4 @@ export * from './handle-mongoose-errors';
 export * from './test-utils';
 export * from './deleteFromFolder';
 export * from './try-catch';
+export * from './storage-keys';

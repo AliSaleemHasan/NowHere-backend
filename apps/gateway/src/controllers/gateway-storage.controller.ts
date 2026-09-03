@@ -6,12 +6,22 @@ import {
   Body,
   UseGuards,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { GatewayAuthGuard } from '../guards/auth.guard';
-import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
+import {
+  ReqUser,
+  RoleGuard,
+  UserRoles,
+  natsRequest,
+  assertAllowedContentType,
+  assertOwnedObjectKey,
+  buildOwnedObjectKey,
+  MAX_UPLOAD_BATCH,
+} from 'nowhere-common';
 import { StoragePatterns, ROLES } from 'contracts';
-import { firstValueFrom } from 'rxjs';
+import { PresignedUploadDto } from '../dto/presigned-upload.dto';
 
 @Controller('storage')
 export class GatewayStorageController {
@@ -21,62 +31,66 @@ export class GatewayStorageController {
   @UserRoles([ROLES.ADMIN])
   @UseGuards(GatewayAuthGuard, RoleGuard)
   async getAllFiles() {
-    return await firstValueFrom(
-      this.natsClient.send(StoragePatterns.LIST_FILES, {}),
-    );
+    return await natsRequest(this.natsClient, StoragePatterns.LIST_FILES, {});
   }
 
   @Get('signed')
   @UseGuards(GatewayAuthGuard)
-  async getSignedURL(@Query('key') key: string) {
-    return await firstValueFrom(
-      this.natsClient.send(StoragePatterns.GET_SIGNED_URL, { key }),
-    );
+  async getSignedURL(
+    @ReqUser() user: { id: string; role?: string },
+    @Query('key') key: string,
+  ) {
+    if (!key) {
+      throw new BadRequestException('key is required');
+    }
+    const isAdmin = user.role === ROLES.ADMIN || user.role === 'ADMIN';
+    assertOwnedObjectKey(key, user.id, isAdmin);
+    return await natsRequest(this.natsClient, StoragePatterns.GET_SIGNED_URL, {
+      key,
+    });
   }
 
   @Post('presigned-upload')
   @UseGuards(GatewayAuthGuard)
   async getPresignedUploadURL(
     @ReqUser('id') userId: string,
-    @Body()
-    body: {
-      files?: Array<{ filename?: string; contentType?: string }>;
-      filename?: string;
-      contentType?: string;
-      prefix?: string;
-    },
+    @Body() body: PresignedUploadDto,
   ) {
-    const today = new Date().toISOString().split('T')[0];
-    const folder = body.prefix || 'snaps';
-
     if (Array.isArray(body.files) && body.files.length > 0) {
+      if (body.files.length > MAX_UPLOAD_BATCH) {
+        throw new BadRequestException(
+          `At most ${MAX_UPLOAD_BATCH} files per request`,
+        );
+      }
       const results = await Promise.all(
         body.files.map(async (file) => {
-          const uniqueSuffix =
-            Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-          const ext = file.filename ? file.filename.split('.').pop() : 'jpg';
-          const key = `${folder}/${today}/${userId || 'user'}/${uniqueSuffix}.${ext}`;
-          return await firstValueFrom(
-            this.natsClient.send(StoragePatterns.GET_PRESIGNED_UPLOAD, {
-              key,
-              contentType: file.contentType || 'image/jpeg',
-            }),
+          const contentType = assertAllowedContentType(file.contentType);
+          const key = buildOwnedObjectKey({
+            prefix: body.prefix,
+            userId,
+            filename: file.filename,
+          });
+          return await natsRequest(
+            this.natsClient,
+            StoragePatterns.GET_PRESIGNED_UPLOAD,
+            { key, contentType },
           );
         }),
       );
       return { uploads: results };
     }
 
-    const uniqueSuffix =
-      Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-    const ext = body.filename ? body.filename.split('.').pop() : 'jpg';
-    const key = `${folder}/${today}/${userId || 'user'}/${uniqueSuffix}.${ext}`;
+    const contentType = assertAllowedContentType(body.contentType);
+    const key = buildOwnedObjectKey({
+      prefix: body.prefix,
+      userId,
+      filename: body.filename,
+    });
 
-    return await firstValueFrom(
-      this.natsClient.send(StoragePatterns.GET_PRESIGNED_UPLOAD, {
-        key,
-        contentType: body.contentType || 'image/jpeg',
-      }),
+    return await natsRequest(
+      this.natsClient,
+      StoragePatterns.GET_PRESIGNED_UPLOAD,
+      { key, contentType },
     );
   }
 }

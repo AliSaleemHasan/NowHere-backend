@@ -8,6 +8,7 @@ export interface FindNearSnapsPayload {
 
 export interface CreateSnapPayload {
   userId: string;
+  description?: string;
   title?: string;
   body?: string;
   tag?: string;
@@ -18,14 +19,5 @@ export interface CreateSnapPayload {
         coordinates: [number, number];
       }
     | string;
-  files?: Array<{
-    fieldname: string;
-    originalname: string;
-    encoding: string;
-    mimetype: string;
-    buffer?: any;
-    size?: number;
-    filename?: string;
-    path?: string;
-  }>;
+  snaps: string[];
 }
