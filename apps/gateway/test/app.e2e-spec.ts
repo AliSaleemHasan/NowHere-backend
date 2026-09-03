@@ -1,24 +1,46 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { GatewayModule } from './../src/gateway.module';
+import { HealthController } from '../src/health.controller';
+import { HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
+import { DataResponseInterceptor, HttpExceptionFilter } from 'nowhere-common';
 
-describe('GatewayController (e2e)', () => {
+describe('Gateway (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [GatewayModule],
+      controllers: [HealthController],
+      providers: [
+        {
+          provide: HealthCheckService,
+          useValue: {
+            check: jest.fn().mockResolvedValue({
+              status: 'ok',
+              info: { memory_heap: { status: 'up' } },
+            }),
+          },
+        },
+        {
+          provide: MemoryHealthIndicator,
+          useValue: { checkHeap: jest.fn() },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new HttpExceptionFilter());
+    app.useGlobalInterceptors(new DataResponseInterceptor());
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('/health (GET) is unwrapped Terminus output', async () => {
+    const res = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(res.body.status).toBe('ok');
+    expect(res.body.success).toBeUndefined();
   });
 });

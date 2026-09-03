@@ -1,4 +1,6 @@
 export enum Tags {
+  PROMOTION = 'PROMOTION',
+  /** @deprecated typo kept for existing Mongo documents */
   PROOMOTION = 'PROOMOTION',
   INTERESTING = 'INTERESTING',
   FINDINGS = 'FINDINGS',

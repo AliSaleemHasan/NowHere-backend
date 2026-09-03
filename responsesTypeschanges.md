@@ -1,5 +1,7 @@
 # Backend Request & Response Contract Changes (`responsesTypeschanges.md`)
 
+> Archived notes. Named HTTP controllers on users/auth/snaps/storage were replaced by NATS handlers plus the gateway. `/health` is not wrapped in `{ success, data }`.
+
 This document outlines all request and response shape changes across the backend microservices, including RFC 9457 problem details, the unified success envelope, and before/after comparisons for each endpoint to assist with frontend migration.
 
 ---

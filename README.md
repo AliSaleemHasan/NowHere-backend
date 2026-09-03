@@ -30,12 +30,15 @@ pnpm install --filter [service name]
 ```bash
 # development locally with docker
 docker compose -f docker-compose.dev.yml up
-# start deployment like server
+# production-like compose (publishes gateway :3005 and snaps :3000 for Socket.IO)
 docker compose up
-# if you prefer kubernetes locally (with kubectl)
-kubectl create -f k8s/secrets
-kubectl create -f k8s
+# kubernetes: copy example secrets, fill locally, then apply
+cp -r k8s/secrets.example k8s/secrets
+kubectl apply -f k8s/secrets
+kubectl apply -f k8s
 ```
+
+`k8s/secrets/` is gitignored. Only `k8s/secrets.example/` with `change_me_*` values is committed.
 
 ---
 
@@ -81,8 +84,10 @@ You **do not** need to copy cloud keys into every microservice `.env` file. You 
 ### 2. Cloud Storage (`STORAGE_PROVIDER`)
 Supported values: `aws` (AWS S3 / MinIO / R2) | `gcp` (Google Cloud Storage) | `minio`.
 
-- **Direct Presigned Uploads**: Clients request presigned URLs from the backend and upload media directly to S3/GCS.
-- **Service Isolation**: Only the `storage` microservice requires S3/GCS credentials. All other microservices (`users`, `snaps`, `gateway`, `authentication`) communicate with `storage` exclusively over gRPC and do not require bucket credentials.
+- **Direct Presigned Uploads**: Clients request presigned URLs from the gateway (`POST /storage/presigned-upload`) and upload media directly to S3/GCS/MinIO, then create a snap with the object keys (`POST /snaps`).
+- **Service Isolation**: Only the `storage` microservice requires S3/GCS credentials. All other microservices (`users`, `snaps`, `gateway`, `authentication`) communicate with `storage` exclusively over NATS and do not require bucket credentials.
+
+`SecretManagerModule` in `nowhere-common` is an optional Strategy-pattern loader (GCP/AWS/env). Apps currently boot from `ConfigModule` / `.env`. Wire it at bootstrap when you want secrets to come from a cloud manager instead of files.
 
 ---
 

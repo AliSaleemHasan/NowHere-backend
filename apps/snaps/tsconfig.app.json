@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "declaration": false,
-    "outDir": "dist",
+    "outDir": "../../dist/apps/snaps",
     "skipLibCheck": true
   },
   "include": ["src/**/*"],

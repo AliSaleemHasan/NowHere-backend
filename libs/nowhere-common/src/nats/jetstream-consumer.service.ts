@@ -38,11 +38,29 @@ export class JetStreamConsumerService implements OnModuleDestroy {
     const jsm = await this.nc.jetstreamManager();
 
     // Ensure the durable consumer exists (upsert)
-    await jsm.consumers.add(config.stream, {
+    const consumerConfig = {
       durable_name: config.consumer,
       ack_policy: AckPolicy.Explicit,
       filter_subject: config.filterSubject,
-    });
+      max_deliver: 5,
+      backoff: [2_000, 10_000, 30_000, 60_000],
+    };
+
+    try {
+      await jsm.consumers.add(config.stream, consumerConfig);
+    } catch {
+      try {
+        await jsm.consumers.update(
+          config.stream,
+          config.consumer,
+          consumerConfig,
+        );
+      } catch (updateError: any) {
+        this.logger.warn(
+          `Could not update consumer ${config.consumer}: ${updateError?.message}`,
+        );
+      }
+    }
 
     // Retrieve the configured consumer
     const consumer = await this.js.consumers.get(config.stream, config.consumer);

@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "ts-node-dev -r tsconfig-paths/register --ignore-watch  --respawn src/main.ts",
-    "start:prod": "node dist/apps/authentication/src/main.js",
+    "start:prod": "node ../../dist/apps/authentication/apps/authentication/src/main.js",
     "build": "tsc -p tsconfig.app.json",
     "test": "nx jest:test",
     "test:watch": "nx jest:test --watch",

@@ -5,13 +5,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Snap } from '../snaps/schemas/snap.schema';
 import { Model } from 'mongoose';
 import { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
 import {
   UsersPatterns,
   AuthPatterns,
   AuthResponse,
   SignupPayload,
 } from 'contracts';
+import { natsRequest } from 'nowhere-common';
 import { Tags } from 'nowhere-common/types/common-types';
 
 @Injectable()
@@ -121,33 +121,29 @@ export class SeedService {
     for (let i = 0; i < user_names.length; i++) {
       const name = user_names[i];
       try {
-        await firstValueFrom(
-          this.natsClient.send<AuthResponse, SignupPayload>(
-            AuthPatterns.SIGNUP,
-            {
-              email: `${name.split(' ').join('_')}@test.com`,
-              password: 'Password123!',
-              firstName: name.split(' ')[0],
-              lastName: name.split(' ')[1],
-              role: 1 as any,
-            },
-          ),
+        await natsRequest<AuthResponse, SignupPayload>(
+          this.natsClient,
+          AuthPatterns.SIGNUP,
+          {
+            email: `${name.split(' ').join('_')}@test.com`,
+            password: 'Password123!',
+            firstName: name.split(' ')[0],
+            lastName: name.split(' ')[1],
+          },
         );
       } catch (e) {
         // user may already exist
       }
     }
 
-    const usersRes = await firstValueFrom(
-      this.natsClient.send<{
-        users: Array<{
-          id: string;
-          firstName: string;
-          lastName: string;
-          email: string;
-        }>;
-      }>(UsersPatterns.GET_ALL_USERS_INFO, {}),
-    );
+    const usersRes = await natsRequest<{
+      users: Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+      }>;
+    }>(this.natsClient, UsersPatterns.GET_ALL_USERS_INFO, {});
     const users = usersRes?.users || [];
 
     const locations = this.generateLocations();

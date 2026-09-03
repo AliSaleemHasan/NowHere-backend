@@ -1,19 +1,23 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import {
+  HttpExceptionFilter,
+  NatsRpcExceptionFilter,
+  natsConnectionOptions,
+} from 'nowhere-common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new HttpExceptionFilter(), new NatsRpcExceptionFilter());
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.NATS,
-    options: {
-      servers: [process.env.NATS_URL || 'nats://nats:4222'],
-    },
+    options: natsConnectionOptions(),
   });
 
   await app.startAllMicroservices();
-  // HTTP server kept only for WebSocket gateway upgrade handshake
-  await app.listen(process.env.PORT || 3000, '0.0.0.0');
+  // HTTP server kept for WebSocket gateway upgrade handshake and /health
+  await app.listen(process.env.PORT || process.env.NEST_PORT || 3000, '0.0.0.0');
 }
-bootstrap();
+void bootstrap();

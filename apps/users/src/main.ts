@@ -2,9 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { UsersAppModule } from './app.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import {
-  setupSwagger,
   HttpExceptionFilter,
-  DataResponseInterceptor,
+  NatsRpcExceptionFilter,
+  natsConnectionOptions,
 } from 'nowhere-common';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ValidationError } from 'class-validator';
@@ -13,10 +13,7 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(UsersAppModule);
   app.use(helmet());
-
-  setupSwagger(app, { port: 3001, name: 'users' });
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new DataResponseInterceptor());
+  app.useGlobalFilters(new HttpExceptionFilter(), new NatsRpcExceptionFilter());
   app.useGlobalPipes(
     new ValidationPipe({
       enableDebugMessages: true,
@@ -32,12 +29,10 @@ async function bootstrap() {
   );
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.NATS,
-    options: {
-      servers: [process.env.NATS_URL || 'nats://nats:4222'],
-    },
+    options: natsConnectionOptions(),
   });
   await app.startAllMicroservices();
 
-  await app.listen(3001); // HTTP port
+  await app.listen(process.env.PORT || process.env.NEST_PORT || 3001, '0.0.0.0');
 }
-bootstrap();
+void bootstrap();

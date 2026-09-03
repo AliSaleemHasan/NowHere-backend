@@ -1,6 +1,7 @@
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
@@ -9,6 +10,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
 
 type UserSocket = {
@@ -17,31 +20,76 @@ type UserSocket = {
 };
 
 type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
+
+function socketCorsOrigin(): string | string[] | boolean {
+  const fromCors = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (fromCors.length > 0) {
+    return fromCors;
+  }
+  if (process.env.GATEWAY_URL) {
+    return process.env.GATEWAY_URL;
+  }
+  return process.env.NODE_ENV === 'production' ? false : true;
+}
+
 @WebSocketGateway({
   cors: {
-    origin: [process.env.GATEWAY_URL],
+    origin: socketCorsOrigin(),
+    credentials: true,
   },
 })
-export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
+export class SnapsGateway
+  implements OnGatewayInit, OnGatewayDisconnect, OnGatewayConnection
+{
   private readonly logger = new Logger(SnapsGateway.name, { timestamp: true });
   @WebSocketServer()
   server: Server;
 
+  /**
+   * In-memory location map. Does not survive process restart or a second
+   * snaps replica — sticky sessions or a shared store is a later phase.
+   */
   usersLocationMap: Map<string, UserSocket>;
-  afterInit(server: any) {
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  afterInit() {
     this.logger.log('Server Started');
     this.logger.log('Creating in memory User Location Map');
     this.usersLocationMap = new Map<string, UserSocket>();
     this.logger.log('UsersLocationMap Created ...');
   }
 
-  // remove  client from the map
+  handleConnection(client: Socket) {
+    const token = this.extractHandshakeToken(client);
+    if (!token) {
+      this.logger.warn(`Socket ${client.id} missing access token`);
+      client.disconnect(true);
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: this.configService.get<string>('ACCESS_SECRET'),
+      });
+      client.data.user = payload.user || payload;
+    } catch {
+      this.logger.warn(`Socket ${client.id} presented an invalid token`);
+      client.disconnect(true);
+    }
+  }
+
   handleDisconnect(client: Socket) {
-    if (this.usersLocationMap.get(client.id))
+    if (this.usersLocationMap?.get(client.id))
       this.usersLocationMap.delete(client.id);
   }
 
-  // when user Locaiton Change
   @SubscribeMessage('locationChange')
   locationChange(
     @MessageBody() data: LocationChangeBody,
@@ -63,7 +111,7 @@ export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
   ): number {
     const toRadians = (degrees: number) => degrees * (Math.PI / 180);
 
-    const earthRadiusMeters = 6371e3; // Radius of Earth in meters
+    const earthRadiusMeters = 6371e3;
 
     const lat1Rad = toRadians(latitude1);
     const lat2Rad = toRadians(latitude2);
@@ -77,9 +125,7 @@ export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
     const haversineC =
       2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
 
-    const distance = earthRadiusMeters * haversineC;
-
-    return distance; // in meters
+    return earthRadiusMeters * haversineC;
   }
 
   findNearbyUsers(lat: number, lng: number, radiusKm: number) {
@@ -96,16 +142,12 @@ export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
     });
   }
 
-  // for testing purposes
   @SubscribeMessage('snap-added')
   handleGetNewSnaps(@MessageBody() snap: CreateSnapDto) {
     return snap;
   }
 
-  // A user Posts a Snap
   handleNewSnap(body: CreateSnapDto) {
-    // first handle posting this snap to snaps Service
-
     const users = this.findNearbyUsers(
       body.location.coordinates[1],
       body.location.coordinates[0],
@@ -115,5 +157,17 @@ export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
     users.forEach((user) => {
       this.server.to(user.socketId).emit('snap-added', body);
     });
+  }
+
+  private extractHandshakeToken(client: Socket): string | undefined {
+    const fromAuth = client.handshake?.auth?.token;
+    if (typeof fromAuth === 'string' && fromAuth.length > 0) {
+      return fromAuth.replace(/^Bearer\s+/i, '');
+    }
+    const header = client.handshake?.headers?.authorization;
+    if (typeof header === 'string' && header.startsWith('Bearer ')) {
+      return header.slice(7);
+    }
+    return undefined;
   }
 }

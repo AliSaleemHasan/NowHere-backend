@@ -1,55 +1,146 @@
 services:
-  nowhere-snaps:
+  nats:
+    image: nats:2.11-alpine
+    command:
+      - '--jetstream'
+      - '--store_dir=/data'
+      - '--auth=${NATS_TOKEN:-change_me_nats_token}'
+    volumes:
+      - nats_data:/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--requirepass', '${REDIS_PASSWORD:-change_me_redis_password}']
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:9.4.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASS:-change_me_mysql_root_pass}
+    volumes:
+      - ./mysql_init:/docker-entrypoint-initdb.d
+      - sql_data:/var/lib/mysql
+
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASS:-change_me_mongo_root_pass}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-snaps}
+    volumes:
+      - mongo-data:/data/db
+
+  minio:
+    image: quay.io/minio/minio
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin_user}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change_me_minio_password}
+    volumes:
+      - minio-data:/data
+    restart: unless-stopped
+
+  authentication:
+    container_name: nowhere-authentication
+    build:
+      context: .
+      dockerfile: ./apps/authentication/Dockerfile
+      target: runtime
     env_file:
-      - ./apps/snaps/.env
+      - ./apps/authentication/.env
+    environment:
+      NODE_ENV: production
+      TYPEORM_SYNC: 'false'
+      NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
+    depends_on:
+      - mysql
+      - nats
+    restart: unless-stopped
+
+  users:
+    container_name: nowhere-users
+    build:
+      context: .
+      dockerfile: ./apps/users/Dockerfile
+      target: runtime
+    env_file:
+      - ./apps/users/.env
+    environment:
+      NODE_ENV: production
+      TYPEORM_SYNC: 'false'
+      NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
+    depends_on:
+      - mysql
+      - nats
+    restart: unless-stopped
+
+  snaps:
     container_name: nowhere-snaps
     build:
       context: .
       dockerfile: ./apps/snaps/Dockerfile
       target: runtime
-    environment:
-      - NODE_ENV=deployment
-
-    ports:
-      - "3000:3000"
-    command: node apps/snaps/dist/apps/snaps/src/main.js
-
-  nowhere-auth:
-    container_name: nowhere-auth-dep
     env_file:
-      - ./apps/auth/.env
-    build:
-      context: .
-      dockerfile: ./apps/auth/Dockerfile
-      target: runtime
+      - ./apps/snaps/.env
     environment:
-      - NODE_ENV=deployment
-
-    command: node apps/auth/dist/apps/auth/src/main.js
+      NODE_ENV: production
+      ENABLE_SEED: 'false'
+      NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
     ports:
-      - "3001:3001"
-      - "50051:50051"
+      - '3000:3000'
+    depends_on:
+      - mongodb
+      - nats
+    restart: unless-stopped
 
-  nowhere-storage:
-    env_file:
-      - ./apps/storage/.env
-    container_name: nowhere-storage-dep
-
+  storage:
+    container_name: nowhere-storage
     build:
       context: .
       dockerfile: ./apps/storage/Dockerfile
       target: runtime
+    env_file:
+      - ./apps/storage/.env
+    environment:
+      NODE_ENV: production
+      NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
+      REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis_password}@redis:6379
+    depends_on:
+      - minio
+      - nats
+      - redis
+    restart: unless-stopped
 
-    command: node apps/storage/dist/apps/storage/src/main.js
+  gateway:
+    container_name: nowhere-gateway
+    build:
+      context: .
+      dockerfile: ./apps/gateway/Dockerfile
+      target: runtime
+    env_file:
+      - ./apps/gateway/.env
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
     ports:
-      - "3002:3002"
-      - "50052:50051"
-  redis:
-    image: redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+      - '3005:3005'
+    depends_on:
+      - nats
+      - authentication
+      - users
+      - snaps
+      - storage
+    restart: unless-stopped
 
 volumes:
   redis_data:
+  mongo-data:
+  minio-data:
+  sql_data:
+  nats_data:

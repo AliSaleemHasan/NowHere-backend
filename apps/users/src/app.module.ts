@@ -9,8 +9,7 @@ import {
   NatsClientModule,
   JetStreamModule,
 } from 'nowhere-common';
-import { AuthEnvVariables } from './utils/auth-env-variables';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { UsersEnvVariables } from './utils/auth-env-variables';
 import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './health.controller';
 
@@ -20,16 +19,10 @@ import { HealthController } from './health.controller';
     JetStreamModule.forRoot(),
     TerminusModule,
     ConfigModule.forRoot({
-      validate: getValidateFn(AuthEnvVariables),
+      validate: getValidateFn(UsersEnvVariables),
       isGlobal: true,
       envFilePath: [path.resolve(process.cwd(), '.env')],
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 3600000, // 1 hour
-        limit: 10, // 10 requests per hour
-      },
-    ]),
     JwtModule.register({ global: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -39,13 +32,11 @@ import { HealthController } from './health.controller';
         port: Number(configService.get('MYSQL_PORT', 3306)),
         username: configService.get('MYSQL_USER', 'root'),
         password: configService.get('MYSQL_PASS', 'root'),
-        database: configService.get('MYSQL_DATABASE', 'users'),
+        database: configService.get('MYSQL_DATABASE', 'Users_Info'),
         entities: [],
         migrations: [__dirname + '/migrations/*{.ts,.js}'],
         autoLoadEntities: true,
-        synchronize:
-          configService.get('TYPEORM_SYNC') === 'true' ||
-          configService.get('NODE_ENV') !== 'production',
+        synchronize: configService.get('TYPEORM_SYNC') === 'true',
       }),
       inject: [ConfigService],
     }),

@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { SnapsGateway } from './gateway';
 import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
 
@@ -13,12 +15,22 @@ describe('SnapsGateway', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SnapsGateway],
+      providers: [
+        SnapsGateway,
+        {
+          provide: JwtService,
+          useValue: { verify: jest.fn().mockReturnValue({ user: { id: 'u1' } }) },
+        },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('test-secret') },
+        },
+      ],
     }).compile();
 
     gateway = module.get<SnapsGateway>(SnapsGateway);
     gateway.server = serverMock;
-    gateway.afterInit(serverMock); // Initialize map
+    gateway.afterInit();
   });
 
   it('should be defined', () => {

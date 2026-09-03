@@ -1,24 +1,42 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { StorageModule } from './../src/storage.module';
+import { HealthController } from '../src/health.controller';
+import { HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
 
-describe('StorageController (e2e)', () => {
+describe('Storage HTTP (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [StorageModule],
+      controllers: [HealthController],
+      providers: [
+        {
+          provide: HealthCheckService,
+          useValue: {
+            check: jest.fn().mockResolvedValue({
+              status: 'ok',
+              info: { memory_heap: { status: 'up' } },
+            }),
+          },
+        },
+        {
+          provide: MemoryHealthIndicator,
+          useValue: { checkHeap: jest.fn() },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('/health (GET)', async () => {
+    const res = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(res.body.status).toBe('ok');
   });
 });

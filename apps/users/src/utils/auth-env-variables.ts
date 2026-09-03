@@ -1,44 +1,42 @@
-import { IsEmail, IsNumber, IsString, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
-export class AuthEnvVariables {
+export class UsersEnvVariables {
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(65535)
-  NEST_PORT!: number;
+  NEST_PORT?: number;
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(65535)
-  MYSQL_PORT!: number;
+  MYSQL_PORT?: number;
+
   @IsString({ message: 'Name of used MYSQL users database' })
   MYSQL_DATABASE!: string;
-  @IsString({ message: "Password for Users Database' root user" })
-  MYSQL_ROOT_PASS!: string;
+
+  @IsOptional()
+  @IsString()
+  MYSQL_ROOT_PASS?: string;
+
   @IsString({ message: 'Username of used Users Database' })
   MYSQL_USER!: string;
+
   @IsString({ message: 'Password of used Users database' })
   MYSQL_PASS!: string;
-  @IsString({
-    message:
-      'Host of users databse, please put your host here (aws,gcp ..etc.)',
-  })
+
+  @IsString()
   MYSQL_HOST!: string;
 
-  @IsString({ message: 'Secret used for JWT authentication' })
-  ACCESS_SECRET!: string;
-
-  @IsString({ message: 'Refresh secret used for refreshing JWT access token' })
-  REFRESH_SECRET!: string;
-
   @IsString()
-  ACCESS_EXP!: string;
+  NATS_URL!: string;
 
+  @IsOptional()
   @IsString()
-  REFRESH_EXP!: string;
+  TYPEORM_SYNC?: string;
 
-  @IsEmail()
-  ADMIN_EMAIL!: string;
-
+  @IsOptional()
   @IsString()
-  ADMIN_PASSWORD!: string;
+  NODE_ENV?: string;
 }

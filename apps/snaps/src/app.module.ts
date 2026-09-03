@@ -6,7 +6,6 @@ import {
   configuration,
   getValidateFn,
   NatsClientModule,
-  JetStreamModule,
 } from 'nowhere-common';
 import { SnapsEnvVariables } from './utils/snaps-env-variables';
 import { SeedModule } from './seed/seed.module';
@@ -16,7 +15,6 @@ import { HealthController } from './health.controller';
 @Module({
   imports: [
     NatsClientModule.register('NATS_CLIENT'),
-    JetStreamModule.forRoot(),
     TerminusModule,
     ConfigModule.forRoot({
       validate: getValidateFn(SnapsEnvVariables),
@@ -33,7 +31,7 @@ import { HealthController } from './health.controller';
       inject: [ConfigService],
     }),
     SnapsModule,
-    SeedModule,
+    SeedModule.register(),
   ],
   controllers: [HealthController],
 })

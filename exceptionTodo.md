@@ -1,5 +1,7 @@
 # Exception Handling Improvements (`exceptionTodo.md`)
 
+> Archived notes. Public HTTP now lives on **gateway** (`:3005`). Auth/users/storage/snaps are NATS services with `/health` only. The HTTP controllers named below were removed.
+
 ## Current Problems
 
 1. **Catches ONLY `HttpException` (`@Catch(HttpException)`):**

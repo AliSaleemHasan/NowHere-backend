@@ -1,17 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { StorageModule } from './storage.module';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import {
+  HttpExceptionFilter,
+  NatsRpcExceptionFilter,
+  natsConnectionOptions,
+} from 'nowhere-common';
 
 async function bootstrap() {
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    StorageModule,
-    {
-      transport: Transport.NATS,
-      options: {
-        servers: [process.env.NATS_URL || 'nats://nats:4222'],
-      },
-    },
-  );
-  await app.listen();
+  const app = await NestFactory.create(StorageModule);
+  app.useGlobalFilters(new HttpExceptionFilter(), new NatsRpcExceptionFilter());
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.NATS,
+    options: natsConnectionOptions(),
+  });
+  await app.startAllMicroservices();
+  await app.listen(process.env.PORT || process.env.NEST_PORT || 3002, '0.0.0.0');
 }
-bootstrap();
+void bootstrap();

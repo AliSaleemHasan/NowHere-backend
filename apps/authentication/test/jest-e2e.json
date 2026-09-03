@@ -13,6 +13,7 @@
   "moduleNameMapper": {
     "^apps/authentication/src/(.*)$": "<rootDir>/../src/$1",
     "^nowhere-common(|/.*)$": "<rootDir>/../../../libs/nowhere-common/src/$1",
+    "^contracts(|/.*)$": "<rootDir>/../../../libs/contracts/src/$1",
     "^proto(|/.*)$": "<rootDir>/../../../libs/proto/$1"
   }
 }

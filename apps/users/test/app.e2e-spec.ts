@@ -1,24 +1,42 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { AuthModule } from '../src/app.module';
+import { HealthController } from '../src/health.controller';
+import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
 
-describe('AuthController (e2e)', () => {
+describe('Users HTTP (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AuthModule],
+      controllers: [HealthController],
+      providers: [
+        {
+          provide: HealthCheckService,
+          useValue: {
+            check: jest.fn().mockResolvedValue({
+              status: 'ok',
+              info: { database: { status: 'up' } },
+            }),
+          },
+        },
+        {
+          provide: TypeOrmHealthIndicator,
+          useValue: { pingCheck: jest.fn() },
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  afterEach(async () => {
+    await app.close();
+  });
+
+  it('/health (GET) is the only public HTTP surface', async () => {
+    const res = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(res.body.status).toBe('ok');
   });
 });
