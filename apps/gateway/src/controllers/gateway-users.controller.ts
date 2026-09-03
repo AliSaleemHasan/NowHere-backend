@@ -13,10 +13,9 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { GatewayAuthGuard } from '../guards/auth.guard';
-import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
+import { ReqUser, RoleGuard, UserRoles, natsRequest } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersPatterns, StoragePatterns, ROLES } from 'contracts';
-import { firstValueFrom } from 'rxjs';
 
 @Controller('users')
 export class GatewayUsersController {
@@ -25,15 +24,17 @@ export class GatewayUsersController {
   @Get('id/:id')
   @UseGuards(GatewayAuthGuard)
   async getUserById(@Param('id') id: string) {
-    const user = await firstValueFrom(
-      this.natsClient.send(UsersPatterns.GET_USER_BY_ID, { id }),
-    );
-    
+    const user = await natsRequest(this.natsClient, UsersPatterns.GET_USER_BY_ID, {
+      id,
+    });
+
     let userImage = '';
     if (user?.image) {
       try {
-        const res = await firstValueFrom(
-          this.natsClient.send<{ signed: string }>(StoragePatterns.GET_SIGNED_URL, { key: user.image }),
+        const res = await natsRequest<{ signed: string }>(
+          this.natsClient,
+          StoragePatterns.GET_SIGNED_URL,
+          { key: user.image },
         );
         userImage = res?.signed || '';
       } catch {
@@ -47,8 +48,10 @@ export class GatewayUsersController {
   @UserRoles([ROLES.ADMIN])
   @UseGuards(GatewayAuthGuard, RoleGuard)
   async getAllUsers() {
-    return await firstValueFrom(
-      this.natsClient.send(UsersPatterns.GET_ALL_USERS_INFO, {}),
+    return await natsRequest(
+      this.natsClient,
+      UsersPatterns.GET_ALL_USERS_INFO,
+      {},
     );
   }
 
@@ -67,27 +70,25 @@ export class GatewayUsersController {
     )
     photo: Express.Multer.File,
   ) {
-    return await firstValueFrom(
-      this.natsClient.send(UsersPatterns.SET_USER_PHOTO, {
-        image: photo.buffer,
-        userId: id,
-      }),
-    );
+    return await natsRequest(this.natsClient, UsersPatterns.SET_USER_PHOTO, {
+      image: photo.buffer,
+      userId: id,
+    });
   }
 
   @Get('settings')
   @UseGuards(GatewayAuthGuard)
   async getUserSettings(@ReqUser('id') id: string) {
-    return await firstValueFrom(
-      this.natsClient.send(UsersPatterns.GET_SETTINGS, { id }),
-    );
+    return await natsRequest(this.natsClient, UsersPatterns.GET_SETTINGS, {
+      id,
+    });
   }
 
   @Get(':email')
   @UseGuards(GatewayAuthGuard)
   async getByEmail(@Param('email') email: string) {
-    return await firstValueFrom(
-      this.natsClient.send(UsersPatterns.GET_USER_BY_EMAIL, { email }),
-    );
+    return await natsRequest(this.natsClient, UsersPatterns.GET_USER_BY_EMAIL, {
+      email,
+    });
   }
 }

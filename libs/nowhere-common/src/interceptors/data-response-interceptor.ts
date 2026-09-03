@@ -7,8 +7,14 @@ export class DataResponseInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler<any>,
   ): Observable<any> | Promise<Observable<any>> {
-    // Only wrap HTTP responses; leave RPC/gRPC/microservice transports untouched
+    // Only wrap HTTP responses; leave RPC/microservice transports untouched
     if (context.getType() !== 'http') {
+      return next.handle();
+    }
+
+    const request = context.switchToHttp().getRequest<Request>();
+    const path = (request.path || request.url || '').split('?')[0];
+    if (path === '/health' || path.endsWith('/health')) {
       return next.handle();
     }
 

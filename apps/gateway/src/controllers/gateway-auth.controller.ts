@@ -11,32 +11,39 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { Request } from 'express';
-import { extractTokenFromHeader, ReqUser } from 'nowhere-common';
+import { extractTokenFromHeader, ReqUser, natsRequest } from 'nowhere-common';
 import { SigninDTO, CreateCredentialDTO } from '../dto';
-import { AuthPatterns, AuthResponse, ValidateUserPayload, SignupPayload } from 'contracts';
-import { firstValueFrom } from 'rxjs';
+import {
+  AuthPatterns,
+  AuthResponse,
+  ValidateUserPayload,
+  SignupPayload,
+} from 'contracts';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class GatewayAuthController {
   constructor(@Inject('NATS_CLIENT') private readonly natsClient: ClientProxy) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async login(@Body() body: SigninDTO): Promise<AuthResponse> {
-    return await firstValueFrom(
-      this.natsClient.send<AuthResponse, ValidateUserPayload>(
-        AuthPatterns.VALIDATE_USER,
-        body,
-      ),
+    return await natsRequest<AuthResponse, ValidateUserPayload>(
+      this.natsClient,
+      AuthPatterns.VALIDATE_USER,
+      body,
+      15_000,
     );
   }
 
   @Post('signup')
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async signup(@Body() body: CreateCredentialDTO): Promise<AuthResponse> {
-    return await firstValueFrom(
-      this.natsClient.send<AuthResponse, SignupPayload>(
-        AuthPatterns.SIGNUP,
-        body as any,
-      ),
+    return await natsRequest<AuthResponse, SignupPayload>(
+      this.natsClient,
+      AuthPatterns.SIGNUP,
+      body,
+      15_000,
     );
   }
 
@@ -44,13 +51,14 @@ export class GatewayAuthController {
   async refresh(@Req() request: Request): Promise<AuthResponse> {
     const token = extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException('Missing or invalid Authorization header');
+      throw new UnauthorizedException(
+        'Missing or invalid Authorization header',
+      );
     }
-    return await firstValueFrom(
-      this.natsClient.send<AuthResponse, { token: string }>(
-        AuthPatterns.REFRESH_TOKEN,
-        { token },
-      ),
+    return await natsRequest<AuthResponse, { token: string }>(
+      this.natsClient,
+      AuthPatterns.REFRESH_TOKEN,
+      { token },
     );
   }
 
