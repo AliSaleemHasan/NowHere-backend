@@ -4,8 +4,8 @@ import { CreateUserInfoSchema } from './users.schemas';
 // ── Message Patterns ──
 
 export enum ROLES {
-  ADMIN,
-  USER,
+  ADMIN = 'ADMIN',
+  USER = 'USER',
 }
 
 // ── Schemas & Types ──
@@ -20,7 +20,7 @@ export interface UserDto {
   bio?: string;
   image?: string;
   isActive?: boolean;
-  role?: ROLES;
+  role?: ROLES | string;
 }
 
 export interface UserSettingsDto {

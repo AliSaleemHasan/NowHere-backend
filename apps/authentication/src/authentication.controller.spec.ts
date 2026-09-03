@@ -36,15 +36,15 @@ describe('AuthNatsController', () => {
 
   describe('validateUser', () => {
     it('should call service.login', async () => {
-      const result = await controller.validateUser({ email: 't@e.com', password: 'p' });
-      expect(service.login).toHaveBeenCalledWith('t@e.com', 'p');
+      const result = await controller.validateUser({ email: 't@e.com', password: 'password1' });
+      expect(service.login).toHaveBeenCalledWith('t@e.com', 'password1');
       expect(result).toEqual(authResponse);
     });
   });
 
   describe('signup', () => {
     it('should call service.signup', async () => {
-      const dto = { email: 't@e.com', password: 'p', firstName: 'John', lastName: 'Doe', role: Roles.USER };
+      const dto = { email: 't@e.com', password: 'password1', firstName: 'John', lastName: 'Doe' };
       const result = await controller.signup(dto);
       expect(service.signup).toHaveBeenCalledWith(dto);
       expect(result).toEqual(authResponse);

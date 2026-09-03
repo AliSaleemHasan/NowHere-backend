@@ -16,7 +16,7 @@ export interface AuthTokens {
 export interface AuthUserDto {
   id: string;
   email: string;
-  role: keyof typeof ROLES;
+  role: ROLES;
   isActive: boolean;
   lastLoginAt?: Date | string;
 }

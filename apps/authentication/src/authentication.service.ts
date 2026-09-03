@@ -1,6 +1,8 @@
 import { AuthEvents, AuthResponse, ROLES } from 'contracts';
 import {
   BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   OnModuleInit,
@@ -15,6 +17,24 @@ import { Credential } from './entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
 import { UserCredentialsCreatedEvent } from 'contracts';
 import { CreateCredentialDTO } from 'nowhere-common/dto/authentication/create-credential-dto';
+
+const GENERIC_LOGIN_ERROR = 'Invalid email or password';
+
+function isDuplicateKeyError(error: unknown): boolean {
+  if (error instanceof QueryFailedError) {
+    const driver = (error as QueryFailedError & {
+      driverError?: { code?: string; errno?: number };
+    }).driverError;
+    return driver?.code === 'ER_DUP_ENTRY' || driver?.errno === 1062;
+  }
+  const maybe = error as { code?: string; errno?: number; driverError?: { code?: string; errno?: number } };
+  return (
+    maybe?.code === 'ER_DUP_ENTRY' ||
+    maybe?.errno === 1062 ||
+    maybe?.driverError?.code === 'ER_DUP_ENTRY' ||
+    maybe?.driverError?.errno === 1062
+  );
+}
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
@@ -63,8 +83,7 @@ export class AuthenticationService implements OnModuleInit {
     const savedAdmin = await this.userRepository.save(admin);
     this.logger.log(`Admin credentials seeded with ID: ${savedAdmin.id}`);
 
-    // Emit event so Users service creates the user profile asynchronously
-    await this.jsPublisher.publish(
+    await this.jsPublisher.publish<UserCredentialsCreatedEvent>(
       AuthEvents.USER_CREDENTIALS_CREATED,
       {
         authId: savedAdmin.id,
@@ -75,7 +94,11 @@ export class AuthenticationService implements OnModuleInit {
     );
   }
 
-  async createUserCredentials(createUserDto: CreateCredentialDTO) {
+  async createUserCredentials(
+    createUserDto: Omit<CreateCredentialDTO, 'firstName' | 'lastName' | 'username'> & {
+      role: ROLES;
+    },
+  ) {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
@@ -88,7 +111,7 @@ export class AuthenticationService implements OnModuleInit {
       user: {
         id: result.user.id as string,
         email: result.user.email as string,
-        role: result.user.role as any,
+        role: (result.user.role as ROLES) ?? ROLES.USER,
         isActive: result.user.isActive as boolean,
         lastLoginAt: result.user.lastLoginAt,
       },
@@ -105,11 +128,16 @@ export class AuthenticationService implements OnModuleInit {
       throw new QueryFailedError('get user by email', undefined, error);
     }
 
-    if (!user)
-      throw new UnauthorizedException('User not found, please sign up');
+    const passwordMatches = user
+      ? await bcrypt.compare(password, user.password)
+      : false;
 
-    if (!(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Wrong password');
+    if (!user || !passwordMatches) {
+      throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
+    }
+
+    if (!user.isActive) {
+      throw new ForbiddenException('Account is disabled');
     }
 
     await this.userRepository.save({ ...user, lastLoginAt: new Date() });
@@ -121,23 +149,23 @@ export class AuthenticationService implements OnModuleInit {
   async signup(createUserDto: CreateCredentialDTO) {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
-    createUserDto.password = hashedPassword;
-
-    if (typeof createUserDto.role === 'number') {
-      createUserDto.role = createUserDto.role === 0 ? ROLES.ADMIN : ROLES.USER;
-    }
 
     const { error: createUserError, data: newUser } = await tryCatch(
-      this.createUserCredentials(createUserDto),
+      this.createUserCredentials({
+        email: createUserDto.email,
+        password: hashedPassword,
+        role: ROLES.USER,
+      }),
     );
 
-    if (createUserError || !newUser)
-      throw new BadRequestException(
-        createUserError?.message || 'Failed to create user credentials',
-      );
+    if (createUserError || !newUser) {
+      if (isDuplicateKeyError(createUserError)) {
+        throw new ConflictException('Email already in use');
+      }
+      throw new BadRequestException('Failed to create user credentials');
+    }
 
-    // Publish durable event via NATS JetStream
-    await this.jsPublisher.publish(
+    await this.jsPublisher.publish<UserCredentialsCreatedEvent>(
       AuthEvents.USER_CREDENTIALS_CREATED,
       {
         authId: newUser.id,
@@ -155,26 +183,29 @@ export class AuthenticationService implements OnModuleInit {
     if (!token) throw new UnauthorizedException('No refresh token provided!');
 
     const { error: jwtError, data: payload } = await tryCatch(
-      this.jwt.verifyAsync<any>(token, {
+      this.jwt.verifyAsync<{ sub: string; user?: Partial<Credential> }>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       }),
     );
 
-    if (jwtError) throw new UnauthorizedException(jwtError.message);
+    if (jwtError || !payload?.sub) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
 
-    const { error, data } = await tryCatch(
-      this.generateTokens(payload.user, payload.sub),
-    );
+    const user = await this.userRepository.findOneBy({ id: payload.sub });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
 
-    if (error) throw new UnauthorizedException(error.message);
-    return this.toAuthResponse({ user: payload.user, tokens: data });
+    const tokens = await this.generateTokens(user, user.id);
+    return this.toAuthResponse({ user, tokens });
   }
 
   async generateTokens(user: Partial<Credential>, Id: string) {
     const userPayload = {
       id: Id,
       email: user.email,
-      role: user.role,
+      role: user.role ?? ROLES.USER,
     };
     const payload = { sub: Id, user: userPayload };
 

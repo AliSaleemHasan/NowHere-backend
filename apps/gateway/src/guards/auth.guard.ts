@@ -32,14 +32,14 @@ export class GatewayAuthGuard implements CanActivate {
       // Inject identity headers for downstream service calls
       request.headers['x-user-id'] = userId;
       request.headers['x-user-email'] = user.email || '';
-      request.headers['x-user-role'] = user.role || 'USER';
+      request.headers['x-user-role'] = String(user.role ?? 'USER');
 
       request['user'] = {
         id: userId,
         Id: userId,
         _id: userId,
         email: user.email,
-        role: user.role,
+        role: user.role ?? 'USER',
       };
     } catch {
       throw new UnauthorizedException('Invalid or expired token');

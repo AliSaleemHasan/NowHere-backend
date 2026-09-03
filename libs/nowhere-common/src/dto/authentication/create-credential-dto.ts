@@ -1,12 +1,10 @@
 import {
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   IsStrongPassword,
 } from 'class-validator';
-import { ROLES } from 'contracts';
 
 export class CreateCredentialDTO {
   @IsStrongPassword({
@@ -33,8 +31,4 @@ export class CreateCredentialDTO {
   @IsString()
   @IsOptional()
   username?: string;
-
-  @IsOptional()
-  @IsEnum(ROLES)
-  role?: ROLES;
 }

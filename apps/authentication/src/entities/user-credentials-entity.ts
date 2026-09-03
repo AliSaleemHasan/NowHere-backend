@@ -27,6 +27,6 @@ export class Credential {
   @Column({ type: 'simple-enum', enum: ROLES, default: ROLES.USER })
   role: ROLES;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   lastLoginAt: Date;
 }
