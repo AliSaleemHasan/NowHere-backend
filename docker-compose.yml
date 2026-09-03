@@ -15,6 +15,11 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-change_me_redis_password}', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   mysql:
     image: mysql:9.4.0
@@ -24,6 +29,12 @@ services:
     volumes:
       - ./mysql_init:/docker-entrypoint-initdb.d
       - sql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-uroot', '-p${MYSQL_ROOT_PASS:-change_me_mysql_root_pass}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
 
   mongodb:
     image: mongo:7
@@ -34,6 +45,24 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-snaps}
     volumes:
       - mongo-data:/data/db
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mongosh',
+          '--username',
+          '${MONGO_ROOT_USER:-root}',
+          '--password',
+          '${MONGO_ROOT_PASS:-change_me_mongo_root_pass}',
+          '--authenticationDatabase',
+          'admin',
+          '--eval',
+          'db.adminCommand({ ping: 1 })',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
 
   minio:
     image: quay.io/minio/minio
@@ -43,14 +72,24 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-change_me_minio_password}
     volumes:
       - minio-data:/data
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    networks:
+      default:
+        aliases:
+          - minio-local
     restart: unless-stopped
 
   authentication:
     container_name: nowhere-authentication
     build:
       context: .
-      dockerfile: ./apps/authentication/Dockerfile
+      dockerfile: docker/service.Dockerfile
       target: runtime
+      args:
+        APP_NAME: authentication
+        APP_PORT: '3004'
     env_file:
       - ./apps/authentication/.env
     environment:
@@ -58,16 +97,21 @@ services:
       TYPEORM_SYNC: 'false'
       NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
     depends_on:
-      - mysql
-      - nats
+      mysql:
+        condition: service_healthy
+      nats:
+        condition: service_started
     restart: unless-stopped
 
   users:
     container_name: nowhere-users
     build:
       context: .
-      dockerfile: ./apps/users/Dockerfile
+      dockerfile: docker/service.Dockerfile
       target: runtime
+      args:
+        APP_NAME: users
+        APP_PORT: '3001'
     env_file:
       - ./apps/users/.env
     environment:
@@ -75,16 +119,21 @@ services:
       TYPEORM_SYNC: 'false'
       NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
     depends_on:
-      - mysql
-      - nats
+      mysql:
+        condition: service_healthy
+      nats:
+        condition: service_started
     restart: unless-stopped
 
   snaps:
     container_name: nowhere-snaps
     build:
       context: .
-      dockerfile: ./apps/snaps/Dockerfile
+      dockerfile: docker/service.Dockerfile
       target: runtime
+      args:
+        APP_NAME: snaps
+        APP_PORT: '3000'
     env_file:
       - ./apps/snaps/.env
     environment:
@@ -94,40 +143,56 @@ services:
     ports:
       - '3000:3000'
     depends_on:
-      - mongodb
-      - nats
+      mongodb:
+        condition: service_healthy
+      nats:
+        condition: service_started
     restart: unless-stopped
 
   storage:
     container_name: nowhere-storage
     build:
       context: .
-      dockerfile: ./apps/storage/Dockerfile
+      dockerfile: docker/service.Dockerfile
       target: runtime
+      args:
+        APP_NAME: storage
+        APP_PORT: '3002'
     env_file:
       - ./apps/storage/.env
     environment:
       NODE_ENV: production
       NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
       REDIS_URL: redis://:${REDIS_PASSWORD:-change_me_redis_password}@redis:6379
+      AWS_ENDPOINT_URL: http://minio:9000
+      AWS_PUBLIC_ENDPOINT_URL: ${AWS_PUBLIC_ENDPOINT_URL:-http://192.168.1.69:9000}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio_admin_user}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-change_me_minio_password}
     depends_on:
-      - minio
-      - nats
-      - redis
+      minio:
+        condition: service_started
+      nats:
+        condition: service_started
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
   gateway:
     container_name: nowhere-gateway
     build:
       context: .
-      dockerfile: ./apps/gateway/Dockerfile
+      dockerfile: docker/service.Dockerfile
       target: runtime
+      args:
+        APP_NAME: gateway
+        APP_PORT: '3005'
     env_file:
       - ./apps/gateway/.env
     environment:
       NODE_ENV: production
       PORT: 3005
       NATS_URL: nats://${NATS_TOKEN:-change_me_nats_token}@nats:4222
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://localhost:5173}
     ports:
       - '3005:3005'
     depends_on:

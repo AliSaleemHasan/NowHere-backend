@@ -61,7 +61,10 @@ services:
       - ./apps/snaps/.env
     build:
       context: .
-      dockerfile: ./apps/snaps/Dockerfile
+      dockerfile: docker/service.Dockerfile
+      args:
+        APP_NAME: snaps
+        APP_PORT: '3000'
       target: dev
     environment:
       NODE_ENV: development
@@ -85,7 +88,10 @@ services:
       - ./apps/users/.env
     build:
       context: .
-      dockerfile: ./apps/users/Dockerfile
+      dockerfile: docker/service.Dockerfile
+      args:
+        APP_NAME: users
+        APP_PORT: '3001'
       target: dev
     environment:
       NODE_ENV: development
@@ -108,7 +114,10 @@ services:
       - ./apps/authentication/.env
     build:
       context: .
-      dockerfile: ./apps/authentication/Dockerfile
+      dockerfile: docker/service.Dockerfile
+      args:
+        APP_NAME: authentication
+        APP_PORT: '3004'
       target: dev
     environment:
       NODE_ENV: development
@@ -132,12 +141,16 @@ services:
       - ./apps/storage/.env
     build:
       context: .
-      dockerfile: ./apps/storage/Dockerfile
+      dockerfile: docker/service.Dockerfile
+      args:
+        APP_NAME: storage
+        APP_PORT: '3002'
       target: dev
     environment:
       NODE_ENV: development
       NATS_URL: nats://${NATS_TOKEN:-dev_nats_token}@nats:4222
       REDIS_URL: redis://:${REDIS_PASSWORD:-dev_redis_password}@redis:6379
+      AWS_PUBLIC_ENDPOINT_URL: ${AWS_PUBLIC_ENDPOINT_URL:-http://192.168.1.69:9000}
     volumes:
       - ./apps/storage:/usr/src/apps/storage
       - ./libs:/usr/src/libs
@@ -156,7 +169,10 @@ services:
       - ./apps/gateway/.env
     build:
       context: .
-      dockerfile: ./apps/gateway/Dockerfile
+      dockerfile: docker/service.Dockerfile
+      args:
+        APP_NAME: gateway
+        APP_PORT: '3005'
       target: dev
     environment:
       NODE_ENV: development

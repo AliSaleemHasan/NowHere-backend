@@ -1,7 +1,7 @@
 # Shared NestJS service image. Build with:
 #   docker build -f docker/service.Dockerfile \
 #     --build-arg APP_NAME=authentication --build-arg APP_PORT=3004 --target runtime .
-ARG APP_NAME=snaps
+ARG APP_NAME
 ARG APP_PORT=3000
 
 FROM node:24 AS base
