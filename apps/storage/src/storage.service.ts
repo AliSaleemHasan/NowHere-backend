@@ -5,6 +5,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager';
+import { ConfigService } from '@nestjs/config';
 import {
   STORAGE_STRATEGY,
   StorageStrategy,
@@ -18,26 +19,9 @@ export class StorageService {
   constructor(
     @Inject(STORAGE_STRATEGY) private readonly strategy: StorageStrategy,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly configService: ConfigService,
   ) {}
 
-  /**
-   * Generates a unique key for presigned uploads
-   */
-  generatePresignedUploadKey(
-    userId: string,
-    options?: { filename?: string; prefix?: string },
-  ): string {
-    const today = new Date().toISOString().split('T')[0];
-    const uniqueSuffix =
-      Date.now() + '-' + Math.random().toString(36).substring(2, 8);
-    const ext = options?.filename ? options.filename.split('.').pop() : 'jpg';
-    const folder = options?.prefix || 'snaps';
-    return `${folder}/${today}/${userId || 'user'}/${uniqueSuffix}.${ext}`;
-  }
-
-  /**
-   * Generates a presigned upload URL for direct client upload
-   */
   async getPresignedUploadUrl(
     key: string,
     contentType: string = 'image/jpeg',
@@ -84,7 +68,7 @@ export class StorageService {
     await this.cacheManager.set(
       key,
       signedURL,
-      Number(process.env.CACHE_TTL) || 86340,
+      Number(this.configService.get('CACHE_TTL')) || 86340,
     );
 
     return signedURL;
@@ -128,17 +112,11 @@ export class StorageService {
     }
   }
 
-  /**
-   * Helper for profile photo uploads (used by gRPC)
-   */
   async uploadPhoto(image: Buffer, userId: string): Promise<string> {
     const key = `profile/${userId}`;
     return await this.uploadFile(image, key);
   }
 
-  /**
-   * Helper for multiple signed URLs (used by gRPC)
-   */
   async getSignedUrls(keys: string[]): Promise<string[]> {
     const outputs: string[] = [];
     for (const key of keys) {

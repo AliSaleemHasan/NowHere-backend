@@ -5,6 +5,7 @@ import { SnapsService } from './snaps.service';
 import { Snap, SnapStatus } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
 import { UsersPatterns } from 'contracts';
+import { NATS_CLIENT } from 'nowhere-common';
 
 describe('SnapsService', () => {
   let service: SnapsService;
@@ -54,7 +55,7 @@ describe('SnapsService', () => {
       providers: [
         SnapsService,
         { provide: getModelToken(Snap.name), useValue: snapModel },
-        { provide: 'NATS_CLIENT', useValue: natsClient },
+        { provide: NATS_CLIENT, useValue: natsClient },
         {
           provide: SnapsGateway,
           useValue: { handleNewSnap: jest.fn() },

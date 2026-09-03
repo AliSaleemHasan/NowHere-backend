@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HealthController } from './health.controller';
+import { MemoryHealthController as HealthController } from 'nowhere-common';
 import { HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
 
 describe('HealthController', () => {

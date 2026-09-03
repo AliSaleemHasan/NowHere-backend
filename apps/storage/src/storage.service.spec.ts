@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { StorageService } from './storage.service';
 import { STORAGE_STRATEGY } from './strategies/storage-strategy.interface';
 
@@ -30,6 +31,7 @@ describe('StorageService', () => {
         StorageService,
         { provide: STORAGE_STRATEGY, useValue: strategy },
         { provide: CACHE_MANAGER, useValue: cache },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
       ],
     }).compile();
 

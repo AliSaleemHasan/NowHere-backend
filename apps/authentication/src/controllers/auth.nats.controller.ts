@@ -28,7 +28,7 @@ export class AuthNatsController {
   @MessagePattern(AuthPatterns.SIGNUP)
   async signup(@Payload() data: SignupPayload): Promise<AuthResponse> {
     const payload = validateSchema(SignupSchema, data);
-    return await this.authService.signup(payload as any);
+    return await this.authService.signup(payload);
   }
 
   @MessagePattern(AuthPatterns.REFRESH_TOKEN)

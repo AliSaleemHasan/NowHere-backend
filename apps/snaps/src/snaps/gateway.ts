@@ -12,7 +12,11 @@ import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
+import {
+  extractBearerToken,
+  haversineMeters,
+  parseCorsOrigins,
+} from 'nowhere-common';
 
 type UserSocket = {
   socketId: string;
@@ -21,18 +25,10 @@ type UserSocket = {
 
 type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
 
-function socketCorsOrigin(): string | string[] | boolean {
-  const fromCors = (process.env.CORS_ORIGIN || '')
-    .split(',')
-    .map((value) => value.trim())
-    .filter(Boolean);
-  if (fromCors.length > 0) {
-    return fromCors;
-  }
-  if (process.env.GATEWAY_URL) {
-    return process.env.GATEWAY_URL;
-  }
-  return process.env.NODE_ENV === 'production' ? false : true;
+function socketCorsOrigin() {
+  return parseCorsOrigins({
+    fallback: process.env.GATEWAY_URL || true,
+  });
 }
 
 @WebSocketGateway({
@@ -103,56 +99,28 @@ export class SnapsGateway
     return this.usersLocationMap.get(client.id);
   }
 
-  getDistanceInMeters(
-    latitude1: number,
-    longitude1: number,
-    latitude2: number,
-    longitude2: number,
-  ): number {
-    const toRadians = (degrees: number) => degrees * (Math.PI / 180);
-
-    const earthRadiusMeters = 6371e3;
-
-    const lat1Rad = toRadians(latitude1);
-    const lat2Rad = toRadians(latitude2);
-    const deltaLat = toRadians(latitude2 - latitude1);
-    const deltaLon = toRadians(longitude2 - longitude1);
-
-    const haversineA =
-      Math.sin(deltaLat / 2) ** 2 +
-      Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLon / 2) ** 2;
-
-    const haversineC =
-      2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
-
-    return earthRadiusMeters * haversineC;
-  }
-
   findNearbyUsers(lat: number, lng: number, radiusKm: number) {
     const radiusInMeters = radiusKm * 1000;
+    if (!this.usersLocationMap) return [];
 
     return Array.from(this.usersLocationMap.values()).filter((user) => {
-      const distance = this.getDistanceInMeters(
-        lat,
-        lng,
-        user.coordinates[1],
-        user.coordinates[0],
+      if (!user?.coordinates || user.coordinates.length < 2) return false;
+      return (
+        haversineMeters(
+          lat,
+          lng,
+          user.coordinates[1],
+          user.coordinates[0],
+        ) <= radiusInMeters
       );
-      return distance <= radiusInMeters;
     });
   }
 
-  @SubscribeMessage('snap-added')
-  handleGetNewSnaps(@MessageBody() snap: CreateSnapDto) {
-    return snap;
-  }
+  handleNewSnap(body: { location?: { coordinates?: [number, number] } }) {
+    const coordinates = body?.location?.coordinates;
+    if (!coordinates || coordinates.length < 2) return;
 
-  handleNewSnap(body: CreateSnapDto) {
-    const users = this.findNearbyUsers(
-      body.location.coordinates[1],
-      body.location.coordinates[0],
-      100,
-    );
+    const users = this.findNearbyUsers(coordinates[1], coordinates[0], 100);
 
     users.forEach((user) => {
       this.server.to(user.socketId).emit('snap-added', body);
@@ -162,12 +130,9 @@ export class SnapsGateway
   private extractHandshakeToken(client: Socket): string | undefined {
     const fromAuth = client.handshake?.auth?.token;
     if (typeof fromAuth === 'string' && fromAuth.length > 0) {
-      return fromAuth.replace(/^Bearer\s+/i, '');
+      return extractBearerToken(fromAuth) ?? fromAuth;
     }
     const header = client.handshake?.headers?.authorization;
-    if (typeof header === 'string' && header.startsWith('Bearer ')) {
-      return header.slice(7);
-    }
-    return undefined;
+    return extractBearerToken(Array.isArray(header) ? header[0] : header);
   }
 }

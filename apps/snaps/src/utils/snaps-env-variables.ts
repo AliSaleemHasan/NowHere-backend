@@ -1,12 +1,7 @@
 import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { JwtAccessOptionalNatsEnv } from 'nowhere-common';
 
-export class SnapsEnvVariables {
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(65535)
-  NEST_PORT?: number;
-
+export class SnapsEnvVariables extends JwtAccessOptionalNatsEnv {
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -43,9 +38,6 @@ export class SnapsEnvVariables {
   @IsNumber()
   SNAP_DISAPPEAR_TIME?: number;
 
-  @IsString({ message: 'Access secret used for JWT authentication' })
-  ACCESS_SECRET!: string;
-
   @IsOptional()
   @IsString()
   GATEWAY_URL?: string;
@@ -56,13 +48,5 @@ export class SnapsEnvVariables {
 
   @IsOptional()
   @IsString()
-  NATS_URL?: string;
-
-  @IsOptional()
-  @IsString()
   ENABLE_SEED?: string;
-
-  @IsOptional()
-  @IsString()
-  NODE_ENV?: string;
 }

@@ -6,32 +6,22 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
+import { OptionalNatsEnv } from 'nowhere-common';
+import { isGcpStorageProvider } from './storage-provider';
 
-export class StroageEnvVariables {
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(65535)
-  NEST_PORT?: number;
-
+export class StorageEnvVariables extends OptionalNatsEnv {
   @IsOptional()
   @IsString()
   STORAGE_PROVIDER?: string;
 
   @ValidateIf(
-    (env: StroageEnvVariables) =>
-      (env.STORAGE_PROVIDER || 'aws').toLowerCase() !== 'gcp' &&
-      (env.STORAGE_PROVIDER || 'aws').toLowerCase() !== 'gcs' &&
-      (env.STORAGE_PROVIDER || 'aws').toLowerCase() !== 'google',
+    (env: StorageEnvVariables) => !isGcpStorageProvider(env.STORAGE_PROVIDER),
   )
   @IsString({ message: 'BUCKET name used in AWS S3 / MinIO' })
   AWS_BUCKET?: string;
 
   @ValidateIf(
-    (env: StroageEnvVariables) =>
-      (env.STORAGE_PROVIDER || 'aws').toLowerCase() !== 'gcp' &&
-      (env.STORAGE_PROVIDER || 'aws').toLowerCase() !== 'gcs' &&
-      (env.STORAGE_PROVIDER || 'aws').toLowerCase() !== 'google',
+    (env: StorageEnvVariables) => !isGcpStorageProvider(env.STORAGE_PROVIDER),
   )
   @IsString({ message: 'Region of AWS Bucket used' })
   AWS_REGION?: string;
@@ -48,10 +38,9 @@ export class StroageEnvVariables {
   @IsString()
   AWS_ENDPOINT_URL?: string;
 
-  @ValidateIf((env: StroageEnvVariables) => {
-    const provider = (env.STORAGE_PROVIDER || 'aws').toLowerCase();
-    return provider === 'gcp' || provider === 'gcs' || provider === 'google';
-  })
+  @ValidateIf((env: StorageEnvVariables) =>
+    isGcpStorageProvider(env.STORAGE_PROVIDER),
+  )
   @IsOptional()
   @IsString()
   GCP_BUCKET?: string;
@@ -66,8 +55,4 @@ export class StroageEnvVariables {
   @IsOptional()
   @IsNumber()
   CACHE_TTL?: number;
-
-  @IsOptional()
-  @IsString()
-  NATS_URL?: string;
 }

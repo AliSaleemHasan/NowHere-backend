@@ -8,8 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { GeoPointType, Tags } from 'nowhere-common/types/common-types';
-import { GeoPointDto } from 'nowhere-common/dto/snaps/create-snap.dto';
+import { GeoPointDto, MAX_UPLOAD_BATCH, Tags } from 'nowhere-common';
 
 export class CreateSnapHttpDto {
   @IsString()
@@ -32,7 +31,7 @@ export class CreateSnapHttpDto {
 
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(4)
+  @ArrayMaxSize(MAX_UPLOAD_BATCH)
   @IsString({ each: true })
   snaps: string[];
 
@@ -41,5 +40,3 @@ export class CreateSnapHttpDto {
   @Transform(({ value }) => value ?? Tags.SOCIAL)
   tag?: Tags;
 }
-
-export { GeoPointDto, GeoPointType };

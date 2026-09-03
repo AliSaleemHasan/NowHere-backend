@@ -5,8 +5,8 @@ import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
 import { SnapSeen } from '../entities/snaps-seen.entity';
 import { Settings } from '../../settings/entities/settings.entity';
-import { ConfigService } from '@nestjs/config';
 import { NotFoundException } from '@nestjs/common';
+import { NATS_CLIENT } from 'nowhere-common';
 
 describe('UsersService (unit)', () => {
   let service: UsersService;
@@ -17,7 +17,7 @@ describe('UsersService (unit)', () => {
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
-        { provide: "NATS_CLIENT", useValue: { send: jest.fn(), emit: jest.fn() } },
+        { provide: NATS_CLIENT, useValue: { send: jest.fn(), emit: jest.fn() } },
         UsersService,
         {
           provide: getRepositoryToken(User),
@@ -45,10 +45,6 @@ describe('UsersService (unit)', () => {
             find: jest.fn(),
             findOne: jest.fn(),
           },
-        },
-        {
-          provide: ConfigService,
-          useValue: { get: jest.fn() },
         },
       ],
     }).compile();

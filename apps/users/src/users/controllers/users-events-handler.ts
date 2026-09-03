@@ -1,5 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { AuthEvents, UserCredentialsCreatedEvent } from 'contracts';
+import {
+  AuthEvents,
+  CreateUserInfoSchema,
+  UserCredentialsCreatedEvent,
+  validateSchema,
+} from 'contracts';
 import { JetStreamConsumerService } from 'nowhere-common';
 import { UsersService } from '../users.service';
 
@@ -23,12 +28,16 @@ export class UsersEventsHandler implements OnModuleInit {
 
   private async handleUserCreated(data: UserCredentialsCreatedEvent) {
     this.logger.log(`Handling user credentials created for authId=${data.authId}`);
-    await this.usersService.createUser({
-      id: data.authId,
+    const payload = validateSchema(CreateUserInfoSchema, {
+      authId: data.authId,
       email: data.email,
       firstName: data.firstName,
       lastName: data.lastName,
       bio: '',
+    });
+    await this.usersService.createUser({
+      ...payload,
+      id: payload.authId,
     });
   }
 }

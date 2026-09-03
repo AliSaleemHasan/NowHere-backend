@@ -10,24 +10,25 @@ import { DeleteResult, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { SnapsGateway } from './gateway';
 import {
-  maxDistance_TO_SEE,
+  MAX_DISTANCE_TO_SEE,
   MIN_DISTANCE_TO_POST,
   SNAP_DISAPPEAR_TIME,
   handleMongoError,
   natsRequest,
   assertSnapImageKeys,
+  NATS_CLIENT,
+  Tags,
+  metersToSphereRadians,
 } from 'nowhere-common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
+  CreateSnapPayload,
   StoragePatterns,
   UsersPatterns,
   SignedUrlsPayload,
   UserSettingsDto,
   SeenObjectsDto,
 } from 'contracts';
-import { FindSnapDTO } from 'nowhere-common/dto/snaps/find-snap.dto';
-import { CreateSnapDto } from 'nowhere-common/dto/snaps/create-snap.dto';
-import { Tags } from 'nowhere-common/types/common-types';
 
 @Injectable()
 export class SnapsService {
@@ -35,39 +36,42 @@ export class SnapsService {
 
   constructor(
     @InjectModel(Snap.name) private snapModel: Model<Snap>,
-    @Inject('NATS_CLIENT') private natsClient: ClientProxy,
-    private snapsGateaway: SnapsGateway,
+    @Inject(NATS_CLIENT) private natsClient: ClientProxy,
+    private snapsGateway: SnapsGateway,
   ) {}
 
-  async create(userId: string, createSnapDto: CreateSnapDto) {
-    createSnapDto._userId = userId;
-
+  async create(userId: string, createSnapDto: CreateSnapPayload) {
     let location = createSnapDto.location;
     if (typeof location === 'string') location = JSON.parse(location);
-    createSnapDto.location = location;
 
     const snapKeys = Array.isArray(createSnapDto.snaps)
       ? createSnapDto.snaps.filter((k) => typeof k === 'string' && k.length > 0)
       : [];
     assertSnapImageKeys(snapKeys, userId);
-    createSnapDto.snaps = snapKeys;
 
     const params = await this.getNearParams({ _userId: userId });
 
-    const exists = await this.snapModel
-      .findOne({
-        _userId: userId,
-        createdAt: { $gte: params.showBefore, $lte: params.showAfter },
-        location: {
-          $near: {
-            $geometry: location,
-            $maxDistance: params.allowedPostDistance,
+    let exists: { _id?: unknown } | null = null;
+    try {
+      exists = await this.snapModel
+        .findOne({
+          _userId: userId,
+          createdAt: { $gte: params.showBefore, $lte: params.showAfter },
+          location: {
+            $near: {
+              $geometry: location,
+              $maxDistance: params.allowedPostDistance,
+            },
           },
-        },
-      })
-      .select('_id')
-      .lean()
-      .exec();
+        })
+        .select('_id')
+        .lean()
+        .exec();
+    } catch (geoErr) {
+      this.logger.warn(
+        `Duplicate-area geo query failed: ${geoErr instanceof Error ? geoErr.message : geoErr}`,
+      );
+    }
 
     if (exists)
       throw new ForbiddenException(
@@ -77,12 +81,22 @@ export class SnapsService {
     try {
       const createdSnap = new this.snapModel({
         ...createSnapDto,
+        _userId: userId,
+        location,
+        snaps: snapKeys,
         status: SnapStatus.SUCCESS,
       });
 
       const created = await createdSnap.save();
-      this.snapsGateaway.handleNewSnap(created);
-      return created;
+      const json = created.toJSON();
+      try {
+        this.snapsGateway.handleNewSnap(json);
+      } catch (broadcastErr) {
+        this.logger.warn(
+          `snap-added broadcast failed: ${broadcastErr instanceof Error ? broadcastErr.message : broadcastErr}`,
+        );
+      }
+      return json;
     } catch (err) {
       handleMongoError(err);
     }
@@ -108,7 +122,7 @@ export class SnapsService {
       }
     }
 
-    const visionDistance = user_settings?.maxDistance || maxDistance_TO_SEE;
+    const visionDistance = user_settings?.maxDistance || MAX_DISTANCE_TO_SEE;
     const allowedPostDistance =
       user_settings?.newSnapDistance || MIN_DISTANCE_TO_POST;
 
@@ -135,23 +149,47 @@ export class SnapsService {
     _userId: string;
   }) {
     const params = await this.getNearParams({ _userId });
+    const radiusRadians = metersToSphereRadians(params.visionDistance);
+    const filters = {
+      status: SnapStatus.SUCCESS,
+      ...(tags && tags.length > 0 && { tag: { $in: tags } }),
+      createdAt: { $gte: params.showBefore, $lte: params.showAfter },
+    };
 
-    return await this.snapModel
-      .find({
-        status: SnapStatus.SUCCESS,
-        ...(tags && tags.length > 0 && { tag: { $in: tags } }),
-        createdAt: { $gte: params.showBefore, $lte: params.showAfter },
-        location: {
-          $near: {
-            $geometry: {
-              type: 'Point',
-              coordinates: location,
+    try {
+      return await this.snapModel
+        .find({
+          ...filters,
+          location: {
+            $geoWithin: {
+              $centerSphere: [location, radiusRadians],
             },
-            $maxDistance: params.visionDistance,
           },
-        },
-      })
-      .exec();
+        })
+        .exec();
+    } catch (geoErr) {
+      this.logger.warn(
+        `findNear geo query failed: ${geoErr instanceof Error ? geoErr.message : geoErr}`,
+      );
+      try {
+        return await this.snapModel
+          .find({
+            ...filters,
+            location: {
+              $near: {
+                $geometry: { type: 'Point', coordinates: location },
+                $maxDistance: params.visionDistance,
+              },
+            },
+          })
+          .exec();
+      } catch (nearErr) {
+        this.logger.warn(
+          `findNear $near fallback failed: ${nearErr instanceof Error ? nearErr.message : nearErr}`,
+        );
+        return [];
+      }
+    }
   }
 
   async updateSnapImages(id: string, images: string[]) {
@@ -222,15 +260,18 @@ export class SnapsService {
   }
 
   async getSeenSnaps(
-    getSnapDTO: FindSnapDTO,
+    query: { tags?: Tags[]; location: [number, number] },
     userID: string,
     seen: boolean = true,
   ) {
-    const nearSnaps = await this.findNear({ ...getSnapDTO, _userId: userID });
+    const nearSnaps = await this.findNear({ ...query, _userId: userID });
 
     if (!userID || nearSnaps.length === 0) return nearSnaps;
 
-    const snapIds = nearSnaps.map((s) => s.id);
+    const idOf = (snap: { id?: string; _id?: unknown }) =>
+      snap.id || (snap._id ? String(snap._id) : '');
+
+    const snapIds = nearSnaps.map(idOf).filter(Boolean);
 
     const response = await natsRequest<
       SeenObjectsDto,
@@ -242,8 +283,9 @@ export class SnapsService {
     });
 
     const seenSnapIdsSet = new Set((response?.seen || []).map((s) => s.snapId));
-    return nearSnaps.filter((snap) =>
-      seen ? seenSnapIdsSet.has(snap.id) : !seenSnapIdsSet.has(snap.id),
-    );
+    return nearSnaps.filter((snap) => {
+      const id = idOf(snap);
+      return seen ? seenSnapIdsSet.has(id) : !seenSnapIdsSet.has(id);
+    });
   }
 }

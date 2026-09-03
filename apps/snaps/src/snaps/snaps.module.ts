@@ -5,11 +5,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Snap, SnapSchema } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
 import { JwtModule } from '@nestjs/jwt';
-import { NatsClientModule } from 'nowhere-common';
 
 @Module({
   imports: [
-    NatsClientModule.register('NATS_CLIENT'),
     JwtModule.register({}),
     MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
   ],

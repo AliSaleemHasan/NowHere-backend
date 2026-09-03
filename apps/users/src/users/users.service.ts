@@ -12,12 +12,12 @@ import { Settings } from '../settings/entities/settings.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { SnapSeen } from './entities/snaps-seen.entity';
 import {
+  CreateUserInfoPayload,
   StoragePatterns,
   UploadPhotoPayload,
   SignedUrlPayload,
 } from 'contracts';
-import { CreateUserDTO } from 'nowhere-common/dto/users/create-user.dto';
-import { natsRequest } from 'nowhere-common';
+import { NATS_CLIENT, natsRequest } from 'nowhere-common';
 
 @Injectable()
 export class UsersService {
@@ -28,25 +28,16 @@ export class UsersService {
     @InjectRepository(SnapSeen) private snapSeenRepo: Repository<SnapSeen>,
     @InjectRepository(Settings)
     private settingsRepository: Repository<Settings>,
-    @Inject('NATS_CLIENT') private natsClient: ClientProxy,
+    @Inject(NATS_CLIENT) private natsClient: ClientProxy,
   ) {}
 
   async createUser(
-    createUserDto: Partial<CreateUserDTO> & {
-      id?: string;
-      bio?: string;
-      authId?: string;
-    },
+    createUserDto: CreateUserInfoPayload & { id?: string },
   ) {
     const userId = createUserDto.id || createUserDto.authId;
     const email = createUserDto.email;
 
-    const existing = await this.userRepository.findOne({
-      where: [
-        ...(userId ? [{ id: userId }] : []),
-        ...(email ? [{ email }] : []),
-      ],
-    });
+    const existing = await this.findByIdOrEmail(userId, email);
     if (existing) {
       return existing;
     }
@@ -58,17 +49,21 @@ export class UsersService {
       });
       return await this.userRepository.save(user);
     } catch (err) {
-      const raced = await this.userRepository.findOne({
-        where: [
-          ...(userId ? [{ id: userId }] : []),
-          ...(email ? [{ email }] : []),
-        ],
-      });
+      const raced = await this.findByIdOrEmail(userId, email);
       if (raced) {
         return raced;
       }
       throw err;
     }
+  }
+
+  private findByIdOrEmail(userId?: string, email?: string) {
+    return this.userRepository.findOne({
+      where: [
+        ...(userId ? [{ id: userId }] : []),
+        ...(email ? [{ email }] : []),
+      ],
+    });
   }
 
   async getUserByEmail(email: string) {

@@ -1,4 +1,11 @@
-import { AuthEvents, AuthResponse, ROLES } from 'contracts';
+import {
+  AuthEvents,
+  AuthResponse,
+  JwtPayload,
+  ROLES,
+  SignupPayload,
+  UserCredentialsCreatedEvent,
+} from 'contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -11,30 +18,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { JetStreamPublisher, tryCatch } from 'nowhere-common';
+import { isDuplicateKeyError, JetStreamPublisher, tryCatch } from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Credential } from './entities/user-credentials-entity';
 import { QueryFailedError, Repository } from 'typeorm';
-import { UserCredentialsCreatedEvent } from 'contracts';
-import { CreateCredentialDTO } from 'nowhere-common/dto/authentication/create-credential-dto';
 
 const GENERIC_LOGIN_ERROR = 'Invalid email or password';
-
-function isDuplicateKeyError(error: unknown): boolean {
-  if (error instanceof QueryFailedError) {
-    const driver = (error as QueryFailedError & {
-      driverError?: { code?: string; errno?: number };
-    }).driverError;
-    return driver?.code === 'ER_DUP_ENTRY' || driver?.errno === 1062;
-  }
-  const maybe = error as { code?: string; errno?: number; driverError?: { code?: string; errno?: number } };
-  return (
-    maybe?.code === 'ER_DUP_ENTRY' ||
-    maybe?.errno === 1062 ||
-    maybe?.driverError?.code === 'ER_DUP_ENTRY' ||
-    maybe?.driverError?.errno === 1062
-  );
-}
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
@@ -71,12 +60,9 @@ export class AuthenticationService implements OnModuleInit {
       return;
     }
 
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const admin = this.userRepository.create({
       email,
-      password: hashedPassword,
+      password: await this.hashPassword(password),
       role: ROLES.ADMIN,
     });
 
@@ -94,11 +80,11 @@ export class AuthenticationService implements OnModuleInit {
     );
   }
 
-  async createUserCredentials(
-    createUserDto: Omit<CreateCredentialDTO, 'firstName' | 'lastName' | 'username'> & {
-      role: ROLES;
-    },
-  ) {
+  async createUserCredentials(createUserDto: {
+    email: string;
+    password: string;
+    role: ROLES;
+  }) {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
@@ -146,14 +132,11 @@ export class AuthenticationService implements OnModuleInit {
     return this.toAuthResponse({ user, tokens });
   }
 
-  async signup(createUserDto: CreateCredentialDTO) {
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
-
+  async signup(createUserDto: SignupPayload) {
     const { error: createUserError, data: newUser } = await tryCatch(
       this.createUserCredentials({
         email: createUserDto.email,
-        password: hashedPassword,
+        password: await this.hashPassword(createUserDto.password),
         role: ROLES.USER,
       }),
     );
@@ -183,7 +166,7 @@ export class AuthenticationService implements OnModuleInit {
     if (!token) throw new UnauthorizedException('No refresh token provided!');
 
     const { error: jwtError, data: payload } = await tryCatch(
-      this.jwt.verifyAsync<{ sub: string; user?: Partial<Credential> }>(token, {
+      this.jwt.verifyAsync<JwtPayload>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       }),
     );
@@ -201,13 +184,20 @@ export class AuthenticationService implements OnModuleInit {
     return this.toAuthResponse({ user, tokens });
   }
 
+  private async hashPassword(password: string): Promise<string> {
+    const salt = await bcrypt.genSalt();
+    return bcrypt.hash(password, salt);
+  }
+
   async generateTokens(user: Partial<Credential>, Id: string) {
-    const userPayload = {
-      id: Id,
-      email: user.email,
-      role: user.role ?? ROLES.USER,
+    const payload: JwtPayload = {
+      sub: Id,
+      user: {
+        id: Id,
+        email: user.email as string,
+        role: user.role ?? ROLES.USER,
+      },
     };
-    const payload = { sub: Id, user: userPayload };
 
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('ACCESS_SECRET'),

@@ -1,5 +1,4 @@
 import { IsEmail } from 'class-validator';
-import { ROLES } from 'contracts';
 import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('users')

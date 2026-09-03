@@ -21,21 +21,50 @@ export class S3StorageStrategy implements StorageStrategy, OnModuleInit {
   private readonly client: S3Client;
   private readonly bucket: string;
 
+  private readonly signingClient: S3Client;
+
   constructor(private readonly config: ConfigService) {
     this.bucket = this.config.get<string>('AWS_BUCKET', 'mysnapsbucket');
 
-    this.client = new S3Client({
-      endpoint: this.config.get<string>(
-        'AWS_ENDPOINT_URL',
-        'http://minio-local:9000',
+    const region = this.config.get<string>('AWS_REGION', 'us-east-1');
+    const credentials = {
+      accessKeyId: this.config.get<string>(
+        'AWS_ACCESS_KEY_ID',
+        'minio_admin_user',
       ),
-      region: this.config.get<string>('AWS_REGION', 'us-east-1'),
-      credentials: {
-        accessKeyId: this.config.get<string>('AWS_ACCESS_KEY_ID', 'minio_admin_user'),
-        secretAccessKey: this.config.get<string>('AWS_SECRET_ACCESS_KEY', 'minio_secure_dev_pass_2026!'),
-      },
-      forcePathStyle: true,
+      secretAccessKey: this.config.get<string>(
+        'AWS_SECRET_ACCESS_KEY',
+        'minio_secure_dev_pass_2026!',
+      ),
+    };
+    const internalEndpoint = this.config.get<string>(
+      'AWS_ENDPOINT_URL',
+      'http://minio-local:9000',
+    );
+    const publicEndpoint =
+      this.config.get<string>('AWS_PUBLIC_ENDPOINT_URL') || internalEndpoint;
+
+    const clientOptions = {
+      region,
+      credentials,
+      forcePathStyle: true as const,
+      // AWS SDK v3 otherwise signs x-amz-checksum-* headers the app does not send → 403
+      requestChecksumCalculation: 'WHEN_REQUIRED' as const,
+      responseChecksumValidation: 'WHEN_REQUIRED' as const,
+    };
+
+    this.client = new S3Client({
+      endpoint: internalEndpoint,
+      ...clientOptions,
     });
+
+    this.signingClient =
+      publicEndpoint === internalEndpoint
+        ? this.client
+        : new S3Client({
+            endpoint: publicEndpoint,
+            ...clientOptions,
+          });
   }
 
   async onModuleInit() {
@@ -57,8 +86,11 @@ export class S3StorageStrategy implements StorageStrategy, OnModuleInit {
 
   private formatSignedUrl(url: string): string {
     const publicEndpoint = this.config.get<string>('AWS_PUBLIC_ENDPOINT_URL');
-    if (publicEndpoint && url.includes('minio-local:9000')) {
-      return url.replace('http://minio-local:9000', publicEndpoint);
+    const internalEndpoint = (
+      this.config.get<string>('AWS_ENDPOINT_URL') || 'http://minio-local:9000'
+    ).replace(/\/$/, '');
+    if (publicEndpoint && url.includes(internalEndpoint)) {
+      return url.replace(internalEndpoint, publicEndpoint.replace(/\/$/, ''));
     }
     return url;
   }
@@ -89,7 +121,7 @@ export class S3StorageStrategy implements StorageStrategy, OnModuleInit {
       Key: key,
       ResponseContentDisposition: 'inline',
     });
-    const url = await getSignedUrl(this.client, command, { expiresIn });
+    const url = await getSignedUrl(this.signingClient, command, { expiresIn });
     return this.formatSignedUrl(url);
   }
 
@@ -100,7 +132,7 @@ export class S3StorageStrategy implements StorageStrategy, OnModuleInit {
       Key: key,
       ContentType: contentType,
     });
-    const url = await getSignedUrl(this.client, command, { expiresIn });
+    const url = await getSignedUrl(this.signingClient, command, { expiresIn });
     return this.formatSignedUrl(url);
   }
 

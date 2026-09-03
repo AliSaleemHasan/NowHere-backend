@@ -11,8 +11,7 @@ import {
   AuthResponse,
   SignupPayload,
 } from 'contracts';
-import { natsRequest } from 'nowhere-common';
-import { Tags } from 'nowhere-common/types/common-types';
+import { NATS_CLIENT, natsRequest, Tags } from 'nowhere-common';
 
 @Injectable()
 export class SeedService {
@@ -20,7 +19,7 @@ export class SeedService {
 
   constructor(
     @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
-    @Inject('NATS_CLIENT') private natsClient: ClientProxy,
+    @Inject(NATS_CLIENT) private natsClient: ClientProxy,
   ) {}
 
   generateLocations = () => {

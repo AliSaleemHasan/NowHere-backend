@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { HealthController } from '../src/health.controller';
+import { TypeOrmHealthController as HealthController } from 'nowhere-common';
 import { HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus';
 
 describe('Authentication HTTP (e2e)', () => {

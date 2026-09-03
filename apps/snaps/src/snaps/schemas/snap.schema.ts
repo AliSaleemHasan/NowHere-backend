@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { GeoPointType, Tags } from 'nowhere-common/types/common-types';
+import { GeoPointType, Tags } from 'nowhere-common';
 
 export type SnapDocument = HydratedDocument<Snap>;
 
@@ -11,7 +11,11 @@ export enum SnapStatus {
   PROCESSING = 'PROCESSING',
 }
 
-@Schema({ timestamps: true }) // auto-adds createdAt and updatedAt
+@Schema({
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+})
 export class Snap {
   @Prop({ required: true })
   description: string;
@@ -51,4 +55,5 @@ export class Snap {
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);
 
+SnapSchema.index({ location: '2dsphere' });
 SnapSchema.index({ createdAt: -1, location: '2dsphere' });

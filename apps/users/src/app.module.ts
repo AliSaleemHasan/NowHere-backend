@@ -1,47 +1,33 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import {
-  getValidateFn,
-  NatsClientModule,
+  createEnvConfigModule,
+  HealthModule,
   JetStreamModule,
+  mysqlTypeOrmConfig,
+  NatsClientModule,
 } from 'nowhere-common';
-import { UsersEnvVariables } from './utils/auth-env-variables';
-import { TerminusModule } from '@nestjs/terminus';
-import { HealthController } from './health.controller';
+import { UsersEnvVariables } from './utils/users-env-variables';
 
 @Module({
   imports: [
-    NatsClientModule.register('NATS_CLIENT'),
+    createEnvConfigModule(UsersEnvVariables),
+    NatsClientModule.register(),
     JetStreamModule.forRoot(),
-    TerminusModule,
-    ConfigModule.forRoot({
-      validate: getValidateFn(UsersEnvVariables),
-      isGlobal: true,
-      envFilePath: [path.resolve(process.cwd(), '.env')],
-    }),
-    JwtModule.register({ global: true }),
+    HealthModule.forTypeOrm(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('MYSQL_HOST', 'mysql'),
-        port: Number(configService.get('MYSQL_PORT', 3306)),
-        username: configService.get('MYSQL_USER', 'root'),
-        password: configService.get('MYSQL_PASS', 'root'),
-        database: configService.get('MYSQL_DATABASE', 'Users_Info'),
-        entities: [],
-        migrations: [__dirname + '/migrations/*{.ts,.js}'],
-        autoLoadEntities: true,
-        synchronize: configService.get('TYPEORM_SYNC') === 'true',
-      }),
       inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        mysqlTypeOrmConfig(configService, {
+          migrationsDir: path.join(__dirname, 'migrations'),
+          defaultDatabase: 'Users_Info',
+        }),
     }),
     UsersModule,
   ],
-  controllers: [HealthController],
 })
 export class UsersAppModule {}

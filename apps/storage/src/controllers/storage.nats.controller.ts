@@ -12,6 +12,7 @@ import {
   PresignedUploadPayload,
   PresignedUploadResponse,
 } from 'contracts';
+import { toBuffer } from 'nowhere-common';
 
 @Controller()
 export class StorageNatsController {
@@ -25,17 +26,10 @@ export class StorageNatsController {
   async uploadPhoto(
     @Payload() data: UploadPhotoPayload,
   ): Promise<{ key: string }> {
-    let buffer: Buffer;
-    if (Buffer.isBuffer(data.image)) {
-      buffer = data.image;
-    } else if (typeof data.image === 'object' && (data.image as any)?.data) {
-      buffer = Buffer.from((data.image as any).data);
-    } else if (typeof data.image === 'string') {
-      buffer = Buffer.from(data.image, 'base64');
-    } else {
-      buffer = Buffer.from(data.image as any);
-    }
-    const key = await this.storageService.uploadPhoto(buffer, data.userId);
+    const key = await this.storageService.uploadPhoto(
+      toBuffer(data.image),
+      data.userId,
+    );
     return { key };
   }
 

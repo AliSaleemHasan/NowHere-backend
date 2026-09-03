@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { HealthController } from '../src/health.controller';
+import { MongooseHealthController as HealthController } from 'nowhere-common';
 import { HealthCheckService, MongooseHealthIndicator } from '@nestjs/terminus';
 
 describe('Snaps HTTP (e2e)', () => {

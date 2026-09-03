@@ -3,7 +3,6 @@ import { SeedService } from './seed.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SeedController } from './seed.controller';
 import { Snap, SnapSchema } from '../snaps/schemas/snap.schema';
-import { NatsClientModule } from 'nowhere-common';
 
 @Module({})
 export class SeedModule {
@@ -15,7 +14,6 @@ export class SeedModule {
     return {
       module: SeedModule,
       imports: [
-        NatsClientModule.register('NATS_CLIENT'),
         MongooseModule.forFeature([{ name: Snap.name, schema: SnapSchema }]),
       ],
       providers: [SeedService],

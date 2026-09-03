@@ -15,6 +15,7 @@ describe('UsersNatsController (unit)', () => {
           useValue: {
             getUserByEmail: jest.fn(),
             getUserById: jest.fn(),
+            getUserWithImage: jest.fn(),
             getAllUsers: jest.fn(),
             getUserSetting: jest.fn(),
             getSeen: jest.fn(),
@@ -36,11 +37,14 @@ describe('UsersNatsController (unit)', () => {
     expect(res).toEqual({ id: 'u1', email: 'a@a.com' });
   });
 
-  it('getUserById returns service result', async () => {
-    service.getUserById.mockResolvedValue({ id: 'u1' } as any);
+  it('getUserById returns user with image', async () => {
+    service.getUserWithImage.mockResolvedValue({
+      user: { id: 'u1' },
+      userImage: 'https://signed',
+    } as any);
     const res = await controller.getUserByIdNats({ id: 'u1' });
-    expect(service.getUserById).toHaveBeenCalledWith('u1');
-    expect(res).toEqual({ id: 'u1' });
+    expect(service.getUserWithImage).toHaveBeenCalledWith('u1');
+    expect(res).toEqual({ user: { id: 'u1' }, userImage: 'https://signed' });
   });
 
   it('getAllUsers returns service result', async () => {

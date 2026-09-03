@@ -9,6 +9,7 @@ import {
   SnapIdPayloadSchema,
   validateSchema,
 } from 'contracts';
+import { Tags } from 'nowhere-common';
 import { SnapsService } from '../snaps.service';
 import { DeleteResult } from 'mongoose';
 
@@ -22,7 +23,7 @@ export class SnapsNatsController {
   }
 
   @MessagePattern(SnapsPatterns.FIND_BY_TAGS)
-  async findByTags(@Payload() data: { tags: any[] }) {
+  async findByTags(@Payload() data: { tags: Tags[] }) {
     return await this.snapsService.findByTags(data.tags);
   }
 
@@ -45,33 +46,29 @@ export class SnapsNatsController {
 
   @MessagePattern(SnapsPatterns.FIND_NEAR)
   async findNear(@Payload() data: FindNearSnapsPayload) {
-    const payload = validateSchema(FindNearSnapsSchema, data);
-    return await this.snapsService.getSeenSnaps(
-      {
-        tags: payload.tags as any,
-        location: [Number(payload.lng), Number(payload.lat)],
-      },
-      payload.userId,
-      false,
-    );
+    return this.queryNearby(data, false);
   }
 
   @MessagePattern(SnapsPatterns.FIND_SEEN)
   async findSeen(@Payload() data: FindNearSnapsPayload) {
-    const payload = validateSchema(FindNearSnapsSchema, data);
-    return await this.snapsService.getSeenSnaps(
-      {
-        tags: payload.tags as any,
-        location: [Number(payload.lng), Number(payload.lat)],
-      },
-      payload.userId,
-      true,
-    );
+    return this.queryNearby(data, true);
   }
 
   @MessagePattern(SnapsPatterns.CREATE)
   async create(@Payload() data: CreateSnapPayload) {
     const payload = validateSchema(CreateSnapSchema, data);
-    return await this.snapsService.create(payload.userId, payload as any);
+    return await this.snapsService.create(payload.userId, payload);
+  }
+
+  private queryNearby(data: FindNearSnapsPayload, seen: boolean) {
+    const payload = validateSchema(FindNearSnapsSchema, data);
+    return this.snapsService.getSeenSnaps(
+      {
+        tags: payload.tags as Tags[] | undefined,
+        location: [Number(payload.lng), Number(payload.lat)],
+      },
+      payload.userId,
+      seen,
+    );
   }
 }

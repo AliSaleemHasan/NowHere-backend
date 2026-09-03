@@ -9,50 +9,31 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
-  Inject,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
 import { GatewayAuthGuard } from '../guards/auth.guard';
-import { ReqUser, RoleGuard, UserRoles, natsRequest } from 'nowhere-common';
+import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UsersPatterns, StoragePatterns, ROLES } from 'contracts';
+import { UsersPatterns, ROLES, UserDto } from 'contracts';
+import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 
 @Controller('users')
 export class GatewayUsersController {
-  constructor(@Inject('NATS_CLIENT') private readonly natsClient: ClientProxy) {}
+  constructor(private readonly rpc: GatewayRpcClient) {}
 
   @Get('id/:id')
   @UseGuards(GatewayAuthGuard)
   async getUserById(@Param('id') id: string) {
-    const user = await natsRequest(this.natsClient, UsersPatterns.GET_USER_BY_ID, {
-      id,
-    });
-
-    let userImage = '';
-    if (user?.image) {
-      try {
-        const res = await natsRequest<{ signed: string }>(
-          this.natsClient,
-          StoragePatterns.GET_SIGNED_URL,
-          { key: user.image },
-        );
-        userImage = res?.signed || '';
-      } catch {
-        // Gracefully degrade if storage is unavailable
-      }
-    }
-    return { user, userImage };
+    return this.rpc.request<{ user: UserDto; userImage: string }, { id: string }>(
+      UsersPatterns.GET_USER_BY_ID,
+      { id },
+    );
   }
 
   @Get()
   @UserRoles([ROLES.ADMIN])
   @UseGuards(GatewayAuthGuard, RoleGuard)
   async getAllUsers() {
-    return await natsRequest(
-      this.natsClient,
-      UsersPatterns.GET_ALL_USERS_INFO,
-      {},
-    );
+    return this.rpc.request(UsersPatterns.GET_ALL_USERS_INFO, {});
   }
 
   @Put('image')
@@ -70,7 +51,7 @@ export class GatewayUsersController {
     )
     photo: Express.Multer.File,
   ) {
-    return await natsRequest(this.natsClient, UsersPatterns.SET_USER_PHOTO, {
+    return this.rpc.request(UsersPatterns.SET_USER_PHOTO, {
       image: photo.buffer,
       userId: id,
     });
@@ -79,16 +60,12 @@ export class GatewayUsersController {
   @Get('settings')
   @UseGuards(GatewayAuthGuard)
   async getUserSettings(@ReqUser('id') id: string) {
-    return await natsRequest(this.natsClient, UsersPatterns.GET_SETTINGS, {
-      id,
-    });
+    return this.rpc.request(UsersPatterns.GET_SETTINGS, { id });
   }
 
   @Get(':email')
   @UseGuards(GatewayAuthGuard)
   async getByEmail(@Param('email') email: string) {
-    return await natsRequest(this.natsClient, UsersPatterns.GET_USER_BY_EMAIL, {
-      email,
-    });
+    return this.rpc.request(UsersPatterns.GET_USER_BY_EMAIL, { email });
   }
 }

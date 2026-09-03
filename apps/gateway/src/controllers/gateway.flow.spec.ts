@@ -7,7 +7,8 @@ import { GatewaySnapsController } from './gateway-snaps.controller';
 import { GatewayStorageController } from './gateway-storage.controller';
 import { AuthPatterns, SnapsPatterns, StoragePatterns, ROLES } from 'contracts';
 import { CreateSnapHttpDto } from '../dto/create-snap.dto';
-import { GeoPointType, Tags } from 'nowhere-common/types/common-types';
+import { GeoPointType, NATS_CLIENT, Tags } from 'nowhere-common';
+import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 
 describe('Gateway product flow (mocked NATS)', () => {
   let auth: GatewayAuthController;
@@ -42,7 +43,8 @@ describe('Gateway product flow (mocked NATS)', () => {
         GatewayStorageController,
       ],
       providers: [
-        { provide: 'NATS_CLIENT', useValue: { send } },
+        GatewayRpcClient,
+        { provide: NATS_CLIENT, useValue: { send } },
         { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
         { provide: ConfigService, useValue: { get: jest.fn() } },
       ],
