@@ -8,6 +8,10 @@ export enum ROLES {
   USER = 'USER',
 }
 
+export function isAdminRole(role?: string): boolean {
+  return role === ROLES.ADMIN;
+}
+
 // ── Schemas & Types ──
 
 export type CreateUserInfoPayload = z.infer<typeof CreateUserInfoSchema>;

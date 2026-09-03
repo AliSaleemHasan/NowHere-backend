@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_UPLOAD_BATCH } from '../shared/limits';
 
 export const CreateSnapSchema = z.object({
   userId: z.string().min(1),
@@ -10,9 +11,8 @@ export const CreateSnapSchema = z.object({
     }),
     z.string().min(1),
   ]),
-  snaps: z.array(z.string().min(1)).min(1).max(4),
+  snaps: z.array(z.string().min(1)).min(1).max(MAX_UPLOAD_BATCH),
   tag: z.string().optional(),
-  tags: z.array(z.string()).optional(),
 });
 
 export const FindNearSnapsSchema = z.object({

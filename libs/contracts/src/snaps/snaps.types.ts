@@ -1,23 +1,5 @@
-export interface FindNearSnapsPayload {
-  userId: string;
-  lng: number | string;
-  lat: number | string;
-  tags?: string[]; // TODO: Define required tags
-  maxDistance?: number;
-}
+import { z } from 'zod';
+import { CreateSnapSchema, FindNearSnapsSchema } from './snaps.schemas';
 
-export interface CreateSnapPayload {
-  userId: string;
-  description?: string;
-  title?: string;
-  body?: string;
-  tag?: string;
-  tags?: string[];
-  location:
-    | {
-        type: 'Point';
-        coordinates: [number, number];
-      }
-    | string;
-  snaps: string[];
-}
+export type FindNearSnapsPayload = z.infer<typeof FindNearSnapsSchema>;
+export type CreateSnapPayload = z.infer<typeof CreateSnapSchema>;

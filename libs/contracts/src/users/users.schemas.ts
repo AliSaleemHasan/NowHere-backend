@@ -21,3 +21,7 @@ export const SetSeenSchema = z.object({
 export const UserIdPayloadSchema = z.object({
   id: z.string().min(1),
 });
+
+export const EmailPayloadSchema = z.object({
+  email: z.email(),
+});

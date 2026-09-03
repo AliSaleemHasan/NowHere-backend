@@ -21,22 +21,3 @@ export interface PresignedUploadResponse {
   uploadUrl: string;
   key: string;
 }
-
-export interface SnapUploadPayload {
-  files: Array<{
-    filename: string;
-    originalname?: string;
-    path?: string;
-    buffer?: any;
-    mimetype?: string;
-  }>;
-  userId: string;
-  snapId: string;
-}
-
-export interface SnapUploadedEvent {
-  snapId: string;
-  filesNames: string[];
-  keys?: string[];
-  error?: string;
-}

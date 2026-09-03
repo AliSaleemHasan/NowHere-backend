@@ -32,3 +32,14 @@ export interface UserCredentialsCreatedEvent {
   firstName: string;
   lastName: string;
 }
+
+export interface JwtUserPayload {
+  id: string;
+  email: string;
+  role: ROLES;
+}
+
+export interface JwtPayload {
+  sub: string;
+  user: JwtUserPayload;
+}
