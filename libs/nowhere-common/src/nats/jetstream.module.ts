@@ -11,6 +11,7 @@ import { connect, NatsConnection, RetentionPolicy, StorageType, nanos } from 'na
 import { JetStreamPublisher, JETSTREAM_NC } from './jetstream-publisher.service';
 import { JetStreamConsumerService } from './jetstream-consumer.service';
 import { JETSTREAM_STREAMS } from './jetstream.config';
+import { natsConnectionOptions } from './nats-request';
 
 /**
  * Provides JetStream publisher and consumer services.
@@ -42,8 +43,12 @@ export class JetStreamModule implements OnModuleInit, OnModuleDestroy {
         {
           provide: JETSTREAM_NC,
           useFactory: async (config: ConfigService) => {
-            const servers = config.get<string>('NATS_URL', 'nats://nats:4222');
-            const nc = await connect({ servers, name: 'jetstream-client' });
+            const nc = await connect({
+              ...natsConnectionOptions(
+                config.get<string>('NATS_URL', 'nats://nats:4222'),
+              ),
+              name: 'jetstream-client',
+            });
             return nc;
           },
           inject: [ConfigService],

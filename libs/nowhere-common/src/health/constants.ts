@@ -1,0 +1,1 @@
+export const HEALTH_HEAP_LIMIT_BYTES = 300 * 1024 * 1024;

@@ -1,4 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { MAX_UPLOAD_BATCH } from 'contracts';
+
+export { MAX_UPLOAD_BATCH };
 
 export const ALLOWED_UPLOAD_PREFIXES = ['snaps', 'profile'] as const;
 export type UploadPrefix = (typeof ALLOWED_UPLOAD_PREFIXES)[number];
@@ -8,8 +11,6 @@ export const ALLOWED_IMAGE_CONTENT_TYPES = [
   'image/png',
   'image/webp',
 ] as const;
-
-export const MAX_UPLOAD_BATCH = 4;
 
 const SAFE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'webp']);
 

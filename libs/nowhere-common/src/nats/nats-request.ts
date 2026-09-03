@@ -8,6 +8,20 @@ import { firstValueFrom, TimeoutError, timeout } from 'rxjs';
 
 export const DEFAULT_NATS_TIMEOUT_MS = 8_000;
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function messageFrom(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) return value;
+  if (Array.isArray(value) && value.length > 0) {
+    return value.map(String).join(', ');
+  }
+  return undefined;
+}
+
 export function mapNatsError(err: unknown): never {
   if (err instanceof HttpException) {
     throw err;
@@ -23,32 +37,32 @@ export function mapNatsError(err: unknown): never {
     throw new GatewayTimeoutException('Upstream service timeout');
   }
 
-  const e = err as {
-    statusCode?: number;
-    message?: unknown;
-    error?: { statusCode?: number; message?: unknown };
-  } | null;
+  const root = asRecord(err);
+  const candidates = [
+    root,
+    asRecord(root?.error),
+    asRecord(root?.message),
+    asRecord(asRecord(root?.message)?.error),
+  ].filter((item): item is Record<string, unknown> => item !== null);
 
-  const payload =
-    e && typeof e === 'object'
-      ? typeof e.statusCode === 'number'
-        ? e
-        : e.error && typeof e.error === 'object'
-          ? e.error
-          : e.message && typeof e.message === 'object'
-            ? (e.message as { statusCode?: number; message?: unknown })
-            : null
-      : null;
-
-  if (payload && typeof payload.statusCode === 'number') {
-    const rawMessage = payload.message;
+  for (const candidate of candidates) {
+    const statusCode =
+      typeof candidate.statusCode === 'number'
+        ? candidate.statusCode
+        : typeof candidate.status === 'number'
+          ? candidate.status
+          : undefined;
+    if (typeof statusCode !== 'number') continue;
     const message =
-      typeof rawMessage === 'string'
-        ? rawMessage
-        : Array.isArray(rawMessage)
-          ? rawMessage.map(String).join(', ')
-          : 'Request failed';
-    throw new HttpException(message, payload.statusCode);
+      messageFrom(candidate.message) ||
+      messageFrom(candidate.detail) ||
+      'Request failed';
+    throw new HttpException(message, statusCode);
+  }
+
+  const fallback = messageFrom(root?.message);
+  if (fallback && fallback !== 'Internal server error') {
+    throw new InternalServerErrorException(fallback);
   }
 
   throw new InternalServerErrorException('Internal server error');
@@ -69,8 +83,29 @@ export async function natsRequest<TResult = unknown, TInput = unknown>(
   }
 }
 
-export function natsConnectionOptions() {
+export function natsConnectionOptions(url?: string) {
+  const raw = url || process.env.NATS_URL || 'nats://nats:4222';
+  let servers = raw;
+  let token = process.env.NATS_TOKEN || undefined;
+
+  try {
+    const parsed = new URL(raw);
+    if (!token) {
+      if (parsed.username && !parsed.password) {
+        token = decodeURIComponent(parsed.username);
+      } else if (parsed.password) {
+        token = decodeURIComponent(parsed.password);
+      }
+    }
+    const host = parsed.hostname;
+    const port = parsed.port ? `:${parsed.port}` : '';
+    servers = `${parsed.protocol}//${host}${port}`;
+  } catch {
+    // keep the raw URL if it is not parseable
+  }
+
   return {
-    servers: [process.env.NATS_URL || 'nats://nats:4222'],
+    servers: [servers],
+    ...(token ? { token } : {}),
   };
 }
