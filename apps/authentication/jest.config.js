@@ -5,10 +5,6 @@ module.exports = {
   rootDir: 'src',
 
   displayName: 'authentication',
+  coverageDirectory: '<rootDir>/../coverage',
 
-  moduleNameMapper: {
-    '^apps/authentication/src/(.*)$': '<rootDir>/$1',
-    '^nowhere-common(|/.*)$': '<rootDir>/../../../libs/nowhere-common/src/$1',
-    '^proto(|/.*)$': '<rootDir>/../../../libs/proto/$1',
-  },
 };

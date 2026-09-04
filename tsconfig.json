@@ -24,11 +24,11 @@
       "nowhere-common/*": [
         "libs/nowhere-common/src/*"
       ],
-      "proto": [
-        "libs/proto"
+      "contracts": [
+        "libs/contracts/src"
       ],
-      "proto/*": [
-        "libs/proto/*"
+      "contracts/*": [
+        "libs/contracts/src/*"
       ]
     }
   },

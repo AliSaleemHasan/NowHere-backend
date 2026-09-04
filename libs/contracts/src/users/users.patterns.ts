@@ -1,0 +1,17 @@
+export const UsersPatterns = {
+  GET_SETTINGS: 'users.getSettings',
+  GET_ALL_USERS_INFO: 'users.getAllUsersInfo',
+  GET_USER_BY_ID: 'users.getUserById',
+  GET_USER_BY_EMAIL: 'users.getUserByEmail',
+  SET_USER_PHOTO: 'users.setUserPhoto',
+  SET_SEEN_SNAP: 'users.setSeenSnap',
+  NOT_SEEN_SNAPS: 'users.notSeenSnaps',
+  UPDATE_PROFILE: 'users.updateProfile',
+  UPDATE_SETTINGS: 'users.updateSettings',
+  ADD_BOOKMARK: 'users.addBookmark',
+  REMOVE_BOOKMARK: 'users.removeBookmark',
+  LIST_BOOKMARKS: 'users.listBookmarks',
+  CREATE_REPORT: 'users.createReport',
+  EXPORT_USER: 'users.exportUser',
+  PURGE_USER: 'users.purgeUser',
+} as const;

@@ -1,14 +1,16 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-import { User } from 'proto';
+import { UserDto } from 'contracts';
+
 interface AuthenticatedRequest extends Request {
-  user: User;
+  user: UserDto;
 }
+
 export const ReqUser = createParamDecorator(
-  (data: string, ctx: ExecutionContext) => {
+  (data: keyof UserDto, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
 
-    return data ? user?.[data as keyof typeof user] : user;
+    return data ? user?.[data] : user;
   },
 );

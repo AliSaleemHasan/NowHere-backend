@@ -7,35 +7,43 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { JwtPayload, ROLES } from 'contracts';
+import { extractTokenFromHeader } from 'nowhere-common';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
+export class GatewayAuthGuard implements CanActivate {
   constructor(
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
+    const request = context.switchToHttp().getRequest<Request>();
+    const token = extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Missing Authorization token');
     }
     try {
-      const payload = await this.jwtService.verifyAsync(token, {
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token, {
         secret: this.configService.get('ACCESS_SECRET'),
       });
-      // 💡 We're assigning the payload to the request object here
-      // so that we can access it in our route handlers
-      request['user'] = payload;
+
+      const user = payload.user;
+      const userId = user?.id || payload.sub;
+      const role = user?.role ?? ROLES.USER;
+
+      request.headers['x-user-id'] = userId;
+      request.headers['x-user-email'] = user?.email || '';
+      request.headers['x-user-role'] = String(role);
+
+      request['user'] = {
+        id: userId,
+        email: user?.email,
+        role,
+      };
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid or expired token');
     }
     return true;
-  }
-
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
   }
 }

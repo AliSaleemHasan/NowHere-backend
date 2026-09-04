@@ -1,37 +1,52 @@
-import { IsNumber, IsString, Max, Min } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { JwtAccessOptionalNatsEnv } from 'nowhere-common';
 
-export class SnapsEnvVariables {
+export class SnapsEnvVariables extends JwtAccessOptionalNatsEnv {
+  @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(65535)
-  NEST_PORT!: number;
+  MONGO_PORT?: number;
 
-  @IsNumber()
-  @Min(0)
-  @Max(65535)
-  MONGO_PORT!: number;
   @IsString({ message: 'Name of used snaps Mongodb database' })
   MONGO_DATABASE!: string;
-  @IsString({ message: "Password for snaps Database' root user" })
-  MONGO_ROOT_USER!: string;
 
-  @IsString({ message: 'Password of used snaps database' })
-  MONGO_HOST!: string;
+  @IsOptional()
+  @IsString()
+  MONGO_ROOT_USER?: string;
 
-  @IsNumber()
-  MAX_DISTANCE_NEAR!: number;
-  @IsNumber()
-  MIN_DISTANCE_SAME_USER!: number;
-
-  @IsString({ message: 'Access secret used for JWT authentication' })
-  ACCESS_SECRET!: string;
-
-  @IsString({
-    message:
-      'Folder PATH to get uploded temporary file from (USED in STROAGE too)',
-  })
-  STATIC_TMP_FILES!: string;
+  @IsOptional()
+  @IsString()
+  MONGO_ROOT_PASS?: string;
 
   @IsString()
-  GATEWAY_URL!: string;
+  MONGO_HOST!: string;
+
+  @IsOptional()
+  @IsString()
+  MONGO_URI?: string;
+
+  @IsOptional()
+  @IsNumber()
+  MAX_DISTANCE_NEAR?: number;
+
+  @IsOptional()
+  @IsNumber()
+  MIN_DISTANCE_SAME_USER?: number;
+
+  @IsOptional()
+  @IsNumber()
+  SNAP_DISAPPEAR_TIME?: number;
+
+  @IsOptional()
+  @IsString()
+  GATEWAY_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  CORS_ORIGIN?: string;
+
+  @IsOptional()
+  @IsString()
+  ENABLE_SEED?: string;
 }

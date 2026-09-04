@@ -1,24 +1,49 @@
 import { Module } from '@nestjs/common';
-import { AwsStorageModule } from './aws-storage/aws-storage.module';
+import { StorageService } from './storage.service';
+import { StorageNatsController } from './controllers/storage.nats.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
-import * as path from 'path';
-import { AwsGrpcModule } from './aws-grpc/aws-grpc.module';
-import { getValidateFn } from 'nowhere-common';
-import { StroageEnvVariables } from './utils/storage-env-variables';
+import { CacheModule } from '@nestjs/cache-manager';
+import KeyvRedis from '@keyv/redis';
+import { createEnvConfigModule, HealthModule } from 'nowhere-common';
+import { StorageEnvVariables } from './utils/storage-env-variables';
+import {
+  STORAGE_STRATEGY,
+  S3StorageStrategy,
+  GCSStorageStrategy,
+} from './strategies';
+import { isGcpStorageProvider } from './utils/storage-provider';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      validate: getValidateFn(StroageEnvVariables),
-      isGlobal: true,
-      envFilePath: [path.resolve(process.cwd(), '.env')],
+    createEnvConfigModule(StorageEnvVariables),
+    HealthModule.forMemory(),
+    CacheModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        ttl: configService.get('CACHE_TTL') || 3600,
+        stores: [
+          new KeyvRedis(
+            configService.get('REDIS_URL') || 'redis://redis:6379',
+          ),
+        ],
+      }),
     }),
-    JwtModule.register({
-      global: true,
-    }),
-    AwsStorageModule,
-    AwsGrpcModule,
   ],
+  controllers: [StorageNatsController],
+  providers: [
+    {
+      provide: STORAGE_STRATEGY,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        if (isGcpStorageProvider(configService.get('STORAGE_PROVIDER'))) {
+          return new GCSStorageStrategy(configService);
+        }
+        return new S3StorageStrategy(configService);
+      },
+    },
+    StorageService,
+  ],
+  exports: [StorageService, STORAGE_STRATEGY],
 })
 export class StorageModule {}

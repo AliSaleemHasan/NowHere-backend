@@ -1,6 +1,7 @@
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
   SubscribeMessage,
@@ -8,9 +9,14 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { CreateSnapDto } from './dto/create-snap.dto';
-import { BadRequestException, Body, Logger } from '@nestjs/common';
-import { tryCatch } from 'nowhere-common';
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import {
+  extractBearerToken,
+  haversineMeters,
+  parseCorsOrigins,
+} from 'nowhere-common';
 
 type UserSocket = {
   socketId: string;
@@ -18,31 +24,68 @@ type UserSocket = {
 };
 
 type LocationChangeBody = Pick<UserSocket, 'coordinates'>;
+
+function socketCorsOrigin() {
+  return parseCorsOrigins({
+    fallback: process.env.GATEWAY_URL || true,
+  });
+}
+
 @WebSocketGateway({
   cors: {
-    origin: [process.env.GATEWAY_URL],
+    origin: socketCorsOrigin(),
+    credentials: true,
   },
 })
-export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
+export class SnapsGateway
+  implements OnGatewayInit, OnGatewayDisconnect, OnGatewayConnection
+{
   private readonly logger = new Logger(SnapsGateway.name, { timestamp: true });
   @WebSocketServer()
   server: Server;
 
+  /**
+   * In-memory location map. Does not survive process restart or a second
+   * snaps replica — sticky sessions or a shared store is a later phase.
+   */
   usersLocationMap: Map<string, UserSocket>;
-  afterInit(server: any) {
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  afterInit() {
     this.logger.log('Server Started');
     this.logger.log('Creating in memory User Location Map');
     this.usersLocationMap = new Map<string, UserSocket>();
     this.logger.log('UsersLocationMap Created ...');
   }
 
-  // remove  client from the map
+  handleConnection(client: Socket) {
+    const token = this.extractHandshakeToken(client);
+    if (!token) {
+      this.logger.warn(`Socket ${client.id} missing access token`);
+      client.disconnect(true);
+      return;
+    }
+
+    try {
+      const payload = this.jwtService.verify(token, {
+        secret: this.configService.get<string>('ACCESS_SECRET'),
+      });
+      client.data.user = payload.user || payload;
+    } catch {
+      this.logger.warn(`Socket ${client.id} presented an invalid token`);
+      client.disconnect(true);
+    }
+  }
+
   handleDisconnect(client: Socket) {
-    if (this.usersLocationMap.get(client.id))
+    if (this.usersLocationMap?.get(client.id))
       this.usersLocationMap.delete(client.id);
   }
 
-  // when user Locaiton Change
   @SubscribeMessage('locationChange')
   locationChange(
     @MessageBody() data: LocationChangeBody,
@@ -56,65 +99,40 @@ export class SnapsGateway implements OnGatewayInit, OnGatewayDisconnect {
     return this.usersLocationMap.get(client.id);
   }
 
-  getDistanceInMeters(
-    latitude1: number,
-    longitude1: number,
-    latitude2: number,
-    longitude2: number,
-  ): number {
-    const toRadians = (degrees: number) => degrees * (Math.PI / 180);
-
-    const earthRadiusMeters = 6371e3; // Radius of Earth in meters
-
-    const lat1Rad = toRadians(latitude1);
-    const lat2Rad = toRadians(latitude2);
-    const deltaLat = toRadians(latitude2 - latitude1);
-    const deltaLon = toRadians(longitude2 - longitude1);
-
-    const haversineA =
-      Math.sin(deltaLat / 2) ** 2 +
-      Math.cos(lat1Rad) * Math.cos(lat2Rad) * Math.sin(deltaLon / 2) ** 2;
-
-    const haversineC =
-      2 * Math.atan2(Math.sqrt(haversineA), Math.sqrt(1 - haversineA));
-
-    const distance = earthRadiusMeters * haversineC;
-
-    return distance; // in meters
-  }
-
   findNearbyUsers(lat: number, lng: number, radiusKm: number) {
     const radiusInMeters = radiusKm * 1000;
+    if (!this.usersLocationMap) return [];
 
     return Array.from(this.usersLocationMap.values()).filter((user) => {
-      const distance = this.getDistanceInMeters(
-        lat,
-        lng,
-        user.coordinates[1],
-        user.coordinates[0],
+      if (!user?.coordinates || user.coordinates.length < 2) return false;
+      return (
+        haversineMeters(
+          lat,
+          lng,
+          user.coordinates[1],
+          user.coordinates[0],
+        ) <= radiusInMeters
       );
-      return distance <= radiusInMeters;
     });
   }
 
-  // for testing purposes
-  @SubscribeMessage('snap-added')
-  handleGetNewSnaps(@MessageBody() snap: CreateSnapDto) {
-    return snap;
-  }
+  handleNewSnap(body: { location?: { coordinates?: [number, number] } }) {
+    const coordinates = body?.location?.coordinates;
+    if (!coordinates || coordinates.length < 2) return;
 
-  // A user Posts a Snap
-  handleNewSnap(body: CreateSnapDto) {
-    // first handle posting this snap to snaps Service
-
-    const users = this.findNearbyUsers(
-      body.location.coordinates[1],
-      body.location.coordinates[0],
-      100,
-    );
+    const users = this.findNearbyUsers(coordinates[1], coordinates[0], 100);
 
     users.forEach((user) => {
       this.server.to(user.socketId).emit('snap-added', body);
     });
+  }
+
+  private extractHandshakeToken(client: Socket): string | undefined {
+    const fromAuth = client.handshake?.auth?.token;
+    if (typeof fromAuth === 'string' && fromAuth.length > 0) {
+      return extractBearerToken(fromAuth) ?? fromAuth;
+    }
+    const header = client.handshake?.headers?.authorization;
+    return extractBearerToken(Array.isArray(header) ? header[0] : header);
   }
 }

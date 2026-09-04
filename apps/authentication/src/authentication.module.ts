@@ -1,55 +1,50 @@
 import { Module } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
-import { AuthenticationController } from './authentication.controller';
+import { ChangePasswordService } from './change-password.service';
+import { PasswordResetService } from './password-reset.service';
+import { AccountLifecycleService } from './account-lifecycle.service';
+import { SmtpMailer } from './smtp-mailer';
+import { AuthNatsController } from './controllers/auth.nats.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as path from 'path';
 import { Credential } from './entities/user-credentials-entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { JwtModule } from '@nestjs/jwt';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { credentialsProtoOptions, usersProtoOptions } from 'proto';
-import { USERS_GRPC, CREDENTIALS_GRPC } from 'nowhere-common';
+import {
+  createEnvConfigModule,
+  HealthModule,
+  JetStreamModule,
+  mysqlTypeOrmConfig,
+} from 'nowhere-common';
+import { AuthenticationEnvVariables } from './utils/auth-env-variables';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: CREDENTIALS_GRPC,
-        transport: Transport.GRPC,
-        options: credentialsProtoOptions,
-      },
-      {
-        name: USERS_GRPC,
-        transport: Transport.GRPC,
-        options: usersProtoOptions,
-      },
-    ]),
-    TypeOrmModule.forFeature([Credential]),
+    createEnvConfigModule(AuthenticationEnvVariables),
+    JetStreamModule.forRoot(),
+    HealthModule.forTypeOrm(),
+    TypeOrmModule.forFeature([Credential, PasswordResetToken]),
     JwtModule.register({ global: true }),
-    ConfigModule.forRoot({
-      // validate: getValidateFn(AuthEnvVariables),
-      isGlobal: true,
-      envFilePath: [path.resolve(process.cwd(), '.env')],
-    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('MYSQL_HOST'),
-        port: Number(configService.get('MYSQL_PORT')),
-        username: configService.get('MYSQL_USER'),
-        password: configService.get('MYSQL_PASS'),
-        database: configService.get('MYSQL_DATABASE'),
-        entities: [Credential],
-        migrations: [__dirname + '/migrations/*{.ts,.js}'],
-        autoLoadEntities: true,
-        synchronize: true, //TODO: handle this in production
-      }),
       inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        mysqlTypeOrmConfig(configService, {
+          entities: [Credential, PasswordResetToken],
+          migrationsDir: path.join(__dirname, 'migrations'),
+          defaultDatabase: 'Users_Credentials',
+        }),
     }),
   ],
-  controllers: [AuthenticationController],
-  providers: [AuthenticationService],
+  controllers: [AuthNatsController],
+  providers: [
+    AuthenticationService,
+    ChangePasswordService,
+    PasswordResetService,
+    AccountLifecycleService,
+    SmtpMailer,
+  ],
   exports: [AuthenticationService],
 })
 export class AuthenticationModule {}

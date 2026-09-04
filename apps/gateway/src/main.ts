@@ -1,20 +1,15 @@
-import { NestFactory } from '@nestjs/core';
+import { bootstrapApp } from 'nowhere-common';
 import { GatewayModule } from './gateway.module';
-import { ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter, DataResponseInterceptor } from 'nowhere-common';
+import { setupSwagger } from './swagger';
 
-async function bootstrap() {
-  const app = await NestFactory.create(GatewayModule);
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+const enableSwagger = process.env.ENABLE_SWAGGER === 'true';
 
-  app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new DataResponseInterceptor());
-  await app.listen(process.env.PORT ?? 3005, '0.0.0.0');
-}
-void bootstrap();
+void bootstrapApp({
+  module: GatewayModule,
+  defaultPort: 3005,
+  enableCors: true,
+  requireCorsInProduction: true,
+  enableResponseInterceptor: true,
+  helmetOptions: enableSwagger ? { contentSecurityPolicy: false } : undefined,
+  beforeListen: enableSwagger ? (app) => setupSwagger(app) : undefined,
+});

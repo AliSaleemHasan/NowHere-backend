@@ -1,0 +1,331 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-gateway
+  labels:
+    app: nowhere-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nowhere-gateway
+  template:
+    metadata:
+      labels:
+        app: nowhere-gateway
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: gateway
+          image: nowhere/gateway:latest
+          ports:
+            - containerPort: 3005
+              name: http
+          envFrom:
+            - secretRef:
+                name: nowhere-gateway-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3005
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nowhere-gateway
+spec:
+  type: LoadBalancer
+  selector:
+    app: nowhere-gateway
+  ports:
+    - name: http
+      port: 3005
+      targetPort: 3005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-authentication
+  labels:
+    app: nowhere-authentication
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nowhere-authentication
+  template:
+    metadata:
+      labels:
+        app: nowhere-authentication
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: authentication
+          image: nowhere/authentication:latest
+          ports:
+            - containerPort: 3004
+              name: http
+          envFrom:
+            - secretRef:
+                name: nowhere-auth-db-secrets
+            - secretRef:
+                name: nowhere-auth-token-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3004
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3004
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nowhere-authentication
+spec:
+  type: ClusterIP
+  selector:
+    app: nowhere-authentication
+  ports:
+    - name: http
+      port: 3004
+      targetPort: 3004
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-users
+  labels:
+    app: nowhere-users
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nowhere-users
+  template:
+    metadata:
+      labels:
+        app: nowhere-users
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: users
+          image: nowhere/users:latest
+          ports:
+            - containerPort: 3001
+              name: http
+          envFrom:
+            - secretRef:
+                name: nowhere-users-db-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nowhere-users
+spec:
+  type: ClusterIP
+  selector:
+    app: nowhere-users
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-snaps
+  labels:
+    app: nowhere-snaps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nowhere-snaps
+  template:
+    metadata:
+      labels:
+        app: nowhere-snaps
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: snaps
+          image: nowhere/snaps:latest
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - secretRef:
+                name: nowhere-snaps-secrets
+            - secretRef:
+                name: nowhere-snaps-db-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nowhere-snaps
+spec:
+  type: ClusterIP
+  selector:
+    app: nowhere-snaps
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nowhere-storage
+  labels:
+    app: nowhere-storage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nowhere-storage
+  template:
+    metadata:
+      labels:
+        app: nowhere-storage
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: storage
+          image: nowhere/storage:latest
+          ports:
+            - containerPort: 3002
+              name: http
+          envFrom:
+            - secretRef:
+                name: nowhere-storage-redis-secrets
+            - secretRef:
+                name: nowhere-storage-s3-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nowhere-storage
+spec:
+  type: ClusterIP
+  selector:
+    app: nowhere-storage
+  ports:
+    - name: http
+      port: 3002
+      targetPort: 3002

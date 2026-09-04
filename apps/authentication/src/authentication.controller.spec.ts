@@ -1,115 +1,112 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthenticationController } from './authentication.controller';
+import { AuthNatsController } from './controllers/auth.nats.controller';
 import { AuthenticationService } from './authentication.service';
-import { SigninDTO } from './dto/signin.dto';
-import { CreateCredentialDTO } from './dto/create-credential-dto';
-import { Roles } from './entities/user-credentials-entity';
+import { ChangePasswordService } from './change-password.service';
+import { PasswordResetService } from './password-reset.service';
+import { AccountLifecycleService } from './account-lifecycle.service';
+import { ROLES as Roles } from 'contracts';
 
-import { JwtGuard } from 'nowhere-common';
-
-describe('AuthenticationController', () => {
-  let controller: AuthenticationController;
+describe('AuthNatsController', () => {
+  let controller: AuthNatsController;
   let service: AuthenticationService;
+  let changePassword: ChangePasswordService;
 
   const mockUser = {
-    Id: 'user-id',
+    id: 'user-id',
     email: 'test@example.com',
     role: Roles.USER,
+    isActive: true,
   };
   const mockTokens = { accessToken: 'access', refreshToken: 'refresh' };
+  const authResponse = { user: mockUser, tokens: mockTokens };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [AuthenticationController],
+      controllers: [AuthNatsController],
       providers: [
         {
           provide: AuthenticationService,
           useValue: {
-            login: jest
-              .fn()
-              .mockResolvedValue({ user: mockUser, tokens: mockTokens }),
-            signup: jest
-              .fn()
-              .mockResolvedValue({ user: mockUser, tokens: mockTokens }),
-            refreshToken: jest
-              .fn()
-              .mockResolvedValue({ user: mockUser, tokens: mockTokens }),
+            login: jest.fn().mockResolvedValue(authResponse),
+            signup: jest.fn().mockResolvedValue(authResponse),
+            refreshToken: jest.fn().mockResolvedValue(authResponse),
+          },
+        },
+        {
+          provide: ChangePasswordService,
+          useValue: {
+            changePassword: jest.fn().mockResolvedValue({ success: true }),
+          },
+        },
+        {
+          provide: PasswordResetService,
+          useValue: {
+            forgotPassword: jest.fn().mockResolvedValue({ accepted: true }),
+            resetPassword: jest.fn().mockResolvedValue({ success: true }),
+          },
+        },
+        {
+          provide: AccountLifecycleService,
+          useValue: {
+            deactivateUser: jest.fn().mockResolvedValue({ success: true }),
+            deleteCredentials: jest.fn().mockResolvedValue({ success: true }),
           },
         },
       ],
-    })
-      .overrideGuard(JwtGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
+    }).compile();
 
-    controller = module.get<AuthenticationController>(AuthenticationController);
+    controller = module.get<AuthNatsController>(AuthNatsController);
     service = module.get<AuthenticationService>(AuthenticationService);
+    changePassword = module.get<ChangePasswordService>(ChangePasswordService);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('login', () => {
+  describe('validateUser', () => {
     it('should call service.login', async () => {
-      const dto: SigninDTO = { email: 't@e.com', password: 'p' };
-      const result = await controller.login(dto);
-      expect(service.login).toHaveBeenCalledWith(dto.email, dto.password);
-      expect(result).toEqual({ user: mockUser, tokens: mockTokens });
+      const result = await controller.validateUser({
+        email: 't@e.com',
+        password: 'password1',
+      });
+      expect(service.login).toHaveBeenCalledWith('t@e.com', 'password1');
+      expect(result).toEqual(authResponse);
     });
   });
 
   describe('signup', () => {
     it('should call service.signup', async () => {
-      const dto: CreateCredentialDTO = {
+      const dto = {
         email: 't@e.com',
-        password: 'p',
+        password: 'Password123!',
         firstName: 'John',
         lastName: 'Doe',
       };
       const result = await controller.signup(dto);
       expect(service.signup).toHaveBeenCalledWith(dto);
-      expect(result).toEqual({ user: mockUser, tokens: mockTokens });
+      expect(result).toEqual(authResponse);
     });
   });
 
-  describe('refresh', () => {
+  describe('refreshToken', () => {
     it('should call service.refreshToken', async () => {
-      const req = { headers: { authorization: 'Bearer t' } } as any;
-      const result = await controller.refresh(req);
+      const result = await controller.refreshToken({ token: 't' });
       expect(service.refreshToken).toHaveBeenCalledWith('t');
-      expect(result).toEqual({ user: mockUser, tokens: mockTokens });
+      expect(result).toEqual(authResponse);
     });
   });
 
-  describe('validateAuthUser (gRPC)', () => {
-    it('should format date and return result', async () => {
-      const userWithDate = { ...mockUser, lastLoginAt: new Date(1000) };
-      jest
-        .spyOn(service, 'login')
-        .mockResolvedValue({ user: userWithDate, tokens: mockTokens } as any);
-
-      const result = await controller.validateAuthUser({
-        email: 'e',
-        password: 'p',
-      });
-      expect(result.user.lastLoginAt).toBeDefined();
-      expect(result.user.lastLoginAt!.seconds).toBe(1);
-    });
-  });
-
-  describe('signupGrpc', () => {
-    it('should call signup', async () => {
-      const dto = { email: 'e', password: 'p' };
-      await controller.signupGrpc(dto as any);
-      expect(service.signup).toHaveBeenCalledWith(dto);
-    });
-  });
-
-  describe('refreshTokenGrpc', () => {
-    it('should call refreshToken', async () => {
-      await controller.refreshTokenGrpc({ token: 't' });
-      expect(service.refreshToken).toHaveBeenCalledWith('t');
+  describe('changePassword', () => {
+    it('should call changePasswordService', async () => {
+      const dto = {
+        userId: 'user-id',
+        currentPassword: 'Password123!',
+        newPassword: 'Password456!',
+      };
+      const result = await controller.changePassword(dto);
+      expect(changePassword.changePassword).toHaveBeenCalledWith(dto);
+      expect(result).toEqual({ success: true });
     });
   });
 });

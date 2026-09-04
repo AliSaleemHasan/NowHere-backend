@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { SnapsGateway } from './gateway';
-import { CreateSnapDto } from './dto/create-snap.dto';
+import { haversineMeters } from 'nowhere-common';
 
 describe('SnapsGateway', () => {
   let gateway: SnapsGateway;
@@ -13,12 +15,22 @@ describe('SnapsGateway', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SnapsGateway],
+      providers: [
+        SnapsGateway,
+        {
+          provide: JwtService,
+          useValue: { verify: jest.fn().mockReturnValue({ user: { id: 'u1' } }) },
+        },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('test-secret') },
+        },
+      ],
     }).compile();
 
     gateway = module.get<SnapsGateway>(SnapsGateway);
     gateway.server = serverMock;
-    gateway.afterInit(serverMock); // Initialize map
+    gateway.afterInit();
   });
 
   it('should be defined', () => {
@@ -49,21 +61,19 @@ describe('SnapsGateway', () => {
     });
   });
 
-  describe('getDistanceInMeters', () => {
+  describe('haversineMeters', () => {
     it('should calculate distance correctly', () => {
-      // Distance between two points (approx)
       const lat1 = 52.52;
       const lon1 = 13.405; // Berlin
       const lat2 = 48.8566;
       const lon2 = 2.3522; // Paris
-      // approx 878 km = 878000 meters
-      const distance = gateway.getDistanceInMeters(lat1, lon1, lat2, lon2);
+      const distance = haversineMeters(lat1, lon1, lat2, lon2);
       expect(distance).toBeGreaterThan(800000);
       expect(distance).toBeLessThan(900000);
     });
 
     it('should return 0 for same location', () => {
-      expect(gateway.getDistanceInMeters(0, 0, 0, 0)).toBe(0);
+      expect(haversineMeters(0, 0, 0, 0)).toBe(0);
     });
   });
 
@@ -99,10 +109,9 @@ describe('SnapsGateway', () => {
       // handleNewSnap uses hardcoded 100km radius? verify source code
       // Source: findNearbyUsers(..., 100);
 
-      const body: CreateSnapDto = {
-        location: { coordinates: [0, 0] } as any,
-        // other fields mocked as needed
-      } as any;
+      const body = {
+        location: { coordinates: [0, 0] as [number, number] },
+      };
 
       gateway.handleNewSnap(body);
 

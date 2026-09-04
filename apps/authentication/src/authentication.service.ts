@@ -1,6 +1,15 @@
 import {
+  AuthEvents,
+  AuthResponse,
+  JwtPayload,
+  ROLES,
+  SignupPayload,
+  UserCredentialsCreatedEvent,
+} from 'contracts';
+import {
   BadRequestException,
-  Inject,
+  ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   OnModuleInit,
@@ -9,142 +18,207 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { tryCatch, USERS_GRPC } from 'nowhere-common';
+import {
+  isDuplicateKeyError,
+  JetStreamPublisher,
+  tryCatch,
+} from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GENERIC_CREDENTIALS_ERROR } from './auth-errors';
 import { Credential } from './entities/user-credentials-entity';
+import { hashPassword } from './hash-password';
+import { assertAccountUnlocked, withRecordedFailure } from './login-lockout';
 import { QueryFailedError, Repository } from 'typeorm';
-import { CreateCredentialDTO } from './dto/create-credential-dto';
-import { ClientGrpc } from '@nestjs/microservices';
-import { lastValueFrom } from 'rxjs';
-import { AuthUserRole, USERS_SERVICE_NAME } from 'proto';
-import { Roles } from './entities/user-credentials-entity';
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
   private readonly logger = new Logger(AuthenticationService.name, {
     timestamp: true,
   });
-  private authUsersService: any;
 
   constructor(
     private jwt: JwtService,
     @InjectRepository(Credential)
     private userRepository: Repository<Credential>,
     private configService: ConfigService,
-    @Inject(USERS_GRPC) private client: ClientGrpc,
+    private jsPublisher: JetStreamPublisher,
   ) {}
 
-  onModuleInit() {
-    this.authUsersService = this.client.getService(USERS_SERVICE_NAME);
+  async onModuleInit() {
+    await this.seedAdmin();
   }
 
-  async createUserCredentials(createUserDto: CreateCredentialDTO) {
+  async seedAdmin() {
+    const email = this.configService.get<string>('ADMIN_EMAIL');
+    const password = this.configService.get<string>('ADMIN_PASSWORD');
+
+    if (!email || !password) {
+      this.logger.log(
+        'Admin email and password are not provided , continuing without admin!',
+      );
+      return;
+    }
+
+    const existingAdmin = await this.userRepository.findOneBy({ email });
+    if (existingAdmin) {
+      this.logger.log('Admin credentials already exist, skipping seeding.');
+      return;
+    }
+
+    const admin = this.userRepository.create({
+      email,
+      password: await hashPassword(password),
+      role: ROLES.ADMIN,
+    });
+
+    const savedAdmin = await this.userRepository.save(admin);
+    this.logger.log(`Admin credentials seeded with ID: ${savedAdmin.id}`);
+
+    await this.jsPublisher.publish<UserCredentialsCreatedEvent>(
+      AuthEvents.USER_CREDENTIALS_CREATED,
+      {
+        authId: savedAdmin.id,
+        email: savedAdmin.email,
+        firstName: 'admin',
+        lastName: 'admin',
+      },
+    );
+  }
+
+  async createUserCredentials(createUserDto: {
+    email: string;
+    password: string;
+    role: ROLES;
+  }) {
     const user = this.userRepository.create(createUserDto);
     return this.userRepository.save(user);
   }
+
+  private toAuthResponse(result: {
+    user: Partial<Credential>;
+    tokens: { accessToken: string; refreshToken: string };
+  }): AuthResponse {
+    return {
+      user: {
+        id: result.user.id as string,
+        email: result.user.email as string,
+        role: (result.user.role as ROLES) ?? ROLES.USER,
+        isActive: result.user.isActive as boolean,
+        lastLoginAt: result.user.lastLoginAt,
+      },
+      tokens: result.tokens,
+    };
+  }
+
   async login(email: string, password: string) {
-    // first getting the user from the data base
     const { error, data: user } = await tryCatch(
       this.userRepository.findOneBy({ email }),
     );
-
-    console.log(user);
 
     if (error) {
       throw new QueryFailedError('get user by email', undefined, error);
     }
 
-    if (!user)
-      throw new UnauthorizedException('User not found, please sign up');
-
-    if (!(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Wrong password');
+    if (!user) {
+      throw new UnauthorizedException(GENERIC_CREDENTIALS_ERROR);
     }
 
-    this.userRepository.save({ ...user, lastLoginAt: new Date() });
+    assertAccountUnlocked(user);
+
+    const passwordMatches = await bcrypt.compare(password, user.password);
+    if (!passwordMatches) {
+      await this.userRepository.save({
+        ...user,
+        ...withRecordedFailure(user),
+      });
+      throw new UnauthorizedException(GENERIC_CREDENTIALS_ERROR);
+    }
+
+    if (!user.isActive) {
+      throw new ForbiddenException('Account is disabled');
+    }
+
+    await this.userRepository.save({
+      ...user,
+      lastLoginAt: new Date(),
+      failedLoginCount: 0,
+      lockedUntil: null,
+    });
 
     const tokens = await this.generateTokens(user, user.id);
-    return { user, tokens };
+    return this.toAuthResponse({ user, tokens });
   }
 
-  async signup(createUserDto: CreateCredentialDTO) {
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
-    createUserDto.password = hashedPassword;
-
-    // Map gRPC role (number) to Entity role (string) if necessary
-    if (typeof createUserDto.role === 'number') {
-      createUserDto.role =
-        createUserDto.role === AuthUserRole.ADMIN ? Roles.ADMIN : Roles.USER;
-    }
-
+  async signup(createUserDto: SignupPayload) {
     const { error: createUserError, data: newUser } = await tryCatch(
-      this.createUserCredentials(createUserDto),
+      this.createUserCredentials({
+        email: createUserDto.email,
+        password: await hashPassword(createUserDto.password),
+        role: ROLES.USER,
+      }),
     );
 
-    if (createUserError || !newUser)
-      throw new BadRequestException(
-        createUserError?.message || 'User Not Found',
-      );
-
-    // Call Users service to create profile
-    try {
-      await lastValueFrom(
-        this.authUsersService.CreateUserInfo({
-          email: createUserDto.email,
-          authId: newUser.id,
-          firstName: createUserDto.firstName,
-          lastName: createUserDto.lastName,
-          bio: '',
-        }),
-      );
-    } catch (e) {
-      this.logger.error('Failed to create user profile in Users service', e);
-      await this.userRepository.delete(newUser.id);
-
-      // Reject the signup request
-      throw new BadRequestException(
-        'Failed to complete user registration. Please try again.',
-      );
+    if (createUserError || !newUser) {
+      if (isDuplicateKeyError(createUserError)) {
+        throw new ConflictException('Email already in use');
+      }
+      throw new BadRequestException('Failed to create user credentials');
     }
 
+    await this.jsPublisher.publish<UserCredentialsCreatedEvent>(
+      AuthEvents.USER_CREDENTIALS_CREATED,
+      {
+        authId: newUser.id,
+        email: newUser.email,
+        firstName: createUserDto.firstName,
+        lastName: createUserDto.lastName,
+      },
+    );
+
     const tokens = await this.generateTokens(newUser, newUser.id);
-    return { user: newUser, tokens };
+    return this.toAuthResponse({ user: newUser, tokens });
   }
 
-  // this function is for refreshing the token if
   async refreshToken(token?: string) {
     if (!token) throw new UnauthorizedException('No refresh token provided!');
 
-    // validate the recieved refresh token
-
     const { error: jwtError, data: payload } = await tryCatch(
-      this.jwt.verifyAsync<any>(token, {
+      this.jwt.verifyAsync<JwtPayload>(token, {
         secret: this.configService.get('REFRESH_SECRET'),
       }),
     );
 
-    if (jwtError) throw new UnauthorizedException(jwtError.message);
+    if (jwtError || !payload?.sub) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
 
-    const { error, data } = await tryCatch(
-      this.generateTokens(payload.user, payload.sub),
-    );
+    const user = await this.userRepository.findOneBy({ id: payload.sub });
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Invalid or expired refresh token');
+    }
 
-    if (error) throw new UnauthorizedException(error.message);
-    return { user: payload.user, tokens: data };
+    const tokens = await this.generateTokens(user, user.id);
+    return this.toAuthResponse({ user, tokens });
   }
 
   async generateTokens(user: Partial<Credential>, Id: string) {
-    const payload = { sub: Id, user };
+    const payload: JwtPayload = {
+      sub: Id,
+      user: {
+        id: Id,
+        email: user.email as string,
+        role: user.role ?? ROLES.USER,
+      },
+    };
 
     const accessToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('ACCESS_SECRET'),
-      expiresIn: this.configService.get('ACCESS_EXP'),
+      expiresIn: this.configService.get('ACCESS_EXP') || '15m',
     });
 
     const refreshToken = await this.jwt.signAsync(payload, {
       secret: this.configService.get('REFRESH_SECRET'),
-      expiresIn: this.configService.get('REFRESH_EXP'),
+      expiresIn: this.configService.get('REFRESH_EXP') || '7d',
     });
 
     return { accessToken, refreshToken };

@@ -4,4 +4,5 @@ module.exports = {
   ...base,
   rootDir: 'src',
   displayName: 'snaps',
+  coverageDirectory: '<rootDir>/../coverage',
 };

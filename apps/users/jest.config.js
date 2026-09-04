@@ -3,5 +3,6 @@ const base = require('../../jest.config.base');
 module.exports = {
   ...base,
   rootDir: 'src',
-  displayName: 'auth',
+  displayName: 'users',
+  coverageDirectory: '<rootDir>/../coverage',
 };

@@ -1,40 +1,33 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { GrpcModule } from './grpc/grpc.module';
 import * as path from 'path';
-import { getValidateFn } from 'nowhere-common';
-import { AuthEnvVariables } from './utils/auth-env-variables';
+import {
+  createEnvConfigModule,
+  HealthModule,
+  JetStreamModule,
+  mysqlTypeOrmConfig,
+  NatsClientModule,
+} from 'nowhere-common';
+import { UsersEnvVariables } from './utils/users-env-variables';
+
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      validate: getValidateFn(AuthEnvVariables),
-      isGlobal: true,
-      envFilePath: [path.resolve(process.cwd(), '.env')],
-    }),
-    JwtModule.register({ global: true }),
-    GrpcModule,
+    createEnvConfigModule(UsersEnvVariables),
+    NatsClientModule.register(),
+    JetStreamModule.forRoot(),
+    HealthModule.forTypeOrm(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('MYSQL_HOST'),
-        port: Number(configService.get('MYSQL_PORT')),
-        username: configService.get('MYSQL_USER'),
-        password: configService.get('MYSQL_PASS'),
-        database: configService.get('MYSQL_DATABASE'),
-        entities: [],
-        migrations: [__dirname + '/migrations/*{.ts,.js}'],
-        autoLoadEntities: true,
-        synchronize: true, //TODO: handle this in production
-      }),
       inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        mysqlTypeOrmConfig(configService, {
+          migrationsDir: path.join(__dirname, 'migrations'),
+          defaultDatabase: 'Users_Info',
+        }),
     }),
     UsersModule,
-    // SeedService,
   ],
-  controllers: [],
 })
-export class AuthModule {}
+export class UsersAppModule {}

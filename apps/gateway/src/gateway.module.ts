@@ -1,30 +1,51 @@
 import { Module } from '@nestjs/common';
-import { GatewayController } from './gateway.controller';
-import { GatewayService } from './gateway.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { credentialsProtoOptions } from '../../../libs/proto/proto-options';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
-import * as path from 'path';
+import {
+  createEnvConfigModule,
+  HealthModule,
+  NatsClientModule,
+} from 'nowhere-common';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { GatewayAuthController } from './controllers/gateway-auth.controller';
+import { GatewayUsersController } from './controllers/gateway-users.controller';
+import { GatewaySnapsController } from './controllers/gateway-snaps.controller';
+import { GatewayStorageController } from './controllers/gateway-storage.controller';
+import { GatewayAuthGuard } from './guards/auth.guard';
+import { GatewayEnvVariables } from './utils/gateway-env-variables';
+import { GatewayRpcClient } from './rpc/gateway-rpc.client';
+import { AccountDeleteOrchestrator } from './account-delete.orchestrator';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: [path.resolve(process.cwd(), '.env')],
-    }),
+    createEnvConfigModule(GatewayEnvVariables),
     JwtModule.register({
       global: true,
     }),
-    ClientsModule.register([
+    ThrottlerModule.forRoot([
       {
-        name: 'CREDENTIALS_PACKAGE',
-        transport: Transport.GRPC,
-        options: credentialsProtoOptions,
+        ttl: 60_000,
+        limit: 60,
       },
     ]),
+    NatsClientModule.register(),
+    HealthModule.forMemory(),
   ],
-  controllers: [GatewayController],
-  providers: [GatewayService],
+  controllers: [
+    GatewayAuthController,
+    GatewayUsersController,
+    GatewaySnapsController,
+    GatewayStorageController,
+  ],
+  providers: [
+    GatewayAuthGuard,
+    GatewayRpcClient,
+    AccountDeleteOrchestrator,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
+  exports: [GatewayAuthGuard],
 })
 export class GatewayModule {}

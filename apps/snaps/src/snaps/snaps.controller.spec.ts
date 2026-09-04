@@ -1,117 +1,137 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SnapsController } from './snaps.controller';
-import { SnapsService } from './snaps.service';
-import { JwtGuard, RoleGuard } from 'nowhere-common';
+import { SnapsNatsController } from './controllers/snaps.nats.controller';
+import { SnapsCreateService } from './snaps-create.service';
+import { SnapsDeleteService } from './snaps-delete.service';
+import { SnapsQueryService } from './snaps-query.service';
+import { SnapsResolutionService } from './snaps-resolution.service';
+import { ROLES } from 'contracts';
 
-describe('SnapsController', () => {
-  let controller: SnapsController;
-  let service: any;
+describe('SnapsNatsController', () => {
+  let controller: SnapsNatsController;
+  let query: {
+    findAll: jest.Mock;
+    findByTags: jest.Mock;
+    findOne: jest.Mock;
+    findByUser: jest.Mock;
+    getSeenSnaps: jest.Mock;
+  };
+  let create: { create: jest.Mock };
+  let remove: {
+    deleteAll: jest.Mock;
+    deleteSnap: jest.Mock;
+    deleteByUserId: jest.Mock;
+  };
+  let resolution: { markFound: jest.Mock; reopen: jest.Mock };
 
   beforeEach(async () => {
-    service = {
-      create: jest.fn(),
+    query = {
       findAll: jest.fn(),
-      handleCreateSnap: jest.fn(),
       findByTags: jest.fn(),
       findOne: jest.fn(),
-      deleteAll: jest.fn(),
+      findByUser: jest.fn(),
       getSeenSnaps: jest.fn(),
     };
+    create = { create: jest.fn() };
+    remove = {
+      deleteAll: jest.fn(),
+      deleteSnap: jest.fn(),
+      deleteByUserId: jest.fn(),
+    };
+    resolution = { markFound: jest.fn(), reopen: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [SnapsController],
+      controllers: [SnapsNatsController],
       providers: [
-        {
-          provide: SnapsService,
-          useValue: service,
-        },
+        { provide: SnapsQueryService, useValue: query },
+        { provide: SnapsCreateService, useValue: create },
+        { provide: SnapsDeleteService, useValue: remove },
+        { provide: SnapsResolutionService, useValue: resolution },
       ],
-    })
-      .overrideGuard(JwtGuard)
-      .useValue({ canActivate: () => true })
-      .overrideGuard(RoleGuard)
-      .useValue({ canActivate: () => true })
-      .compile();
+    }).compile();
 
-    controller = module.get<SnapsController>(SnapsController);
+    controller = module.get<SnapsNatsController>(SnapsNatsController);
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('saveUploadedSnaps', () => {
-    it('should call handleCreateSnap', async () => {
-      const data: any = { snapId: 's1' };
-      await controller.saveUploadedSnaps(data);
-      expect(service.handleCreateSnap).toHaveBeenCalledWith(data);
-    });
-  });
-
   describe('create', () => {
-    it('should call service.create', async () => {
-      const dto: any = { location: [0, 0] };
-      const files: any = [];
-      await controller.create('u1', files, dto);
-      expect(service.create).toHaveBeenCalledWith('u1', files, dto);
+    it('should call create service', async () => {
+      const dto = {
+        userId: 'u1',
+        location: {
+          type: 'Point' as const,
+          coordinates: [0, 0] as [number, number],
+        },
+        snaps: ['snaps/2026-09-03/u1/a.jpg'],
+      };
+      await controller.create(dto);
+      expect(create.create).toHaveBeenCalledWith('u1', dto);
     });
   });
 
   describe('findAll', () => {
-    it('should call service.findAll', async () => {
+    it('should call query.findAll', async () => {
       await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
-    });
-  });
-
-  describe('findByTags', () => {
-    it('should call service.findByTags', async () => {
-      const query: any = { tags: ['t1'] };
-      await controller.findByTags(query);
-      expect(service.findByTags).toHaveBeenCalledWith(['t1']);
-    });
-  });
-
-  describe('findOne', () => {
-    it('should call service.findOne', async () => {
-      await controller.findOne('u1', 's1');
-      expect(service.findOne).toHaveBeenCalledWith('s1', 'u1');
-    });
-  });
-
-  describe('deleteAll', () => {
-    it('should call service.deleteAll', async () => {
-      await controller.deleteAll();
-      expect(service.deleteAll).toHaveBeenCalled();
+      expect(query.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findNear', () => {
-    it('should call service.getSeenSnaps', async () => {
-      const location: any = { lng: 1, lat: 2 };
-      const query: any = { id: 'u1' };
-      await controller.findNear(location, query);
-      expect(service.getSeenSnaps).toHaveBeenCalledWith(
-        expect.objectContaining({
-          location: [1, 2],
-          id: 'u1',
-        }),
+    it('should call query.getSeenSnaps with seen: false', async () => {
+      await controller.findNear({ userId: 'u1', lng: 1, lat: 2 });
+      expect(query.getSeenSnaps).toHaveBeenCalledWith(
+        { tags: undefined, location: [1, 2] },
         'u1',
         false,
       );
     });
   });
 
-  describe('getSeenSnaps', () => {
-    it('should call service.getSeenSnaps', async () => {
-      const location: any = { lng: 1, lat: 2 };
-      const query: any = {};
-      await controller.getSeenSnaps('u1', location, query);
-      expect(service.getSeenSnaps).toHaveBeenCalledWith(
-        expect.objectContaining({ location: [1, 2] }),
-        'u1',
-        false,
-      );
+  describe('deleteOne', () => {
+    it('forwards id with actor identity', async () => {
+      await controller.deleteOne({
+        id: 's1',
+        userId: 'u1',
+        role: ROLES.USER,
+      });
+      expect(remove.deleteSnap).toHaveBeenCalledWith('s1', {
+        userId: 'u1',
+        role: ROLES.USER,
+      });
+    });
+  });
+
+  describe('findByUser', () => {
+    it('calls query.findByUser', async () => {
+      await controller.findByUser({ userId: 'u1', includeExpired: false });
+      expect(query.findByUser).toHaveBeenCalledWith('u1', false);
+    });
+  });
+
+  describe('deleteByUserId', () => {
+    it('forwards userId to deleteByUserId', async () => {
+      await controller.deleteByUserId({ userId: 'u1' });
+      expect(remove.deleteByUserId).toHaveBeenCalledWith('u1');
+    });
+  });
+
+  describe('markFound', () => {
+    it('forwards id, userId, and note', async () => {
+      await controller.markFound({
+        id: 's1',
+        userId: 'u2',
+        note: 'here',
+      });
+      expect(resolution.markFound).toHaveBeenCalledWith('s1', 'u2', 'here');
+    });
+  });
+
+  describe('reopen', () => {
+    it('forwards id and userId', async () => {
+      await controller.reopen({ id: 's1', userId: 'u1' });
+      expect(resolution.reopen).toHaveBeenCalledWith('s1', 'u1');
     });
   });
 });

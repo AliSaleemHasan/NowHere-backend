@@ -1,38 +1,32 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SnapsModule } from './snaps/snaps.module';
-import { configuration, getValidateFn } from 'nowhere-common';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
-import { JwtModule } from '@nestjs/jwt';
-import { SeedModule } from './seed/seed.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import {
+  buildMongoUri,
+  createEnvConfigModule,
+  HealthModule,
+  NatsClientModule,
+} from 'nowhere-common';
 import { SnapsEnvVariables } from './utils/snaps-env-variables';
+import { SeedModule } from './seed/seed.module';
+
 @Module({
   imports: [
-    JwtModule.register({
-      global: true,
+    createEnvConfigModule(SnapsEnvVariables),
+    NatsClientModule.register(),
+    ScheduleModule.forRoot(),
+    HealthModule.forMongoose(),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        uri: buildMongoUri(configService),
+      }),
     }),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'tmp'),
-      serveRoot: `/${process.env.STATIC_TMP_FILES}/`,
-      serveStaticOptions: { index: false },
-    }),
-    ConfigModule.forRoot({
-      validate: getValidateFn(SnapsEnvVariables),
-
-      isGlobal: true,
-      load: [configuration],
-    }),
-
-    MongooseModule.forRoot(
-      `mongodb://${process.env.MONGO_ROOT_USER}:${process.env.MONGO_ROOT_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DATABASE}`,
-      { authSource: 'admin' },
-    ),
     SnapsModule,
-    // SeedModule,
+    SeedModule.register(),
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

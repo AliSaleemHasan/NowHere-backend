@@ -9,9 +9,6 @@ export class SnapSeen {
   @PrimaryColumn({ type: 'varchar', length: 24 })
   snapId!: string;
 
-  @CreateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP(6)',
-  })
+  @CreateDateColumn()
   seenAt!: Date;
 }

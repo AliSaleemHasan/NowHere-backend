@@ -1,32 +1,41 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { UsersController } from './users.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
-import { ClientsModule, Transport } from '@nestjs/microservices';
-import { credentialsProtoOptions, storageProtoOptions } from 'proto';
 import { SnapSeen } from './entities/snaps-seen.entity';
-import { CREDENTIALS_GRPC, STORAGE_GRPC } from 'nowhere-common';
+import { SnapBookmark } from './entities/snap-bookmark.entity';
+import { SnapReport } from './entities/snap-report.entity';
+import { UsersNatsController } from './controllers/users.nats.controller';
+import { UsersEventsHandler } from './controllers/users-events-handler';
+import { UsersProfileService } from './users-profile.service';
+import { UsersSettingsService } from '../settings/users-settings.service';
+import { BookmarksService } from './bookmarks.service';
+import { ReportsService } from './reports.service';
+import { UsersExportService } from './users-export.service';
+import { UsersPurgeService } from './users-purge.service';
 
 @Module({
   imports: [
-    ClientsModule.register([
-      {
-        name: STORAGE_GRPC,
-        transport: Transport.GRPC,
-        options: storageProtoOptions,
-      },
-      {
-        name: CREDENTIALS_GRPC,
-        transport: Transport.GRPC,
-        options: credentialsProtoOptions,
-      },
+    TypeOrmModule.forFeature([
+      User,
+      Settings,
+      SnapSeen,
+      SnapBookmark,
+      SnapReport,
     ]),
-    TypeOrmModule.forFeature([User, Settings, SnapSeen]),
   ],
-  providers: [UsersService],
-  controllers: [UsersController],
+  providers: [
+    UsersService,
+    UsersProfileService,
+    UsersSettingsService,
+    BookmarksService,
+    ReportsService,
+    UsersExportService,
+    UsersPurgeService,
+    UsersEventsHandler,
+  ],
+  controllers: [UsersNatsController],
   exports: [UsersService],
 })
 export class UsersModule {}

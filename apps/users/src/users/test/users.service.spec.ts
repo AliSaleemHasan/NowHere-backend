@@ -1,20 +1,36 @@
-// tests/unit/users.service.spec.ts
 import { Test } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
+import { SnapSeen } from '../entities/snaps-seen.entity';
+import { NotFoundException } from '@nestjs/common';
+import { NATS_CLIENT } from 'nowhere-common';
 
 describe('UsersService (unit)', () => {
   let service: UsersService;
-  let repo: jest.Mocked<Repository<User>>;
+  let userRepo: jest.Mocked<Repository<User>>;
+  let snapSeenRepo: jest.Mocked<Repository<SnapSeen>>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
+        {
+          provide: NATS_CLIENT,
+          useValue: { send: jest.fn(), emit: jest.fn() },
+        },
         UsersService,
         {
           provide: getRepositoryToken(User),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            findOne: jest.fn(),
+          },
+        },
+        {
+          provide: getRepositoryToken(SnapSeen),
           useValue: {
             create: jest.fn(),
             save: jest.fn(),
@@ -26,29 +42,34 @@ describe('UsersService (unit)', () => {
     }).compile();
 
     service = module.get(UsersService);
-    repo = module.get(getRepositoryToken(User));
+    userRepo = module.get(getRepositoryToken(User));
+    snapSeenRepo = module.get(getRepositoryToken(SnapSeen));
   });
 
   it('createUser creates and saves a user', async () => {
     const dto = {
       email: 'a@a.com',
-      password: 'Qqqqqq1!',
       firstName: 'A',
       lastName: 'B',
-      bio: null,
+      bio: '',
+      authId: 'auth-1',
     } as any;
-    const entity = { Id: 'uuid', ...dto } as User;
+    const entity = { id: 'uuid', ...dto } as User;
 
-    repo.create.mockReturnValue(entity);
-    repo.save.mockResolvedValue(entity);
+    userRepo.create.mockReturnValue(entity);
+    userRepo.save.mockResolvedValue(entity);
 
+    userRepo.findOne.mockResolvedValue(null);
     const result = await service.createUser(dto);
-    expect(repo.create).toHaveBeenCalledWith(dto);
-    expect(repo.save).toHaveBeenCalledWith(entity);
+    expect(userRepo.create).toHaveBeenCalledWith({
+      ...dto,
+      id: dto.id || dto.authId,
+    });
+    expect(userRepo.save).toHaveBeenCalledWith(entity);
     expect(result).toEqual(entity);
   });
 
-  it('getUserById returns user without password', async () => {
+  it('getUserById returns user', async () => {
     const user = {
       id: 'u1',
       email: 'a@a.com',
@@ -57,41 +78,69 @@ describe('UsersService (unit)', () => {
       bio: '',
       image: '',
     } as User;
-    repo.findOne.mockResolvedValue(user);
+    userRepo.findOne.mockResolvedValue(user);
 
     const result = await service.getUserById('u1');
-    expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 'u1' } });
-    expect(result).toEqual({
-      Id: 'u1',
-      email: 'a@a.com',
-      firstName: 'A',
-      lastName: 'B',
-      bio: '',
-      isActive: false, // if absent in mock
-    });
-    expect((result as any).password).toBeUndefined();
+    expect(userRepo.findOne).toHaveBeenCalledWith({ where: { id: 'u1' } });
+    expect(result).toEqual(user);
   });
 
-  it('getUserById returns message when not found', async () => {
-    repo.findOne.mockResolvedValue(null);
-    const result = await service.getUserById('missing');
-    expect(result).toBe('User not found!');
+  it('getUserById throws NotFoundException when not found', async () => {
+    userRepo.findOne.mockResolvedValue(null);
+    await expect(service.getUserById('missing')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
-  it('getUserByEmail returns user or null', async () => {
-    repo.findOne.mockResolvedValueOnce({ Id: 'u1' } as any);
+  it('getUserByEmail returns user when found', async () => {
+    const user = { id: 'u1', email: 'a@a.com' } as User;
+    userRepo.findOne.mockResolvedValue(user);
     const found = await service.getUserByEmail('a@a.com');
-    expect(repo.findOne).toHaveBeenCalledWith({ where: { email: 'a@a.com' } });
-    expect(found).toEqual({ Id: 'u1' });
+    expect(userRepo.findOne).toHaveBeenCalledWith({
+      where: { email: 'a@a.com' },
+    });
+    expect(found).toEqual(user);
+  });
 
-    repo.findOne.mockResolvedValueOnce(null);
-    const notFound = await service.getUserByEmail('b@b.com');
-    expect(notFound).toBeNull();
+  it('getUserByEmail throws NotFoundException when not found', async () => {
+    userRepo.findOne.mockResolvedValue(null);
+    await expect(service.getUserByEmail('b@b.com')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('getAllUsers returns array', async () => {
-    repo.find.mockResolvedValue([{ Id: 'u1' }] as any);
+    userRepo.find.mockResolvedValue([{ id: 'u1' }] as any);
     const all = await service.getAllUsers();
-    expect(all).toEqual([{ Id: 'u1' }]);
+    expect(all).toEqual([{ id: 'u1' }]);
+  });
+
+  it('getSeen always queries this user snap_seen rows', async () => {
+    snapSeenRepo.find.mockResolvedValue([]);
+    await service.getSeen({
+      seen: false,
+      userId: 'caller',
+      snapIds: ['s1', 's2'],
+    });
+    expect(snapSeenRepo.find).toHaveBeenCalledWith({
+      where: { userId: 'caller', snapId: expect.anything() },
+    });
+    const arg = snapSeenRepo.find.mock.calls[0][0] as {
+      where: { userId: string };
+    };
+    expect(arg.where.userId).toBe('caller');
+  });
+
+  it('createUser is idempotent on authId', async () => {
+    const existing = { id: 'auth-1', email: 'a@a.com' } as User;
+    userRepo.findOne.mockResolvedValue(existing);
+    const result = await service.createUser({
+      authId: 'auth-1',
+      email: 'a@a.com',
+      firstName: 'A',
+      lastName: 'B',
+    } as any);
+    expect(result).toEqual(existing);
+    expect(userRepo.save).not.toHaveBeenCalled();
   });
 });

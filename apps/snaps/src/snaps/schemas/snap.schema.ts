@@ -1,16 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
+import { MAX_RESOLUTION_NOTE } from 'contracts';
+import { GeoPointType, Tags } from 'nowhere-common';
 
 export type SnapDocument = HydratedDocument<Snap>;
-
-export enum Tags {
-  PROOMOTION = 'PROOMOTION',
-  INTERESTING = 'INTERESTING',
-  FINDINGS = 'FINDINGS',
-  LOST = 'LOST',
-  HIDDEN_GEM = 'HIDDEN_GEM',
-  SOCIAL = 'SOCIAL',
-}
 
 export enum SnapStatus {
   UPLOADING = 'UPLOADING',
@@ -19,11 +12,16 @@ export enum SnapStatus {
   PROCESSING = 'PROCESSING',
 }
 
-export enum GeoPointType {
-  Point = 'Point',
+export enum SnapResolution {
+  OPEN = 'OPEN',
+  FOUND = 'FOUND',
 }
 
-@Schema({ timestamps: true }) // auto-adds createdAt and updatedAt
+@Schema({
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+})
 export class Snap {
   @Prop({ required: true })
   description: string;
@@ -59,8 +57,32 @@ export class Snap {
 
   @Prop({ type: String, enum: SnapStatus, default: SnapStatus.PROCESSING })
   status: SnapStatus;
+
+  @Prop({ type: Date })
+  expiresAt: Date;
+
+  @Prop({ type: String })
+  idempotencyKey?: string;
+
+  @Prop({ type: String, enum: SnapResolution, default: SnapResolution.OPEN })
+  resolution: SnapResolution;
+
+  @Prop({ type: String, maxlength: MAX_RESOLUTION_NOTE })
+  resolutionNote?: string;
+
+  @Prop({ type: String })
+  resolvedBy?: string;
+
+  @Prop({ type: Date })
+  resolvedAt?: Date;
 }
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);
 
+SnapSchema.index({ location: '2dsphere' });
 SnapSchema.index({ createdAt: -1, location: '2dsphere' });
+SnapSchema.index({ expiresAt: 1 });
+SnapSchema.index(
+  { _userId: 1, idempotencyKey: 1 },
+  { unique: true, sparse: true },
+);

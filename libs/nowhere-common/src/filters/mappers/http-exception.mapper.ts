@@ -1,4 +1,6 @@
 import { HttpException } from '@nestjs/common';
+import { STATUS_CODES } from 'http';
+import { readProblemCode } from '../http-problem';
 import { ExceptionMapper, ProblemDetails } from '../problem-details.interface';
 
 export class HttpExceptionMapper implements ExceptionMapper<HttpException> {
@@ -11,11 +13,13 @@ export class HttpExceptionMapper implements ExceptionMapper<HttpException> {
     const response = exception.getResponse();
     let detail = 'An HTTP error occurred';
     let errors: unknown = undefined;
+    let code: string | undefined;
 
     if (typeof response === 'string') {
       detail = response;
     } else if (typeof response === 'object' && response !== null) {
       const resObj = response as Record<string, unknown>;
+      code = readProblemCode(resObj);
       if (Array.isArray(resObj.message)) {
         detail = 'Validation failed';
         errors = resObj.message;
@@ -30,7 +34,7 @@ export class HttpExceptionMapper implements ExceptionMapper<HttpException> {
 
     const problem: ProblemDetails = {
       type: 'about:blank',
-      title: exception.name.replace(/Exception$/, ''),
+      title: STATUS_CODES[status] ?? exception.name.replace(/Exception$/, ''),
       status: status,
       detail: detail,
       instance: requestUrl,
@@ -39,6 +43,9 @@ export class HttpExceptionMapper implements ExceptionMapper<HttpException> {
 
     if (errors !== undefined) {
       problem.errors = errors;
+    }
+    if (code) {
+      problem.code = code;
     }
 
     return problem;

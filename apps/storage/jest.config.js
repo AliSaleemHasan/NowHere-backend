@@ -5,4 +5,5 @@ module.exports = {
   ...base,
   rootDir: 'src',
   displayName: 'storage',
+  coverageDirectory: '<rootDir>/../coverage',
 };

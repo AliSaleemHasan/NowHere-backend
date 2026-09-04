@@ -1,9 +1,8 @@
 import { ClassConstructor, plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 
-// make validation utils usable for all services at once
-export function getValidateFn(variables: ClassConstructor<any>) {
-  return function validate(config: Record<string, unknown>) {
+export function getValidateFn<T extends object>(variables: ClassConstructor<T>) {
+  return function validate(config: Record<string, unknown>): T {
     const validatedConfig = plainToInstance(variables, config, {
       enableImplicitConversion: true,
     });

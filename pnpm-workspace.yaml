@@ -2,8 +2,10 @@ packages:
   - apps/*
   - libs/*
 
+allowBuilds:
+  '@nestjs/core': false
+
 onlyBuiltDependencies:
-  - '@nestjs/core'
   - '@scarf/scarf'
   - '@swc/core'
   - bcrypt
@@ -12,4 +14,3 @@ onlyBuiltDependencies:
   - protobufjs
   - sqlite3
   - unrs-resolver
-
