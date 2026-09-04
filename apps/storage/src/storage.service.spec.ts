@@ -88,7 +88,9 @@ describe('StorageService', () => {
 
   it('ignores missing keys and still invalidates cache', async () => {
     strategy.deleteFile
-      .mockRejectedValueOnce(new Error('NoSuchKey'))
+      .mockRejectedValueOnce(
+        Object.assign(new Error('NoSuchKey'), { code: 'NoSuchKey' }),
+      )
       .mockResolvedValueOnce(undefined);
     cache.del.mockResolvedValue(undefined);
 
@@ -99,5 +101,19 @@ describe('StorageService', () => {
     expect(strategy.deleteFile).toHaveBeenCalledTimes(2);
     expect(cache.del).toHaveBeenCalledWith('missing.jpg');
     expect(cache.del).toHaveBeenCalledWith('present.jpg');
+  });
+
+  it('rethrows a real storage failure and stops the batch', async () => {
+    strategy.deleteFile.mockRejectedValue(
+      Object.assign(new Error('AccessDenied'), { code: 'AccessDenied' }),
+    );
+
+    await expect(
+      service.deleteFiles(['broken.jpg', 'later.jpg']),
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
+
+    expect(strategy.deleteFile).toHaveBeenCalledTimes(1);
+    expect(strategy.deleteFile).toHaveBeenCalledWith('broken.jpg');
+    expect(cache.del).not.toHaveBeenCalled();
   });
 });

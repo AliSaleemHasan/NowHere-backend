@@ -1,6 +1,11 @@
-import { HttpException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  NotFoundException,
+} from '@nestjs/common';
 
-export type HttpProblemBody = {
+type HttpProblemBody = {
   statusCode: number;
   message: string;
   code?: string;
@@ -25,6 +30,12 @@ export function httpProblem(
   };
   if (code) {
     body.code = code;
+  }
+  if (status === HttpStatus.FORBIDDEN) {
+    return new ForbiddenException(body);
+  }
+  if (status === HttpStatus.NOT_FOUND) {
+    return new NotFoundException(body);
   }
   return new HttpException(body, status);
 }

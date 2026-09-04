@@ -11,7 +11,9 @@ describe('SnapsDeleteService', () => {
   let service: SnapsDeleteService;
   let snapModel: {
     findById: jest.Mock;
+    find: jest.Mock;
     deleteOne: jest.Mock;
+    deleteMany: jest.Mock;
   };
   let natsClient: { send: jest.Mock };
 
@@ -26,7 +28,18 @@ describe('SnapsDeleteService', () => {
       findById: jest.fn().mockReturnValue({
         exec: jest.fn().mockResolvedValue(ownedSnap),
       }),
+      find: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest
+          .fn()
+          .mockResolvedValue([
+            { snaps: ['snaps/a.jpg'] },
+            { snaps: ['snaps/b.jpg', 'snaps/a.jpg'] },
+          ]),
+      }),
       deleteOne: jest.fn().mockResolvedValue({ deletedCount: 1 }),
+      deleteMany: jest.fn().mockResolvedValue({ deletedCount: 2 }),
     };
     natsClient = { send: jest.fn().mockReturnValue(of(undefined)) };
 
@@ -78,5 +91,14 @@ describe('SnapsDeleteService', () => {
       keys: ownedSnap.snaps,
     });
     expect(snapModel.deleteOne).toHaveBeenCalled();
+  });
+
+  it('deletes storage keys before wiping all snaps', async () => {
+    const result = await service.deleteAll();
+    expect(natsClient.send).toHaveBeenCalledWith(StoragePatterns.DELETE_FILES, {
+      keys: ['snaps/a.jpg', 'snaps/b.jpg'],
+    });
+    expect(snapModel.deleteMany).toHaveBeenCalledWith({});
+    expect(result).toEqual({ deletedCount: 2 });
   });
 });

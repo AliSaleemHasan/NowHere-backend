@@ -24,6 +24,5 @@ import { SnapsQueryService } from './snaps-query.service';
     SnapsExpiresBackfill,
     SnapsGateway,
   ],
-  exports: [SnapsQueryService, SnapsCreateService, SnapsDeleteService],
 })
 export class SnapsModule {}

@@ -11,6 +11,11 @@ import { Snap, SnapStatus } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
 import { addDays, SnapsNearParamsService } from './snaps-near-params';
 
+function snapJson(doc: { toJSON?: () => unknown }): Record<string, unknown> {
+  const json = typeof doc.toJSON === 'function' ? doc.toJSON() : doc;
+  return json as Record<string, unknown>;
+}
+
 @Injectable()
 export class SnapsCreateService {
   private readonly logger = new Logger(SnapsCreateService.name);
@@ -30,10 +35,21 @@ export class SnapsCreateService {
       : [];
     assertSnapImageKeys(snapKeys, userId);
 
+    const idempotencyKey = createSnapDto.idempotencyKey;
+    if (idempotencyKey) {
+      const replay = await this.snapModel
+        .findOne({ _userId: userId, idempotencyKey })
+        .exec();
+      if (replay) {
+        return snapJson(replay);
+      }
+    }
+
     const params = await this.nearParams.load(userId);
     const now = new Date();
 
-    let exists: { _id?: unknown } | null = null;
+    let exists: { idempotencyKey?: string; toJSON?: () => unknown } | null =
+      null;
     try {
       exists = await this.snapModel
         .findOne({
@@ -46,8 +62,6 @@ export class SnapsCreateService {
             },
           },
         })
-        .select('_id')
-        .lean()
         .exec();
     } catch (geoErr) {
       this.logger.warn(
@@ -56,13 +70,15 @@ export class SnapsCreateService {
     }
 
     if (exists) {
+      if (idempotencyKey && exists.idempotencyKey === idempotencyKey) {
+        return snapJson(exists);
+      }
       throw new ForbiddenException(
-        'User has already posted in this area today!!',
+        'User already has an active snap in this area',
       );
     }
 
     const expiresAt = addDays(now, params.snapDisappearDays);
-    const idempotencyKey = createSnapDto.idempotencyKey;
 
     try {
       const createdSnap = new this.snapModel({
@@ -76,7 +92,7 @@ export class SnapsCreateService {
       });
 
       const created = await createdSnap.save();
-      const json = created.toJSON();
+      const json = snapJson(created);
       try {
         this.snapsGateway.handleNewSnap(json);
       } catch (broadcastErr) {
@@ -91,9 +107,7 @@ export class SnapsCreateService {
           .findOne({ _userId: userId, idempotencyKey })
           .exec();
         if (existing) {
-          return typeof existing.toJSON === 'function'
-            ? existing.toJSON()
-            : existing;
+          return snapJson(existing);
         }
       }
       handleMongoError(err);

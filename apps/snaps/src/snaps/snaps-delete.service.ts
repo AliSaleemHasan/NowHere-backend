@@ -35,19 +35,29 @@ export class SnapsDeleteService {
       );
     }
 
-    const keys = Array.isArray(snap.snaps) ? snap.snaps.filter(Boolean) : [];
-    if (keys.length > 0) {
-      await natsRequest<void, { keys: string[] }>(
-        this.natsClient,
-        StoragePatterns.DELETE_FILES,
-        { keys },
-      );
-    }
-
+    await this.deleteStorageKeys(snap.snaps);
     return this.snapModel.deleteOne({ _id: id });
   }
 
-  deleteAll(): Promise<DeleteResult> {
+  async deleteAll(): Promise<DeleteResult> {
+    const docs = await this.snapModel.find().select('snaps').lean().exec();
+    await this.deleteStorageKeys(docs.flatMap((doc) => doc.snaps || []));
     return this.snapModel.deleteMany({});
+  }
+
+  private async deleteStorageKeys(keys: string[] | undefined): Promise<void> {
+    const unique = [
+      ...new Set(
+        (keys || []).filter((key) => typeof key === 'string' && key.length > 0),
+      ),
+    ];
+    if (unique.length === 0) {
+      return;
+    }
+    await natsRequest<void, { keys: string[] }>(
+      this.natsClient,
+      StoragePatterns.DELETE_FILES,
+      { keys: unique },
+    );
   }
 }

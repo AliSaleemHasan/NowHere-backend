@@ -12,6 +12,37 @@ import {
 } from './strategies/storage-strategy.interface';
 import { tryCatch } from 'nowhere-common';
 
+function isMissingObjectError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+  const e = err as Record<string, unknown>;
+  const nested =
+    typeof e.error === 'object' && e.error !== null
+      ? (e.error as Record<string, unknown>)
+      : undefined;
+  for (const item of [e, nested]) {
+    if (!item) continue;
+    const code = item.code ?? item.Code ?? item.name;
+    if (
+      code === 'NoSuchKey' ||
+      code === 'NotFound' ||
+      code === 404 ||
+      code === '404'
+    ) {
+      return true;
+    }
+    if (item.statusCode === 404 || item.status === 404) {
+      return true;
+    }
+    const meta = item.$metadata as { httpStatusCode?: number } | undefined;
+    if (meta?.httpStatusCode === 404) {
+      return true;
+    }
+  }
+  return false;
+}
+
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
@@ -104,22 +135,22 @@ export class StorageService {
     return data || [];
   }
 
-  async deleteFile(key: string): Promise<void> {
-    const { error } = await tryCatch(this.strategy.deleteFile(key));
-    if (error) {
-      this.logger.error(`Delete file failed: ${error.message}`);
-      throw new InternalServerErrorException('Failed to delete file');
+  async deleteFiles(keys: string[]): Promise<void> {
+    for (const key of keys) {
+      await this.deleteOneKey(key);
     }
   }
 
-  async deleteFiles(keys: string[]): Promise<void> {
-    for (const key of keys) {
-      const { error } = await tryCatch(this.strategy.deleteFile(key));
-      if (error) {
-        this.logger.warn(`Delete skipped for ${key}: ${error.message}`);
+  private async deleteOneKey(key: string): Promise<void> {
+    const { error } = await tryCatch(this.strategy.deleteFile(key));
+    if (error) {
+      if (!isMissingObjectError(error)) {
+        this.logger.error(`Delete file failed: ${error.message}`);
+        throw new InternalServerErrorException('Failed to delete file');
       }
-      await this.cacheManager.del(key);
+      this.logger.warn(`Delete skipped for ${key}: ${error.message}`);
     }
+    await this.cacheManager.del(key);
   }
 
   async uploadPhoto(image: Buffer, userId: string): Promise<string> {

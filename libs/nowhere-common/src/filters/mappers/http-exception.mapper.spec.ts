@@ -14,6 +14,7 @@ describe('HttpExceptionMapper', () => {
     );
     const problem = mapper.map(exception, '/snaps/1');
     expect(problem.status).toBe(403);
+    expect(problem.title).toBe('Forbidden');
     expect(problem.detail).toBe('You do not own this snap');
     expect(problem.code).toBe(ProblemCodes.SNAP_NOT_OWNED);
   });
