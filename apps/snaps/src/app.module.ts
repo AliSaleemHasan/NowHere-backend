@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { SnapsModule } from './snaps/snaps.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -15,6 +16,7 @@ import { SeedModule } from './seed/seed.module';
   imports: [
     createEnvConfigModule(SnapsEnvVariables),
     NatsClientModule.register(),
+    ScheduleModule.forRoot(),
     HealthModule.forMongoose(),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],

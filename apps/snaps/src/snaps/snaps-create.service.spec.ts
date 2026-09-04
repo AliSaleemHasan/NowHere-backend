@@ -4,7 +4,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { of } from 'rxjs';
 import { CreateSnapPayload, UsersPatterns } from 'contracts';
 import { NATS_CLIENT } from 'nowhere-common';
-import { Snap } from './schemas/snap.schema';
+import { Snap, SnapResolution } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
 import { SnapsCreateService } from './snaps-create.service';
 import { SnapsNearParamsService } from './snaps-near-params';
@@ -104,6 +104,7 @@ describe('SnapsCreateService', () => {
     expect(natsClient.send).toHaveBeenCalledWith(UsersPatterns.GET_SETTINGS, {
       id: 'u1',
     });
+    expect(created.resolution).toBe(SnapResolution.OPEN);
     expect(created.expiresAt).toBeInstanceOf(Date);
     const expiresAt = (created.expiresAt as Date).getTime();
     expect(expiresAt).toBeGreaterThanOrEqual(before + 3 * MS_PER_DAY);

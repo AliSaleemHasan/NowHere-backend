@@ -10,8 +10,10 @@ import {
 } from '@nestjs/common';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
-import { SnapsPatterns, ROLES } from 'contracts';
+import { SnapsPatterns, UsersPatterns, ROLES } from 'contracts';
 import { CreateSnapHttpDto } from '../dto/create-snap.dto';
+import { MarkFoundHttpDto } from '../dto/mark-found.dto';
+import { ReportSnapHttpDto } from '../dto/report-snap.dto';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 
 function includeExpiredFromQuery(value?: string): boolean {
@@ -82,15 +84,50 @@ export class GatewaySnapsController {
     return this.rpc.request(SnapsPatterns.FIND_ALL, {});
   }
 
+  @Post(':id/found')
+  @UseGuards(GatewayAuthGuard)
+  async markFound(
+    @ReqUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: MarkFoundHttpDto = {},
+  ) {
+    return this.rpc.request(SnapsPatterns.MARK_FOUND, {
+      id,
+      userId,
+      note: body.note,
+    });
+  }
+
+  @Post(':id/reopen')
+  @UseGuards(GatewayAuthGuard)
+  async reopen(@ReqUser('id') userId: string, @Param('id') id: string) {
+    return this.rpc.request(SnapsPatterns.REOPEN, { id, userId });
+  }
+
+  @Post(':id/report')
+  @UseGuards(GatewayAuthGuard)
+  async report(
+    @ReqUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: ReportSnapHttpDto,
+  ) {
+    return this.rpc.request(UsersPatterns.CREATE_REPORT, {
+      userId,
+      snapId: id,
+      reason: body.reason,
+      details: body.details,
+    });
+  }
+
   @Get(':id')
   @UseGuards(GatewayAuthGuard)
   async findOne(@ReqUser('id') userId: string, @Param('id') id: string) {
     return this.rpc.request(SnapsPatterns.FIND_ONE, { id, userId });
   }
 
+  // Owner-or-admin is enforced in snaps; this route only authenticates.
   @Delete(':id')
-  @UserRoles([ROLES.ADMIN])
-  @UseGuards(GatewayAuthGuard, RoleGuard)
+  @UseGuards(GatewayAuthGuard)
   async deleteOne(
     @ReqUser('id') userId: string,
     @ReqUser('role') role: string,

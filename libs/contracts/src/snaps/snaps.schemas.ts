@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { MAX_UPLOAD_BATCH } from '../shared/limits';
+import { MAX_RESOLUTION_NOTE, MAX_UPLOAD_BATCH } from '../shared/limits';
+
+export const SNAP_RESOLUTIONS = ['OPEN', 'FOUND'] as const;
+export const SnapResolutionSchema = z.enum(SNAP_RESOLUTIONS);
 
 export const CreateSnapSchema = z.object({
   userId: z.string().min(1),
@@ -38,4 +41,15 @@ export const DeleteSnapSchema = z.object({
 export const FindByUserSchema = z.object({
   userId: z.string().min(1),
   includeExpired: z.boolean().optional(),
+});
+
+export const MarkFoundSchema = z.object({
+  id: z.string().min(1),
+  userId: z.string().min(1),
+  note: z.string().max(MAX_RESOLUTION_NOTE).optional(),
+});
+
+export const ReopenSnapSchema = z.object({
+  id: z.string().min(1),
+  userId: z.string().min(1),
 });

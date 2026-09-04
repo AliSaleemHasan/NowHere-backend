@@ -10,12 +10,17 @@ import {
   EmailPayloadSchema,
   UpdateProfileSchema,
   UpdateSettingsSchema,
+  BookmarkPayloadSchema,
+  ListBookmarksSchema,
+  CreateReportSchema,
   validateSchema,
 } from 'contracts';
 import { toBuffer } from 'nowhere-common';
 import { UsersSettingsService } from '../../settings/users-settings.service';
 import { UsersProfileService } from '../users-profile.service';
 import { UsersService } from '../users.service';
+import { BookmarksService } from '../bookmarks.service';
+import { ReportsService } from '../reports.service';
 
 @Controller()
 export class UsersNatsController {
@@ -23,6 +28,8 @@ export class UsersNatsController {
     private usersService: UsersService,
     private usersProfile: UsersProfileService,
     private usersSettings: UsersSettingsService,
+    private bookmarksService: BookmarksService,
+    private reportsService: ReportsService,
   ) {}
 
   @MessagePattern(UsersPatterns.GET_SETTINGS)
@@ -81,5 +88,36 @@ export class UsersNatsController {
       toBuffer(data.image),
       data.userId,
     );
+  }
+
+  @MessagePattern(UsersPatterns.ADD_BOOKMARK)
+  async addBookmark(@Payload() data: unknown) {
+    const payload = validateSchema(BookmarkPayloadSchema, data);
+    return await this.bookmarksService.addBookmark(
+      payload.userId,
+      payload.snapId,
+    );
+  }
+
+  @MessagePattern(UsersPatterns.REMOVE_BOOKMARK)
+  async removeBookmark(@Payload() data: unknown) {
+    const payload = validateSchema(BookmarkPayloadSchema, data);
+    return await this.bookmarksService.removeBookmark(
+      payload.userId,
+      payload.snapId,
+    );
+  }
+
+  @MessagePattern(UsersPatterns.LIST_BOOKMARKS)
+  async listBookmarks(@Payload() data: unknown) {
+    const payload = validateSchema(ListBookmarksSchema, data);
+    const bookmarks = await this.bookmarksService.listBookmarks(payload.userId);
+    return { bookmarks };
+  }
+
+  @MessagePattern(UsersPatterns.CREATE_REPORT)
+  async createReport(@Payload() data: unknown) {
+    const payload = validateSchema(CreateReportSchema, data);
+    return await this.reportsService.createReport(payload);
   }
 }

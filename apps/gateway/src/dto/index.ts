@@ -5,3 +5,5 @@ export * from './presigned-upload.dto';
 export * from './update-profile.dto';
 export * from './update-settings.dto';
 export * from './change-password.dto';
+export * from './report-snap.dto';
+export * from './mark-found.dto';

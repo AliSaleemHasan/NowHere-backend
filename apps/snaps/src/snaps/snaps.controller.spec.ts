@@ -3,6 +3,7 @@ import { SnapsNatsController } from './controllers/snaps.nats.controller';
 import { SnapsCreateService } from './snaps-create.service';
 import { SnapsDeleteService } from './snaps-delete.service';
 import { SnapsQueryService } from './snaps-query.service';
+import { SnapsResolutionService } from './snaps-resolution.service';
 import { ROLES } from 'contracts';
 
 describe('SnapsNatsController', () => {
@@ -16,6 +17,7 @@ describe('SnapsNatsController', () => {
   };
   let create: { create: jest.Mock };
   let remove: { deleteAll: jest.Mock; deleteSnap: jest.Mock };
+  let resolution: { markFound: jest.Mock; reopen: jest.Mock };
 
   beforeEach(async () => {
     query = {
@@ -27,6 +29,7 @@ describe('SnapsNatsController', () => {
     };
     create = { create: jest.fn() };
     remove = { deleteAll: jest.fn(), deleteSnap: jest.fn() };
+    resolution = { markFound: jest.fn(), reopen: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SnapsNatsController],
@@ -34,6 +37,7 @@ describe('SnapsNatsController', () => {
         { provide: SnapsQueryService, useValue: query },
         { provide: SnapsCreateService, useValue: create },
         { provide: SnapsDeleteService, useValue: remove },
+        { provide: SnapsResolutionService, useValue: resolution },
       ],
     }).compile();
 
@@ -95,6 +99,24 @@ describe('SnapsNatsController', () => {
     it('calls query.findByUser', async () => {
       await controller.findByUser({ userId: 'u1', includeExpired: false });
       expect(query.findByUser).toHaveBeenCalledWith('u1', false);
+    });
+  });
+
+  describe('markFound', () => {
+    it('forwards id, userId, and note', async () => {
+      await controller.markFound({
+        id: 's1',
+        userId: 'u2',
+        note: 'here',
+      });
+      expect(resolution.markFound).toHaveBeenCalledWith('s1', 'u2', 'here');
+    });
+  });
+
+  describe('reopen', () => {
+    it('forwards id and userId', async () => {
+      await controller.reopen({ id: 's1', userId: 'u1' });
+      expect(resolution.reopen).toHaveBeenCalledWith('s1', 'u1');
     });
   });
 });

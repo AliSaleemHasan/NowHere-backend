@@ -9,6 +9,8 @@ import { SnapsDeleteService } from './snaps-delete.service';
 import { SnapsExpiresBackfill } from './snaps-expires-backfill';
 import { SnapsNearParamsService } from './snaps-near-params';
 import { SnapsQueryService } from './snaps-query.service';
+import { SnapsResolutionService } from './snaps-resolution.service';
+import { SnapsTtlService } from './snaps-ttl.service';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { SnapsQueryService } from './snaps-query.service';
     SnapsQueryService,
     SnapsCreateService,
     SnapsDeleteService,
+    SnapsResolutionService,
+    SnapsTtlService,
     SnapsExpiresBackfill,
     SnapsGateway,
   ],

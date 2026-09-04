@@ -4,17 +4,31 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Settings } from '../settings/entities/settings.entity';
 import { SnapSeen } from './entities/snaps-seen.entity';
+import { SnapBookmark } from './entities/snap-bookmark.entity';
+import { SnapReport } from './entities/snap-report.entity';
 import { UsersNatsController } from './controllers/users.nats.controller';
 import { UsersEventsHandler } from './controllers/users-events-handler';
 import { UsersProfileService } from './users-profile.service';
 import { UsersSettingsService } from '../settings/users-settings.service';
+import { BookmarksService } from './bookmarks.service';
+import { ReportsService } from './reports.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Settings, SnapSeen])],
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+      Settings,
+      SnapSeen,
+      SnapBookmark,
+      SnapReport,
+    ]),
+  ],
   providers: [
     UsersService,
     UsersProfileService,
     UsersSettingsService,
+    BookmarksService,
+    ReportsService,
     UsersEventsHandler,
   ],
   controllers: [UsersNatsController],

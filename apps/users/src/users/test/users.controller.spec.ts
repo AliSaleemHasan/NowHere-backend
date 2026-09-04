@@ -3,6 +3,8 @@ import { UsersSettingsService } from '../../settings/users-settings.service';
 import { UsersNatsController } from '../controllers/users.nats.controller';
 import { UsersProfileService } from '../users-profile.service';
 import { UsersService } from '../users.service';
+import { BookmarksService } from '../bookmarks.service';
+import { ReportsService } from '../reports.service';
 
 describe('UsersNatsController (unit)', () => {
   let controller: UsersNatsController;
@@ -35,6 +37,20 @@ describe('UsersNatsController (unit)', () => {
           useValue: {
             getUserSetting: jest.fn(),
             updateSettings: jest.fn(),
+          },
+        },
+        {
+          provide: BookmarksService,
+          useValue: {
+            addBookmark: jest.fn(),
+            removeBookmark: jest.fn(),
+            listBookmarks: jest.fn(),
+          },
+        },
+        {
+          provide: ReportsService,
+          useValue: {
+            createReport: jest.fn(),
           },
         },
       ],

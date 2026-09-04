@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -61,6 +62,30 @@ export class GatewayUsersController {
       userId: id,
       ...body,
     });
+  }
+
+  @Get('me/bookmarks')
+  @UseGuards(GatewayAuthGuard)
+  async listBookmarks(@ReqUser('id') userId: string) {
+    return this.rpc.request(UsersPatterns.LIST_BOOKMARKS, { userId });
+  }
+
+  @Put('me/bookmarks/:snapId')
+  @UseGuards(GatewayAuthGuard)
+  async addBookmark(
+    @ReqUser('id') userId: string,
+    @Param('snapId') snapId: string,
+  ) {
+    return this.rpc.request(UsersPatterns.ADD_BOOKMARK, { userId, snapId });
+  }
+
+  @Delete('me/bookmarks/:snapId')
+  @UseGuards(GatewayAuthGuard)
+  async removeBookmark(
+    @ReqUser('id') userId: string,
+    @Param('snapId') snapId: string,
+  ) {
+    return this.rpc.request(UsersPatterns.REMOVE_BOOKMARK, { userId, snapId });
   }
 
   @Put('image')

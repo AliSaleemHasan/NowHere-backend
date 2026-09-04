@@ -8,6 +8,8 @@ import {
   DeleteSnapSchema,
   FindByUserSchema,
   FindNearSnapsSchema,
+  MarkFoundSchema,
+  ReopenSnapSchema,
   SnapIdPayloadSchema,
   validateSchema,
 } from 'contracts';
@@ -16,6 +18,7 @@ import { DeleteResult } from 'mongoose';
 import { SnapsCreateService } from '../snaps-create.service';
 import { SnapsDeleteService } from '../snaps-delete.service';
 import { SnapsQueryService } from '../snaps-query.service';
+import { SnapsResolutionService } from '../snaps-resolution.service';
 
 @Controller()
 export class SnapsNatsController {
@@ -23,6 +26,7 @@ export class SnapsNatsController {
     private readonly snapsQuery: SnapsQueryService,
     private readonly snapsCreate: SnapsCreateService,
     private readonly snapsDelete: SnapsDeleteService,
+    private readonly snapsResolution: SnapsResolutionService,
   ) {}
 
   @MessagePattern(SnapsPatterns.FIND_ALL)
@@ -78,6 +82,22 @@ export class SnapsNatsController {
   async create(@Payload() data: CreateSnapPayload) {
     const payload = validateSchema(CreateSnapSchema, data);
     return await this.snapsCreate.create(payload.userId, payload);
+  }
+
+  @MessagePattern(SnapsPatterns.MARK_FOUND)
+  async markFound(@Payload() data: unknown) {
+    const payload = validateSchema(MarkFoundSchema, data);
+    return this.snapsResolution.markFound(
+      payload.id,
+      payload.userId,
+      payload.note,
+    );
+  }
+
+  @MessagePattern(SnapsPatterns.REOPEN)
+  async reopen(@Payload() data: unknown) {
+    const payload = validateSchema(ReopenSnapSchema, data);
+    return this.snapsResolution.reopen(payload.id, payload.userId);
   }
 
   private queryNearby(data: FindNearSnapsPayload, seen: boolean) {

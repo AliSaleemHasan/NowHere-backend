@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import {
+  BookmarkPayloadSchema,
+  CreateReportSchema,
   CreateUserInfoSchema,
+  ListBookmarksSchema,
+  ReportReasonSchema,
   UpdateProfileSchema,
   UpdateSettingsSchema,
 } from './users.schemas';
@@ -60,3 +64,8 @@ export interface SetSeenPayload {
   snapId: string;
   userId: string;
 }
+
+export type ReportReason = z.infer<typeof ReportReasonSchema>;
+export type BookmarkPayload = z.infer<typeof BookmarkPayloadSchema>;
+export type ListBookmarksPayload = z.infer<typeof ListBookmarksSchema>;
+export type CreateReportPayload = z.infer<typeof CreateReportSchema>;

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { MAX_RESOLUTION_NOTE } from 'contracts';
 import { GeoPointType, Tags } from 'nowhere-common';
 
 export type SnapDocument = HydratedDocument<Snap>;
@@ -9,6 +10,11 @@ export enum SnapStatus {
   FAILED = 'FAILED',
   SUCCESS = 'SUCCESS',
   PROCESSING = 'PROCESSING',
+}
+
+export enum SnapResolution {
+  OPEN = 'OPEN',
+  FOUND = 'FOUND',
 }
 
 @Schema({
@@ -57,6 +63,18 @@ export class Snap {
 
   @Prop({ type: String })
   idempotencyKey?: string;
+
+  @Prop({ type: String, enum: SnapResolution, default: SnapResolution.OPEN })
+  resolution: SnapResolution;
+
+  @Prop({ type: String, maxlength: MAX_RESOLUTION_NOTE })
+  resolutionNote?: string;
+
+  @Prop({ type: String })
+  resolvedBy?: string;
+
+  @Prop({ type: Date })
+  resolvedAt?: Date;
 }
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);
