@@ -20,6 +20,7 @@ People can see what others posted (from their camera feeds) and know if there's 
 ## Project Setup
 
 ### Install Dependencies
+
 ```bash
 pnpm install
 # for specific service
@@ -27,6 +28,7 @@ pnpm install --filter [service name]
 ```
 
 ### Local Setup
+
 ```bash
 # development locally with docker
 docker compose -f docker-compose.dev.yml up
@@ -40,7 +42,7 @@ kubectl apply -f k8s
 
 `k8s/secrets/` is gitignored. Only `k8s/secrets.example/` with `change_me_*` values is committed.
 
-With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Authenticated owners can `DELETE /snaps/:id` (admins still can); `DELETE /snaps` stays admin-only. Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file.
+With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Authenticated owners can `DELETE /snaps/:id` (admins still can); `DELETE /snaps` stays admin-only. Bookmarks are `GET /users/me/bookmarks` and `PUT|DELETE /users/me/bookmarks/:snapId`. Authenticated users can `POST /snaps/:id/report`, `POST /snaps/:id/found`, and the author can `POST /snaps/:id/reopen`. Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file.
 
 ---
 
@@ -49,12 +51,15 @@ With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml
 The backend uses a **Strategy Pattern** for both **Secret Management** and **Cloud Storage**, allowing you to switch between cloud providers (Google Cloud, AWS, or local environment) without changing any application code.
 
 ### 1. Secrets Management (`SECRETS_PROVIDER`)
+
 Supported values: `gcp` | `aws` | `env` (default: auto-detected or `env` for local dev).
 
 #### Working Locally with Cloud Secrets (Without Duplicating `.env` Files)
+
 You **do not** need to copy cloud keys into every microservice `.env` file. You can use your machine's global developer credentials:
 
 - **Google Cloud Secret Manager (GCP)**:
+
   ```bash
   # 1. Login with Application Default Credentials (ADC) once:
   gcloud auth application-default login
@@ -62,13 +67,16 @@ You **do not** need to copy cloud keys into every microservice `.env` file. You 
   # 2. Set your default project:
   gcloud config set project your-gcp-project-id
   ```
+
   The `@google-cloud/secret-manager` library will automatically authenticate via ADC (`~/.config/gcloud/`).
 
 - **AWS Secrets Manager**:
+
   ```bash
   # Configure your AWS CLI credentials once:
   aws configure
   ```
+
   The AWS SDK automatically reads your credentials from `~/.aws/credentials`.
 
 - **Single Root `.env` Option**:
@@ -84,6 +92,7 @@ You **do not** need to copy cloud keys into every microservice `.env` file. You 
 ---
 
 ### 2. Cloud Storage (`STORAGE_PROVIDER`)
+
 Supported values: `aws` (AWS S3 / MinIO / R2) | `gcp` (Google Cloud Storage) | `minio`.
 
 - **Direct Presigned Uploads**: Clients request presigned URLs from the gateway (`POST /storage/presigned-upload`) and upload media directly to S3/GCS/MinIO, then create a snap with the object keys (`POST /snaps`).

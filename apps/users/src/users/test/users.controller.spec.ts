@@ -1,6 +1,8 @@
 import { Test } from '@nestjs/testing';
 import { UsersService } from '../users.service';
 import { UsersNatsController } from '../controllers/users.nats.controller';
+import { BookmarksService } from '../bookmarks.service';
+import { ReportsService } from '../reports.service';
 
 describe('UsersNatsController (unit)', () => {
   let controller: UsersNatsController;
@@ -23,6 +25,20 @@ describe('UsersNatsController (unit)', () => {
             setUserPhoto: jest.fn(),
           },
         },
+        {
+          provide: BookmarksService,
+          useValue: {
+            addBookmark: jest.fn(),
+            removeBookmark: jest.fn(),
+            listBookmarks: jest.fn(),
+          },
+        },
+        {
+          provide: ReportsService,
+          useValue: {
+            createReport: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -31,7 +47,10 @@ describe('UsersNatsController (unit)', () => {
   });
 
   it('getByEmail returns service result', async () => {
-    service.getUserByEmail.mockResolvedValue({ id: 'u1', email: 'a@a.com' } as any);
+    service.getUserByEmail.mockResolvedValue({
+      id: 'u1',
+      email: 'a@a.com',
+    } as any);
     const res = await controller.getUserByEmailNats({ email: 'a@a.com' });
     expect(service.getUserByEmail).toHaveBeenCalledWith('a@a.com');
     expect(res).toEqual({ id: 'u1', email: 'a@a.com' });

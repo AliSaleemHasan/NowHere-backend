@@ -6,7 +6,14 @@ import { of } from 'rxjs';
 import { GatewayAuthController } from './gateway-auth.controller';
 import { GatewaySnapsController } from './gateway-snaps.controller';
 import { GatewayStorageController } from './gateway-storage.controller';
-import { AuthPatterns, SnapsPatterns, StoragePatterns, ROLES } from 'contracts';
+import { GatewayUsersController } from './gateway-users.controller';
+import {
+  AuthPatterns,
+  SnapsPatterns,
+  StoragePatterns,
+  UsersPatterns,
+  ROLES,
+} from 'contracts';
 import { CreateSnapHttpDto } from '../dto/create-snap.dto';
 import {
   GeoPointType,
@@ -22,6 +29,7 @@ describe('Gateway product flow (mocked NATS)', () => {
   let auth: GatewayAuthController;
   let snaps: GatewaySnapsController;
   let storage: GatewayStorageController;
+  let users: GatewayUsersController;
   let send: jest.Mock;
 
   beforeEach(async () => {
@@ -58,6 +66,21 @@ describe('Gateway product flow (mocked NATS)', () => {
       if (pattern === SnapsPatterns.DELETE_ONE) {
         return of({ deletedCount: 1 });
       }
+      if (pattern === UsersPatterns.ADD_BOOKMARK) {
+        return of({ userId: 'u1', snapId: 'snap-1' });
+      }
+      if (pattern === UsersPatterns.LIST_BOOKMARKS) {
+        return of({ bookmarks: [{ userId: 'u1', snapId: 'snap-1' }] });
+      }
+      if (pattern === UsersPatterns.CREATE_REPORT) {
+        return of({ userId: 'u1', snapId: 'snap-1', reason: 'spam' });
+      }
+      if (pattern === SnapsPatterns.MARK_FOUND) {
+        return of({ id: 'snap-1', resolution: 'FOUND' });
+      }
+      if (pattern === SnapsPatterns.REOPEN) {
+        return of({ id: 'snap-1', resolution: 'OPEN' });
+      }
       return of({});
     });
 
@@ -66,6 +89,7 @@ describe('Gateway product flow (mocked NATS)', () => {
         GatewayAuthController,
         GatewaySnapsController,
         GatewayStorageController,
+        GatewayUsersController,
       ],
       providers: [
         GatewayRpcClient,
@@ -78,6 +102,7 @@ describe('Gateway product flow (mocked NATS)', () => {
     auth = module.get(GatewayAuthController);
     snaps = module.get(GatewaySnapsController);
     storage = module.get(GatewayStorageController);
+    users = module.get(GatewayUsersController);
   });
 
   it('signup → login → presign → create snap → nearby', async () => {
@@ -151,6 +176,66 @@ describe('Gateway product flow (mocked NATS)', () => {
     const handler = controllerHandler(GatewaySnapsController, 'deleteAll');
     expect(handlerGuards(handler)).toEqual([GatewayAuthGuard, RoleGuard]);
     expect(handlerRoles(handler)).toEqual([ROLES.ADMIN]);
+  });
+
+  it('forwards bookmark list/add/remove for the current user', async () => {
+    const listed = (await users.listBookmarks('u1')) as {
+      bookmarks: Array<{ snapId: string }>;
+    };
+    expect(listed.bookmarks[0].snapId).toBe('snap-1');
+    expect(send).toHaveBeenCalledWith(UsersPatterns.LIST_BOOKMARKS, {
+      userId: 'u1',
+    });
+
+    await users.addBookmark('u1', 'snap-1');
+    expect(send).toHaveBeenCalledWith(UsersPatterns.ADD_BOOKMARK, {
+      userId: 'u1',
+      snapId: 'snap-1',
+    });
+
+    await users.removeBookmark('u1', 'snap-1');
+    expect(send).toHaveBeenCalledWith(UsersPatterns.REMOVE_BOOKMARK, {
+      userId: 'u1',
+      snapId: 'snap-1',
+    });
+  });
+
+  it('forwards found, reopen, and report', async () => {
+    await snaps.markFound('u2', 'snap-1', { note: 'here' });
+    expect(send).toHaveBeenCalledWith(SnapsPatterns.MARK_FOUND, {
+      id: 'snap-1',
+      userId: 'u2',
+      note: 'here',
+    });
+
+    await snaps.reopen('u1', 'snap-1');
+    expect(send).toHaveBeenCalledWith(SnapsPatterns.REOPEN, {
+      id: 'snap-1',
+      userId: 'u1',
+    });
+
+    await snaps.report('u2', 'snap-1', { reason: 'spam', details: 'bot' });
+    expect(send).toHaveBeenCalledWith(UsersPatterns.CREATE_REPORT, {
+      userId: 'u2',
+      snapId: 'snap-1',
+      reason: 'spam',
+      details: 'bot',
+    });
+  });
+
+  it('found, reopen, report, and bookmarks require auth', () => {
+    expect(
+      handlerGuards(controllerHandler(GatewaySnapsController, 'markFound')),
+    ).toEqual([GatewayAuthGuard]);
+    expect(
+      handlerGuards(controllerHandler(GatewaySnapsController, 'reopen')),
+    ).toEqual([GatewayAuthGuard]);
+    expect(
+      handlerGuards(controllerHandler(GatewaySnapsController, 'report')),
+    ).toEqual([GatewayAuthGuard]);
+    expect(
+      handlerGuards(controllerHandler(GatewayUsersController, 'listBookmarks')),
+    ).toEqual([GatewayAuthGuard]);
   });
 
   it('forwards optional idempotencyKey on create', async () => {

@@ -6,4 +6,8 @@ export const UsersPatterns = {
   SET_USER_PHOTO: 'users.setUserPhoto',
   SET_SEEN_SNAP: 'users.setSeenSnap',
   NOT_SEEN_SNAPS: 'users.notSeenSnaps',
+  ADD_BOOKMARK: 'users.addBookmark',
+  REMOVE_BOOKMARK: 'users.removeBookmark',
+  LIST_BOOKMARKS: 'users.listBookmarks',
+  CREATE_REPORT: 'users.createReport',
 } as const;

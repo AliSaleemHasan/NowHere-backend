@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import { MAX_REPORT_DETAILS } from '../shared/limits';
+
+export const REPORT_REASONS = [
+  'spam',
+  'inappropriate',
+  'wrong_place',
+  'other',
+] as const;
+
+export const ReportReasonSchema = z.enum(REPORT_REASONS);
+
 export const CreateUserInfoSchema = z.object({
   authId: z.string(),
   email: z.email(),
@@ -24,4 +35,20 @@ export const UserIdPayloadSchema = z.object({
 
 export const EmailPayloadSchema = z.object({
   email: z.email(),
+});
+
+export const BookmarkPayloadSchema = z.object({
+  userId: z.string().min(1),
+  snapId: z.string().min(1),
+});
+
+export const ListBookmarksSchema = z.object({
+  userId: z.string().min(1),
+});
+
+export const CreateReportSchema = z.object({
+  userId: z.string().min(1),
+  snapId: z.string().min(1),
+  reason: ReportReasonSchema,
+  details: z.string().max(MAX_REPORT_DETAILS).optional(),
 });

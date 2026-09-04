@@ -10,8 +10,10 @@ import {
 } from '@nestjs/common';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
-import { SnapsPatterns, ROLES } from 'contracts';
+import { SnapsPatterns, UsersPatterns, ROLES } from 'contracts';
 import { CreateSnapHttpDto } from '../dto/create-snap.dto';
+import { MarkFoundHttpDto } from '../dto/mark-found.dto';
+import { ReportSnapHttpDto } from '../dto/report-snap.dto';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 
 function includeExpiredFromQuery(value?: string): boolean {
@@ -80,6 +82,41 @@ export class GatewaySnapsController {
   @UseGuards(GatewayAuthGuard, RoleGuard)
   async findAll() {
     return this.rpc.request(SnapsPatterns.FIND_ALL, {});
+  }
+
+  @Post(':id/found')
+  @UseGuards(GatewayAuthGuard)
+  async markFound(
+    @ReqUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: MarkFoundHttpDto = {},
+  ) {
+    return this.rpc.request(SnapsPatterns.MARK_FOUND, {
+      id,
+      userId,
+      note: body.note,
+    });
+  }
+
+  @Post(':id/reopen')
+  @UseGuards(GatewayAuthGuard)
+  async reopen(@ReqUser('id') userId: string, @Param('id') id: string) {
+    return this.rpc.request(SnapsPatterns.REOPEN, { id, userId });
+  }
+
+  @Post(':id/report')
+  @UseGuards(GatewayAuthGuard)
+  async report(
+    @ReqUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() body: ReportSnapHttpDto,
+  ) {
+    return this.rpc.request(UsersPatterns.CREATE_REPORT, {
+      userId,
+      snapId: id,
+      reason: body.reason,
+      details: body.details,
+    });
   }
 
   @Get(':id')

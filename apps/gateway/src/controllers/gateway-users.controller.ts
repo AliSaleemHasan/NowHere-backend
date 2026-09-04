@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Put,
+  Delete,
   Param,
   UseGuards,
   UseInterceptors,
@@ -20,13 +21,43 @@ import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 export class GatewayUsersController {
   constructor(private readonly rpc: GatewayRpcClient) {}
 
+  @Get('settings')
+  @UseGuards(GatewayAuthGuard)
+  async getUserSettings(@ReqUser('id') id: string) {
+    return this.rpc.request(UsersPatterns.GET_SETTINGS, { id });
+  }
+
+  @Get('me/bookmarks')
+  @UseGuards(GatewayAuthGuard)
+  async listBookmarks(@ReqUser('id') userId: string) {
+    return this.rpc.request(UsersPatterns.LIST_BOOKMARKS, { userId });
+  }
+
+  @Put('me/bookmarks/:snapId')
+  @UseGuards(GatewayAuthGuard)
+  async addBookmark(
+    @ReqUser('id') userId: string,
+    @Param('snapId') snapId: string,
+  ) {
+    return this.rpc.request(UsersPatterns.ADD_BOOKMARK, { userId, snapId });
+  }
+
+  @Delete('me/bookmarks/:snapId')
+  @UseGuards(GatewayAuthGuard)
+  async removeBookmark(
+    @ReqUser('id') userId: string,
+    @Param('snapId') snapId: string,
+  ) {
+    return this.rpc.request(UsersPatterns.REMOVE_BOOKMARK, { userId, snapId });
+  }
+
   @Get('id/:id')
   @UseGuards(GatewayAuthGuard)
   async getUserById(@Param('id') id: string) {
-    return this.rpc.request<{ user: UserDto; userImage: string }, { id: string }>(
-      UsersPatterns.GET_USER_BY_ID,
-      { id },
-    );
+    return this.rpc.request<
+      { user: UserDto; userImage: string },
+      { id: string }
+    >(UsersPatterns.GET_USER_BY_ID, { id });
   }
 
   @Get()
@@ -55,12 +86,6 @@ export class GatewayUsersController {
       image: photo.buffer,
       userId: id,
     });
-  }
-
-  @Get('settings')
-  @UseGuards(GatewayAuthGuard)
-  async getUserSettings(@ReqUser('id') id: string) {
-    return this.rpc.request(UsersPatterns.GET_SETTINGS, { id });
   }
 
   @Get(':email')

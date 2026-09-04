@@ -8,14 +8,23 @@ import {
   SetSeenSchema,
   UserIdPayloadSchema,
   EmailPayloadSchema,
+  BookmarkPayloadSchema,
+  ListBookmarksSchema,
+  CreateReportSchema,
   validateSchema,
 } from 'contracts';
 import { toBuffer } from 'nowhere-common';
 import { UsersService } from '../users.service';
+import { BookmarksService } from '../bookmarks.service';
+import { ReportsService } from '../reports.service';
 
 @Controller()
 export class UsersNatsController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private bookmarksService: BookmarksService,
+    private reportsService: ReportsService,
+  ) {}
 
   @MessagePattern(UsersPatterns.GET_SETTINGS)
   async getSettings(@Payload() data: { id: string }) {
@@ -57,6 +66,40 @@ export class UsersNatsController {
 
   @MessagePattern(UsersPatterns.SET_USER_PHOTO)
   async setUserPhoto(@Payload() data: { image: unknown; userId: string }) {
-    return await this.usersService.setUserPhoto(toBuffer(data.image), data.userId);
+    return await this.usersService.setUserPhoto(
+      toBuffer(data.image),
+      data.userId,
+    );
+  }
+
+  @MessagePattern(UsersPatterns.ADD_BOOKMARK)
+  async addBookmark(@Payload() data: unknown) {
+    const payload = validateSchema(BookmarkPayloadSchema, data);
+    return await this.bookmarksService.addBookmark(
+      payload.userId,
+      payload.snapId,
+    );
+  }
+
+  @MessagePattern(UsersPatterns.REMOVE_BOOKMARK)
+  async removeBookmark(@Payload() data: unknown) {
+    const payload = validateSchema(BookmarkPayloadSchema, data);
+    return await this.bookmarksService.removeBookmark(
+      payload.userId,
+      payload.snapId,
+    );
+  }
+
+  @MessagePattern(UsersPatterns.LIST_BOOKMARKS)
+  async listBookmarks(@Payload() data: unknown) {
+    const payload = validateSchema(ListBookmarksSchema, data);
+    const bookmarks = await this.bookmarksService.listBookmarks(payload.userId);
+    return { bookmarks };
+  }
+
+  @MessagePattern(UsersPatterns.CREATE_REPORT)
+  async createReport(@Payload() data: unknown) {
+    const payload = validateSchema(CreateReportSchema, data);
+    return await this.reportsService.createReport(payload);
   }
 }

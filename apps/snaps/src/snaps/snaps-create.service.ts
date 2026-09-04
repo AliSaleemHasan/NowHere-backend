@@ -7,7 +7,7 @@ import {
   handleMongoError,
   isMongoDuplicateKey,
 } from 'nowhere-common';
-import { Snap, SnapStatus } from './schemas/snap.schema';
+import { Snap, SnapResolution, SnapStatus } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
 import { addDays, SnapsNearParamsService } from './snaps-near-params';
 
@@ -88,6 +88,7 @@ export class SnapsCreateService {
         snaps: snapKeys,
         status: SnapStatus.SUCCESS,
         expiresAt,
+        resolution: SnapResolution.OPEN,
         ...(idempotencyKey ? { idempotencyKey } : {}),
       });
 

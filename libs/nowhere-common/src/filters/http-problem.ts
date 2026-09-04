@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
@@ -31,11 +32,14 @@ export function httpProblem(
   if (code) {
     body.code = code;
   }
-  if (status === HttpStatus.FORBIDDEN) {
+  if (status === (HttpStatus.FORBIDDEN as number)) {
     return new ForbiddenException(body);
   }
-  if (status === HttpStatus.NOT_FOUND) {
+  if (status === (HttpStatus.NOT_FOUND as number)) {
     return new NotFoundException(body);
+  }
+  if (status === (HttpStatus.CONFLICT as number)) {
+    return new ConflictException(body);
   }
   return new HttpException(body, status);
 }
