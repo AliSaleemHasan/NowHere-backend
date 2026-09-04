@@ -3,7 +3,6 @@ import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { Error as MongooseError } from 'mongoose';
 
 export function isMongoDuplicateKey(err: unknown, field?: string): boolean {
   if (!err || typeof err !== 'object') {
@@ -23,11 +22,17 @@ export function isMongoDuplicateKey(err: unknown, field?: string): boolean {
   return Boolean(e.keyPattern?.[field] || e.keyValue?.[field]);
 }
 
+function isMongooseValidationError(err: unknown): err is Error {
+  return (
+    err instanceof Error && err.name === 'ValidationError' && 'errors' in err
+  );
+}
+
 export function handleMongoError(err: unknown): never {
   if (isMongoDuplicateKey(err)) {
     throw new ConflictException('Duplicate value for a unique field');
   }
-  if (err instanceof MongooseError.ValidationError) {
+  if (isMongooseValidationError(err)) {
     throw new BadRequestException(err.message);
   }
   throw new InternalServerErrorException('Database operation failed');
