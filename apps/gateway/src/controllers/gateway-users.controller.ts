@@ -17,7 +17,12 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GatewayAuthGuard } from '../guards/auth.guard';
-import { ReqUser, RoleGuard, UserRoles, throwHttpProblem } from 'nowhere-common';
+import {
+  ReqUser,
+  RoleGuard,
+  UserRoles,
+  throwHttpProblem,
+} from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthPatterns, UsersPatterns, ROLES, UserDto } from 'contracts';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
@@ -179,8 +184,7 @@ export class GatewayUsersController {
     @ReqUser() actor: { email?: string; role?: string },
     @Param('email') email: string,
   ) {
-    const isSelf =
-      (actor.email || '').toLowerCase() === email.toLowerCase();
+    const isSelf = (actor.email || '').toLowerCase() === email.toLowerCase();
     if (!isSelf && actor.role !== ROLES.ADMIN) {
       throwHttpProblem(HttpStatus.FORBIDDEN, 'Forbidden');
     }

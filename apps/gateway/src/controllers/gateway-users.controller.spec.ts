@@ -49,8 +49,10 @@ describe('GatewayUsersController', () => {
     await app.close();
   });
 
+  const server = () => app.getHttpServer() as Parameters<typeof request>[0];
+
   it('rejects out-of-enum settings values with 400', async () => {
-    await request(app.getHttpServer())
+    await request(server())
       .put('/users/settings')
       .send({
         maxDistance: 123,
@@ -62,7 +64,7 @@ describe('GatewayUsersController', () => {
   });
 
   it('maps profile patch, settings put, and password change to RPC', async () => {
-    await request(app.getHttpServer())
+    await request(server())
       .patch('/users/me')
       .send({ firstName: 'Ada', lastName: 'Lovelace', bio: 'notes' })
       .expect(200)
@@ -75,7 +77,7 @@ describe('GatewayUsersController', () => {
     });
 
     rpc.request.mockClear();
-    await request(app.getHttpServer())
+    await request(server())
       .put('/users/settings')
       .send({
         maxDistance: 5000,
@@ -91,7 +93,7 @@ describe('GatewayUsersController', () => {
     });
 
     rpc.request.mockClear();
-    await request(app.getHttpServer())
+    await request(server())
       .post('/users/me/password')
       .send({
         currentPassword: 'Password123!',
@@ -113,14 +115,14 @@ describe('GatewayUsersController', () => {
       snaps: [{ snaps: ['snaps/u1/a.jpg'] }],
     });
 
-    await request(app.getHttpServer()).get('/users/me/export').expect(200);
+    await request(server()).get('/users/me/export').expect(200);
     expect(rpc.request).toHaveBeenCalledWith(UsersPatterns.EXPORT_USER, {
       userId: 'u1',
     });
   });
 
   it('deletes the account by calling snaps then users then auth in order', async () => {
-    await request(app.getHttpServer())
+    await request(server())
       .delete('/users/me')
       .send({ password: 'Password123!' })
       .expect(200);
