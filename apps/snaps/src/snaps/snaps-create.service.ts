@@ -1,11 +1,12 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CreateSnapPayload } from 'contracts';
+import { CreateSnapPayload, ProblemCodes } from 'contracts';
 import {
   assertSnapImageKeys,
   handleMongoError,
   isMongoDuplicateKey,
+  throwHttpProblem,
 } from 'nowhere-common';
 import { Snap, SnapResolution, SnapStatus } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
@@ -73,8 +74,10 @@ export class SnapsCreateService {
       if (idempotencyKey && exists.idempotencyKey === idempotencyKey) {
         return snapJson(exists);
       }
-      throw new ForbiddenException(
+      throwHttpProblem(
+        HttpStatus.FORBIDDEN,
         'User already has an active snap in this area',
+        ProblemCodes.SNAP_ALREADY_IN_AREA,
       );
     }
 

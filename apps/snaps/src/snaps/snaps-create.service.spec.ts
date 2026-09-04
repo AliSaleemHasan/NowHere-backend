@@ -1,8 +1,8 @@
-import { ForbiddenException } from '@nestjs/common';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { of } from 'rxjs';
-import { CreateSnapPayload, UsersPatterns } from 'contracts';
+import { CreateSnapPayload, ProblemCodes, UsersPatterns } from 'contracts';
 import { NATS_CLIENT } from 'nowhere-common';
 import { Snap, SnapResolution } from './schemas/snap.schema';
 import { SnapsGateway } from './gateway';
@@ -165,9 +165,22 @@ describe('SnapsCreateService', () => {
       return null;
     });
 
-    await expect(
-      service.create('u1', { ...payload, idempotencyKey: IDEMPOTENCY_KEY }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+    try {
+      await service.create('u1', {
+        ...payload,
+        idempotencyKey: IDEMPOTENCY_KEY,
+      });
+      throw new Error('expected create to reject');
+    } catch (err) {
+      expect(err).toBeInstanceOf(HttpException);
+      const exception = err as HttpException;
+      expect(exception.getStatus()).toBe(HttpStatus.FORBIDDEN);
+      expect(exception.getResponse()).toEqual(
+        expect.objectContaining({
+          code: ProblemCodes.SNAP_ALREADY_IN_AREA,
+        }),
+      );
+    }
     expect(save).not.toHaveBeenCalled();
   });
 

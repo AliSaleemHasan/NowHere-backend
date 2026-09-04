@@ -3,10 +3,10 @@ import { ProblemCodes } from 'contracts';
 import { throwHttpProblem } from 'nowhere-common';
 import { Credential } from './entities/user-credentials-entity';
 
-export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOGIN_LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
-export function isAccountLocked(
+function isAccountLocked(
   user: Pick<Credential, 'lockedUntil'>,
   now = Date.now(),
 ): boolean {
