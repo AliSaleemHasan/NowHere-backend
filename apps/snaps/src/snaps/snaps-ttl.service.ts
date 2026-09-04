@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Interval } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientProxy } from '@nestjs/microservices';
 import { Model } from 'mongoose';
@@ -8,7 +8,8 @@ import { NATS_CLIENT, natsRequest } from 'nowhere-common';
 import { Snap } from './schemas/snap.schema';
 
 const TTL_BATCH_SIZE = 100;
-const TTL_CRON = '0 */15 * * * *';
+// Milliseconds. Do not use a 5-field or 6-field cron here: "every 5" is easy to misread as 5 minutes.
+export const TTL_INTERVAL_MS = 15 * 60 * 1000;
 
 @Injectable()
 export class SnapsTtlService {
@@ -19,7 +20,7 @@ export class SnapsTtlService {
     @Inject(NATS_CLIENT) private readonly natsClient: ClientProxy,
   ) {}
 
-  @Cron(TTL_CRON)
+  @Interval(TTL_INTERVAL_MS)
   async handleExpiredSnaps(): Promise<void> {
     await this.sweepExpired();
   }
