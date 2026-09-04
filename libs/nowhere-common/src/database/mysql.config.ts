@@ -25,26 +25,24 @@ export interface MysqlConnectionSettings {
   readonly migrations: string[];
 }
 
-export interface MysqlTypeOrmSettings<TEntity extends object = object>
-  extends MysqlConnectionSettings {
-  readonly entities: TypeOrmEntityClass<TEntity>[];
+export interface MysqlTypeOrmSettings extends MysqlConnectionSettings {
+  readonly entities: TypeOrmEntityClass[];
   readonly autoLoadEntities: boolean;
   readonly migrationsRun: boolean;
 }
 
-export interface MysqlDataSourceSettings<TEntity extends object = object>
-  extends MysqlConnectionSettings {
-  readonly entities: TypeOrmEntityClass<TEntity>[];
+export interface MysqlDataSourceSettings extends MysqlConnectionSettings {
+  readonly entities: TypeOrmEntityClass[];
 }
 
-export interface MysqlTypeOrmConfigOptions<TEntity extends object = object> {
-  entities?: readonly TypeOrmEntityClass<TEntity>[];
+export interface MysqlTypeOrmConfigOptions {
+  entities?: readonly TypeOrmEntityClass[];
   migrationsDir: string;
   defaultDatabase?: string;
 }
 
-export interface MysqlCliDataSourceOptions<TEntity extends object = object> {
-  entities: readonly TypeOrmEntityClass<TEntity>[];
+export interface MysqlCliDataSourceOptions {
+  entities: readonly TypeOrmEntityClass[];
   migrationsDir: string;
 }
 
@@ -79,10 +77,10 @@ function mysqlBaseSettings(source: {
   };
 }
 
-export function mysqlTypeOrmConfig<TEntity extends object = object>(
+export function mysqlTypeOrmConfig(
   config: EnvReader,
-  options: MysqlTypeOrmConfigOptions<TEntity>,
-): MysqlTypeOrmSettings<TEntity> {
+  options: MysqlTypeOrmConfigOptions,
+): MysqlTypeOrmSettings {
   const synchronize = config.get<string>('TYPEORM_SYNC') === 'true';
   return {
     ...mysqlBaseSettings({
@@ -104,9 +102,9 @@ export function mysqlTypeOrmConfig<TEntity extends object = object>(
   };
 }
 
-export function mysqlCliDataSourceConfig<TEntity extends object = object>(
-  options: MysqlCliDataSourceOptions<TEntity>,
-): MysqlDataSourceSettings<TEntity> {
+export function mysqlCliDataSourceConfig(
+  options: MysqlCliDataSourceOptions,
+): MysqlDataSourceSettings {
   return {
     ...mysqlBaseSettings({
       host: process.env.MYSQL_HOST || '127.0.0.1',

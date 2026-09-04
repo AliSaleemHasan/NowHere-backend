@@ -1,0 +1,16 @@
+.git
+.github
+.nx
+**/.nx
+**/node_modules
+**/dist
+**/coverage
+**/*.md
+k8s
+uploads
+tmp
+mongo_data
+sql_data
+**/.env
+**/.env.*
+!.env.example

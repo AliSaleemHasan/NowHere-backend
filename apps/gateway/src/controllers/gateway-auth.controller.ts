@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { Request } from 'express';
 import { extractTokenFromHeader, ReqUser } from 'nowhere-common';
@@ -28,11 +29,13 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 
+@ApiTags('auth')
 @Controller('auth')
 export class GatewayAuthController {
   constructor(private readonly rpc: GatewayRpcClient) {}
 
   @Post('login')
+  @ApiOperation({ summary: 'Sign in' })
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async login(@Body() body: SigninDTO): Promise<AuthResponse> {
     return this.rpc.request<AuthResponse, ValidateUserPayload>(
@@ -43,6 +46,7 @@ export class GatewayAuthController {
   }
 
   @Post('signup')
+  @ApiOperation({ summary: 'Register' })
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async signup(@Body() body: CreateCredentialDTO): Promise<AuthResponse> {
     return this.rpc.request<AuthResponse, SignupPayload>(
@@ -53,6 +57,11 @@ export class GatewayAuthController {
   }
 
   @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Request a password reset email',
+    description:
+      'Always 202 with the same body whether the email exists (no enumeration). Mailhog captures mail in the local compose stack.',
+  })
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async forgotPassword(@Body() body: ForgotPasswordDto) {
@@ -60,6 +69,7 @@ export class GatewayAuthController {
   }
 
   @Post('reset-password')
+  @ApiOperation({ summary: 'Reset password with emailed token' })
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async resetPassword(@Body() body: ResetPasswordDto) {
@@ -67,6 +77,8 @@ export class GatewayAuthController {
   }
 
   @Get('refresh')
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiBearerAuth()
   async refresh(@Req() request: Request): Promise<AuthResponse> {
     const token = extractTokenFromHeader(request);
     if (!token) {
@@ -81,6 +93,8 @@ export class GatewayAuthController {
   }
 
   @Get('me')
+  @ApiOperation({ summary: 'Current JWT user' })
+  @ApiBearerAuth()
   @UseGuards(GatewayAuthGuard)
   getMe(@ReqUser() user: UserDto) {
     return user;

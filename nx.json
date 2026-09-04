@@ -17,9 +17,6 @@
     },
     "test:debug": {
       "cache": true
-    },
-    "test:e2e": {
-      "cache": true
     }
   },
   "defaultBase": "master",

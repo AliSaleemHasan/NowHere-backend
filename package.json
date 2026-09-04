@@ -22,11 +22,12 @@
     "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "typecheck": "tsc --noEmit -p apps/authentication/tsconfig.app.json && tsc --noEmit -p apps/users/tsconfig.app.json && tsc --noEmit -p apps/snaps/tsconfig.app.json && tsc --noEmit -p apps/storage/tsconfig.app.json && tsc --noEmit -p apps/gateway/tsconfig.app.json",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "pnpm nx run-many --target=test:e2e --all"
+    "test:e2e:smoke": "bash scripts/e2e-smoke.sh"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.1116.0",

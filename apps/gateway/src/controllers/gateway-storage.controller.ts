@@ -7,6 +7,12 @@ import {
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import {
   ReqUser,
@@ -21,11 +27,14 @@ import { StoragePatterns, ROLES, isAdminRole } from 'contracts';
 import { PresignedUploadDto } from '../dto/presigned-upload.dto';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 
+@ApiTags('storage')
+@ApiBearerAuth()
 @Controller('storage')
 export class GatewayStorageController {
   constructor(private readonly rpc: GatewayRpcClient) {}
 
   @Get('/')
+  @ApiOperation({ summary: 'List object keys (admin)' })
   @UserRoles([ROLES.ADMIN])
   @UseGuards(GatewayAuthGuard, RoleGuard)
   async getAllFiles() {
@@ -33,6 +42,8 @@ export class GatewayStorageController {
   }
 
   @Get('signed')
+  @ApiOperation({ summary: 'Signed download URL for an owned object key' })
+  @ApiQuery({ name: 'key', required: true })
   @UseGuards(GatewayAuthGuard)
   async getSignedURL(
     @ReqUser() user: { id: string; role?: string },
@@ -46,6 +57,11 @@ export class GatewayStorageController {
   }
 
   @Post('presigned-upload')
+  @ApiOperation({
+    summary: 'Presigned upload URL(s)',
+    description:
+      'Client PUTs bytes to object storage, then creates a snap with the returned keys.',
+  })
   @UseGuards(GatewayAuthGuard)
   async getPresignedUploadURL(
     @ReqUser('id') userId: string,

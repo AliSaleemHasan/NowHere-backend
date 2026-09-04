@@ -2,9 +2,6 @@
   <a href="http://nestjs.com/" target="blank"><img src="https://github.com/AliSaleemHasan/NowHere-frontend/blob/master/assets/images/icon.png" width="120" alt="Nest Logo" /></a>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
-
   <p align="center">A Social Media APP Built with <a href="http://nodejs.org" target="_blank">Nest JS</a> framework for knowing what's up nearby.</p>
     <p align="center">
 
@@ -42,7 +39,7 @@ kubectl apply -f k8s
 
 `k8s/secrets/` is gitignored. Only `k8s/secrets.example/` with `change_me_*` values is committed.
 
-With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Authenticated owners can `DELETE /snaps/:id` (admins still can); `DELETE /snaps` stays admin-only. Bookmarks are `GET /users/me/bookmarks` and `PUT|DELETE /users/me/bookmarks/:snapId`. Authenticated users can `POST /snaps/:id/report`, `POST /snaps/:id/found`, and the author can `POST /snaps/:id/reopen`. DSGVO: `GET /users/me/export` returns a JSON pack (object keys, not signed URLs); `DELETE /users/me` with `{ password }` deactivates auth, deletes snaps + profile, then credentials. Forgot/reset: `POST /auth/forgot-password` always 202 (no email enumeration) and `POST /auth/reset-password`. Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file; authentication sends there when `SMTP_HOST` is set.
+With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Authenticated owners can `DELETE /snaps/:id` (admins still can); `DELETE /snaps` stays admin-only. Bookmarks are `GET /users/me/bookmarks` and `PUT|DELETE /users/me/bookmarks/:snapId`. Authenticated users can `POST /snaps/:id/report`, `POST /snaps/:id/found`, and the author can `POST /snaps/:id/reopen`. DSGVO: `GET /users/me/export` returns a JSON pack (object keys, not signed URLs); `DELETE /users/me` with `{ password }` deactivates auth, deletes snaps + profile, then credentials. Forgot/reset: `POST /auth/forgot-password` always 202 (no email enumeration) and `POST /auth/reset-password`. Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file; authentication sends there when `SMTP_HOST` is set. Language toggle lives in the Expo app settings (DE/EN), not on the gateway.
 
 ---
 
@@ -105,7 +102,9 @@ Supported values: `aws` (AWS S3 / MinIO / R2) | `gcp` (Google Cloud Storage) | `
 ## Run Tests
 
 ```bash
-# Run all test suites
+# Lint (gateway HTTP/OpenAPI), typecheck, unit tests (also what GitHub Actions runs)
+pnpm exec eslint "apps/gateway/src/**/*.ts"
+pnpm typecheck
 pnpm test
 
 # For specific service via Nx
@@ -115,6 +114,16 @@ pnpm nx test storage
 pnpm nx test authentication
 pnpm nx test gateway
 ```
+
+CI (`.github/workflows/backend.yml`) runs lint, typecheck, unit tests, and a no-push `docker build` of the **gateway** image. It does not deploy and does not start compose.
+
+Compose HTTP smoke is **local-required** (full stack is slower than the ~8 minute CI budget). With `docker compose -f docker-compose.dev.yml up`:
+
+```bash
+pnpm test:e2e:smoke
+```
+
+Hits `http://localhost:3005` (override with `GATEWAY_URL`): health → signup → settings put → presign (skips uploading bytes) → create snap twice with the same idempotency key → nearby → `GET /snaps/me` → delete snap → export → delete account.
 
 ---
 

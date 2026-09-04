@@ -1,0 +1,52 @@
+name: Backend
+
+on:
+  push:
+    branches: [master, main, fixes]
+    paths-ignore:
+      - '**/*.md'
+      - 'k8s/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'k8s/**'
+
+permissions:
+  contents: read
+
+# No deploy jobs. No registry login. No secrets.
+# Compose e2e (`pnpm test:e2e:smoke`) is local-required; the full stack
+# is over the ~8 minute CI budget.
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Gateway HTTP/OpenAPI surface. Full-repo type-aware ESLint has a
+      # pre-existing backlog (unsafe-*, prettier) outside this phase.
+      - run: pnpm exec eslint "apps/gateway/src/**/*.ts"
+      - run: pnpm typecheck
+      - run: pnpm exec jest --ci --forceExit
+
+  gateway-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build gateway image (no push)
+        run: >
+          docker build
+          -f docker/service.Dockerfile
+          --build-arg APP_NAME=gateway
+          --build-arg APP_PORT=3005
+          --target runtime
+          -t nowhere-gateway:ci
+          .

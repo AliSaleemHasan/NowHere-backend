@@ -11,12 +11,12 @@ describe('HealthController', () => {
       providers: [
         {
           provide: HealthCheckService,
-          useValue: { check: jest.fn().mockResolvedValue('ok') }
+          useValue: { check: jest.fn().mockResolvedValue('ok') },
         },
         {
           provide: MemoryHealthIndicator,
-          useValue: { checkHeap: jest.fn().mockResolvedValue('ok') }
-        }
+          useValue: { checkHeap: jest.fn().mockResolvedValue('ok') },
+        },
       ],
     }).compile();
 
