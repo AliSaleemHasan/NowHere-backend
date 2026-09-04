@@ -8,7 +8,7 @@ import {
   ResetPasswordPayload,
 } from 'contracts';
 import { throwHttpProblem } from 'nowhere-common';
-import { Repository } from 'typeorm';
+import { IsNull, MoreThan, Repository } from 'typeorm';
 import { Credential } from './entities/user-credentials-entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
 import { hashPassword } from './hash-password';
@@ -38,6 +38,12 @@ export class PasswordResetService {
       return { accepted: true };
     }
 
+    const pepper = this.resetPepper();
+    if (!pepper) {
+      this.logger.error('Reset token pepper is not configured');
+      return { accepted: true };
+    }
+
     try {
       const rawToken = generateResetToken();
       const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
@@ -45,7 +51,7 @@ export class PasswordResetService {
       await this.tokens.save(
         this.tokens.create({
           userId: user.id,
-          tokenHash: hashResetToken(rawToken),
+          tokenHash: hashResetToken(rawToken, pepper),
           expiresAt,
           usedAt: null,
         }),
@@ -77,10 +83,27 @@ export class PasswordResetService {
   async resetPassword(
     payload: ResetPasswordPayload,
   ): Promise<{ success: true }> {
-    const row = await this.tokens.findOneBy({
-      tokenHash: hashResetToken(payload.token),
-    });
-    if (!row || row.usedAt || new Date(row.expiresAt).getTime() <= Date.now()) {
+    const pepper = this.resetPepper();
+    if (!pepper) {
+      this.throwInvalid();
+    }
+
+    const tokenHash = hashResetToken(payload.token, pepper);
+    const now = new Date();
+    const consumed = await this.tokens.update(
+      {
+        tokenHash,
+        usedAt: IsNull(),
+        expiresAt: MoreThan(now),
+      },
+      { usedAt: now },
+    );
+    if (!consumed.affected) {
+      this.throwInvalid();
+    }
+
+    const row = await this.tokens.findOneBy({ tokenHash });
+    if (!row) {
       this.throwInvalid();
     }
 
@@ -96,12 +119,15 @@ export class PasswordResetService {
       lockedUntil: null,
     });
 
-    await this.tokens.save({
-      ...row,
-      usedAt: new Date(),
-    });
-
     return { success: true };
+  }
+
+  private resetPepper(): string {
+    return (
+      this.config.get<string>('RESET_TOKEN_PEPPER') ||
+      this.config.get<string>('ACCESS_SECRET') ||
+      ''
+    );
   }
 
   private buildResetUrl(rawToken: string): string {

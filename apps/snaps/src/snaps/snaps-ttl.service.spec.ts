@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 import { StoragePatterns } from 'contracts';
 import { NATS_CLIENT } from 'nowhere-common';
 import { Snap } from './schemas/snap.schema';
-import { SnapsTtlService } from './snaps-ttl.service';
+import { SnapsTtlService, TTL_INTERVAL_MS } from './snaps-ttl.service';
 
 describe('SnapsTtlService', () => {
   let service: SnapsTtlService;
@@ -40,6 +40,11 @@ describe('SnapsTtlService', () => {
     }).compile();
 
     service = module.get(SnapsTtlService);
+  });
+
+  it('runs on a 15-minute interval, not 5 minutes', () => {
+    expect(TTL_INTERVAL_MS).toBe(15 * 60 * 1000);
+    expect(TTL_INTERVAL_MS).not.toBe(5 * 60 * 1000);
   });
 
   it('deletes a batch of expired snaps and calls storage', async () => {
