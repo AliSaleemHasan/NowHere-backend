@@ -1,6 +1,13 @@
 import { ROLES } from 'contracts/users';
 import { z } from 'zod';
-import { ChangePasswordSchema, SignupSchema } from './auth.schemas';
+import {
+  ChangePasswordSchema,
+  DeactivateUserSchema,
+  DeleteCredentialsSchema,
+  ForgotPasswordSchema,
+  ResetPasswordSchema,
+  SignupSchema,
+} from './auth.schemas';
 
 // ── Message Patterns ──
 
@@ -8,6 +15,15 @@ import { ChangePasswordSchema, SignupSchema } from './auth.schemas';
 
 export type SignupPayload = z.infer<typeof SignupSchema>;
 export type ChangePasswordPayload = z.infer<typeof ChangePasswordSchema>;
+export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordSchema>;
+export type ResetPasswordPayload = z.infer<typeof ResetPasswordSchema>;
+export type DeactivateUserPayload = z.infer<typeof DeactivateUserSchema>;
+export type DeleteCredentialsPayload = z.infer<typeof DeleteCredentialsSchema>;
+
+export interface ForgotPasswordResult {
+  accepted: true;
+  devResetUrl?: string;
+}
 
 export interface AuthTokens {
   accessToken: string;

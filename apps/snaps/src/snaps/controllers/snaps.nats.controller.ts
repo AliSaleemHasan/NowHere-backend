@@ -5,6 +5,7 @@ import {
   FindNearSnapsPayload,
   CreateSnapPayload,
   CreateSnapSchema,
+  DeleteByUserIdSchema,
   DeleteSnapSchema,
   FindByUserSchema,
   FindNearSnapsSchema,
@@ -66,6 +67,12 @@ export class SnapsNatsController {
   @MessagePattern(SnapsPatterns.DELETE_ALL)
   async deleteAll(): Promise<DeleteResult> {
     return await this.snapsDelete.deleteAll();
+  }
+
+  @MessagePattern(SnapsPatterns.DELETE_BY_USER_ID)
+  async deleteByUserId(@Payload() data: unknown): Promise<DeleteResult> {
+    const payload = validateSchema(DeleteByUserIdSchema, data);
+    return await this.snapsDelete.deleteByUserId(payload.userId);
   }
 
   @MessagePattern(SnapsPatterns.FIND_NEAR)

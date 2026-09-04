@@ -13,6 +13,8 @@ import {
   BookmarkPayloadSchema,
   ListBookmarksSchema,
   CreateReportSchema,
+  ExportUserSchema,
+  PurgeUserSchema,
   validateSchema,
 } from 'contracts';
 import { toBuffer } from 'nowhere-common';
@@ -21,6 +23,8 @@ import { UsersProfileService } from '../users-profile.service';
 import { UsersService } from '../users.service';
 import { BookmarksService } from '../bookmarks.service';
 import { ReportsService } from '../reports.service';
+import { UsersExportService } from '../users-export.service';
+import { UsersPurgeService } from '../users-purge.service';
 
 @Controller()
 export class UsersNatsController {
@@ -30,6 +34,8 @@ export class UsersNatsController {
     private usersSettings: UsersSettingsService,
     private bookmarksService: BookmarksService,
     private reportsService: ReportsService,
+    private usersExport: UsersExportService,
+    private usersPurge: UsersPurgeService,
   ) {}
 
   @MessagePattern(UsersPatterns.GET_SETTINGS)
@@ -119,5 +125,17 @@ export class UsersNatsController {
   async createReport(@Payload() data: unknown) {
     const payload = validateSchema(CreateReportSchema, data);
     return await this.reportsService.createReport(payload);
+  }
+
+  @MessagePattern(UsersPatterns.EXPORT_USER)
+  async exportUser(@Payload() data: unknown) {
+    const payload = validateSchema(ExportUserSchema, data);
+    return await this.usersExport.exportUser(payload);
+  }
+
+  @MessagePattern(UsersPatterns.PURGE_USER)
+  async purgeUser(@Payload() data: unknown) {
+    const payload = validateSchema(PurgeUserSchema, data);
+    return await this.usersPurge.purgeUser(payload);
   }
 }

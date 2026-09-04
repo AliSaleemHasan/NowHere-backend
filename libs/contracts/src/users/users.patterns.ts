@@ -12,4 +12,6 @@ export const UsersPatterns = {
   REMOVE_BOOKMARK: 'users.removeBookmark',
   LIST_BOOKMARKS: 'users.listBookmarks',
   CREATE_REPORT: 'users.createReport',
+  EXPORT_USER: 'users.exportUser',
+  PURGE_USER: 'users.purgeUser',
 } as const;

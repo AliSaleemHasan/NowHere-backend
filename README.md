@@ -42,7 +42,7 @@ kubectl apply -f k8s
 
 `k8s/secrets/` is gitignored. Only `k8s/secrets.example/` with `change_me_*` values is committed.
 
-With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Authenticated owners can `DELETE /snaps/:id` (admins still can); `DELETE /snaps` stays admin-only. Bookmarks are `GET /users/me/bookmarks` and `PUT|DELETE /users/me/bookmarks/:snapId`. Authenticated users can `POST /snaps/:id/report`, `POST /snaps/:id/found`, and the author can `POST /snaps/:id/reopen`. Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file.
+With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Authenticated owners can `DELETE /snaps/:id` (admins still can); `DELETE /snaps` stays admin-only. Bookmarks are `GET /users/me/bookmarks` and `PUT|DELETE /users/me/bookmarks/:snapId`. Authenticated users can `POST /snaps/:id/report`, `POST /snaps/:id/found`, and the author can `POST /snaps/:id/reopen`. DSGVO: `GET /users/me/export` returns a JSON pack (object keys, not signed URLs); `DELETE /users/me` with `{ password }` deactivates auth, deletes snaps + profile, then credentials. Forgot/reset: `POST /auth/forgot-password` always 202 (no email enumeration) and `POST /auth/reset-password`. Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file; authentication sends there when `SMTP_HOST` is set.
 
 ---
 

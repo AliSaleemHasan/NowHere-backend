@@ -14,6 +14,7 @@ import { GatewayStorageController } from './controllers/gateway-storage.controll
 import { GatewayAuthGuard } from './guards/auth.guard';
 import { GatewayEnvVariables } from './utils/gateway-env-variables';
 import { GatewayRpcClient } from './rpc/gateway-rpc.client';
+import { AccountDeleteOrchestrator } from './account-delete.orchestrator';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { GatewayRpcClient } from './rpc/gateway-rpc.client';
   providers: [
     GatewayAuthGuard,
     GatewayRpcClient,
+    AccountDeleteOrchestrator,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthNatsController } from './controllers/auth.nats.controller';
 import { AuthenticationService } from './authentication.service';
 import { ChangePasswordService } from './change-password.service';
+import { PasswordResetService } from './password-reset.service';
+import { AccountLifecycleService } from './account-lifecycle.service';
 import { ROLES as Roles } from 'contracts';
 
 describe('AuthNatsController', () => {
@@ -34,6 +36,20 @@ describe('AuthNatsController', () => {
           provide: ChangePasswordService,
           useValue: {
             changePassword: jest.fn().mockResolvedValue({ success: true }),
+          },
+        },
+        {
+          provide: PasswordResetService,
+          useValue: {
+            forgotPassword: jest.fn().mockResolvedValue({ accepted: true }),
+            resetPassword: jest.fn().mockResolvedValue({ success: true }),
+          },
+        },
+        {
+          provide: AccountLifecycleService,
+          useValue: {
+            deactivateUser: jest.fn().mockResolvedValue({ success: true }),
+            deleteCredentials: jest.fn().mockResolvedValue({ success: true }),
           },
         },
       ],

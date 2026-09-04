@@ -45,6 +45,16 @@ export class SnapsDeleteService {
     return this.snapModel.deleteMany({});
   }
 
+  async deleteByUserId(userId: string): Promise<DeleteResult> {
+    const docs = await this.snapModel
+      .find({ _userId: userId })
+      .select('snaps')
+      .lean()
+      .exec();
+    await this.deleteStorageKeys(docs.flatMap((doc) => doc.snaps || []));
+    return this.snapModel.deleteMany({ _userId: userId });
+  }
+
   private async deleteStorageKeys(keys: string[] | undefined): Promise<void> {
     const unique = [
       ...new Set(

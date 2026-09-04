@@ -7,3 +7,6 @@ export * from './update-settings.dto';
 export * from './change-password.dto';
 export * from './report-snap.dto';
 export * from './mark-found.dto';
+export * from './delete-account.dto';
+export * from './forgot-password.dto';
+export * from './reset-password.dto';

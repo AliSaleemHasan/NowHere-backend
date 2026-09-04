@@ -79,3 +79,11 @@ export const CreateReportSchema = z.object({
   reason: ReportReasonSchema,
   details: z.string().max(MAX_REPORT_DETAILS).optional(),
 });
+
+export const ExportUserSchema = z.object({
+  userId: z.string().min(1),
+});
+
+export const PurgeUserSchema = z.object({
+  userId: z.string().min(1),
+});

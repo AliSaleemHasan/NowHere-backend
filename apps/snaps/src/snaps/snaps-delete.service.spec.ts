@@ -101,4 +101,14 @@ describe('SnapsDeleteService', () => {
     expect(snapModel.deleteMany).toHaveBeenCalledWith({});
     expect(result).toEqual({ deletedCount: 2 });
   });
+
+  it("deletes a user's snaps and their storage keys", async () => {
+    const result = await service.deleteByUserId('owner');
+    expect(snapModel.find).toHaveBeenCalledWith({ _userId: 'owner' });
+    expect(natsClient.send).toHaveBeenCalledWith(StoragePatterns.DELETE_FILES, {
+      keys: ['snaps/a.jpg', 'snaps/b.jpg'],
+    });
+    expect(snapModel.deleteMany).toHaveBeenCalledWith({ _userId: 'owner' });
+    expect(result).toEqual({ deletedCount: 2 });
+  });
 });

@@ -5,6 +5,8 @@ import { UsersProfileService } from '../users-profile.service';
 import { UsersService } from '../users.service';
 import { BookmarksService } from '../bookmarks.service';
 import { ReportsService } from '../reports.service';
+import { UsersExportService } from '../users-export.service';
+import { UsersPurgeService } from '../users-purge.service';
 
 describe('UsersNatsController (unit)', () => {
   let controller: UsersNatsController;
@@ -51,7 +53,16 @@ describe('UsersNatsController (unit)', () => {
           provide: ReportsService,
           useValue: {
             createReport: jest.fn(),
+            listByUser: jest.fn(),
           },
+        },
+        {
+          provide: UsersExportService,
+          useValue: { exportUser: jest.fn() },
+        },
+        {
+          provide: UsersPurgeService,
+          useValue: { purgeUser: jest.fn() },
         },
       ],
     }).compile();

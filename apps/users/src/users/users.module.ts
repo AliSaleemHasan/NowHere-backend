@@ -12,6 +12,8 @@ import { UsersProfileService } from './users-profile.service';
 import { UsersSettingsService } from '../settings/users-settings.service';
 import { BookmarksService } from './bookmarks.service';
 import { ReportsService } from './reports.service';
+import { UsersExportService } from './users-export.service';
+import { UsersPurgeService } from './users-purge.service';
 
 @Module({
   imports: [
@@ -29,6 +31,8 @@ import { ReportsService } from './reports.service';
     UsersSettingsService,
     BookmarksService,
     ReportsService,
+    UsersExportService,
+    UsersPurgeService,
     UsersEventsHandler,
   ],
   controllers: [UsersNatsController],

@@ -24,6 +24,7 @@ import {
 } from 'nowhere-common';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 import { GatewayAuthGuard } from '../guards/auth.guard';
+import { AccountDeleteOrchestrator } from '../account-delete.orchestrator';
 
 describe('Gateway product flow (mocked NATS)', () => {
   let auth: GatewayAuthController;
@@ -93,6 +94,7 @@ describe('Gateway product flow (mocked NATS)', () => {
       ],
       providers: [
         GatewayRpcClient,
+        AccountDeleteOrchestrator,
         { provide: NATS_CLIENT, useValue: { send } },
         { provide: JwtService, useValue: { verifyAsync: jest.fn() } },
         { provide: ConfigService, useValue: { get: jest.fn() } },

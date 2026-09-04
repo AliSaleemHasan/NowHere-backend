@@ -8,6 +8,7 @@ export const SnapsPatterns = {
   CREATE: 'snaps.create',
   DELETE_ONE: 'snaps.deleteOne',
   DELETE_ALL: 'snaps.deleteAll',
+  DELETE_BY_USER_ID: 'snaps.deleteByUserId',
   MARK_FOUND: 'snaps.markFound',
   REOPEN: 'snaps.reopen',
 } as const;

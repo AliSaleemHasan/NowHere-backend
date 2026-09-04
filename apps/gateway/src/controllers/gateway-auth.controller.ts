@@ -6,11 +6,18 @@ import {
   Req,
   UseGuards,
   UnauthorizedException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { Request } from 'express';
 import { extractTokenFromHeader, ReqUser } from 'nowhere-common';
-import { SigninDTO, CreateCredentialDTO } from '../dto';
+import {
+  SigninDTO,
+  CreateCredentialDTO,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from '../dto';
 import {
   AuthPatterns,
   AuthResponse,
@@ -43,6 +50,20 @@ export class GatewayAuthController {
       body,
       15_000,
     );
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async forgotPassword(@Body() body: ForgotPasswordDto) {
+    return this.rpc.request(AuthPatterns.FORGOT_PASSWORD, body);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    return this.rpc.request(AuthPatterns.RESET_PASSWORD, body);
   }
 
   @Get('refresh')

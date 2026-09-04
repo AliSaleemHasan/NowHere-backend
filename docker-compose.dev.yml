@@ -131,6 +131,10 @@ services:
       PORT: 3004
       TYPEORM_SYNC: 'true'
       NATS_URL: nats://${NATS_TOKEN:-dev_nats_token}@nats:4222
+      SMTP_HOST: mailhog
+      SMTP_PORT: '1025'
+      SMTP_FROM: nowhere@localhost
+      PASSWORD_RESET_BASE_URL: http://localhost:8081/reset-password
     volumes:
       - ./apps/authentication:/usr/src/apps/authentication
       - ./libs:/usr/src/libs
@@ -141,6 +145,7 @@ services:
     depends_on:
       - mysql
       - nats
+      - mailhog
 
   nowhere-storage:
     container_name: nowhere-storage-dev

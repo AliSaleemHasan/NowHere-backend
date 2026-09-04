@@ -16,7 +16,11 @@ describe('SnapsNatsController', () => {
     getSeenSnaps: jest.Mock;
   };
   let create: { create: jest.Mock };
-  let remove: { deleteAll: jest.Mock; deleteSnap: jest.Mock };
+  let remove: {
+    deleteAll: jest.Mock;
+    deleteSnap: jest.Mock;
+    deleteByUserId: jest.Mock;
+  };
   let resolution: { markFound: jest.Mock; reopen: jest.Mock };
 
   beforeEach(async () => {
@@ -28,7 +32,11 @@ describe('SnapsNatsController', () => {
       getSeenSnaps: jest.fn(),
     };
     create = { create: jest.fn() };
-    remove = { deleteAll: jest.fn(), deleteSnap: jest.fn() };
+    remove = {
+      deleteAll: jest.fn(),
+      deleteSnap: jest.fn(),
+      deleteByUserId: jest.fn(),
+    };
     resolution = { markFound: jest.fn(), reopen: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -99,6 +107,13 @@ describe('SnapsNatsController', () => {
     it('calls query.findByUser', async () => {
       await controller.findByUser({ userId: 'u1', includeExpired: false });
       expect(query.findByUser).toHaveBeenCalledWith('u1', false);
+    });
+  });
+
+  describe('deleteByUserId', () => {
+    it('forwards userId to deleteByUserId', async () => {
+      await controller.deleteByUserId({ userId: 'u1' });
+      expect(remove.deleteByUserId).toHaveBeenCalledWith('u1');
     });
   });
 

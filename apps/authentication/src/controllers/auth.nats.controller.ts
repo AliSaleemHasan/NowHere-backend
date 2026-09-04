@@ -10,16 +10,24 @@ import {
   ValidateTokenSchema,
   SignupSchema,
   ChangePasswordSchema,
+  ForgotPasswordSchema,
+  ResetPasswordSchema,
+  DeactivateUserSchema,
+  DeleteCredentialsSchema,
   validateSchema,
 } from 'contracts';
 import { AuthenticationService } from '../authentication.service';
 import { ChangePasswordService } from '../change-password.service';
+import { PasswordResetService } from '../password-reset.service';
+import { AccountLifecycleService } from '../account-lifecycle.service';
 
 @Controller()
 export class AuthNatsController {
   constructor(
     private readonly authService: AuthenticationService,
     private readonly changePasswordService: ChangePasswordService,
+    private readonly passwordResetService: PasswordResetService,
+    private readonly accountLifecycle: AccountLifecycleService,
   ) {}
 
   @MessagePattern(AuthPatterns.VALIDATE_USER)
@@ -48,5 +56,29 @@ export class AuthNatsController {
   async changePassword(@Payload() data: unknown) {
     const payload = validateSchema(ChangePasswordSchema, data);
     return await this.changePasswordService.changePassword(payload);
+  }
+
+  @MessagePattern(AuthPatterns.FORGOT_PASSWORD)
+  async forgotPassword(@Payload() data: unknown) {
+    const payload = validateSchema(ForgotPasswordSchema, data);
+    return await this.passwordResetService.forgotPassword(payload);
+  }
+
+  @MessagePattern(AuthPatterns.RESET_PASSWORD)
+  async resetPassword(@Payload() data: unknown) {
+    const payload = validateSchema(ResetPasswordSchema, data);
+    return await this.passwordResetService.resetPassword(payload);
+  }
+
+  @MessagePattern(AuthPatterns.DEACTIVATE_USER)
+  async deactivateUser(@Payload() data: unknown) {
+    const payload = validateSchema(DeactivateUserSchema, data);
+    return await this.accountLifecycle.deactivateUser(payload);
+  }
+
+  @MessagePattern(AuthPatterns.DELETE_CREDENTIALS)
+  async deleteCredentials(@Payload() data: unknown) {
+    const payload = validateSchema(DeleteCredentialsSchema, data);
+    return await this.accountLifecycle.deleteCredentials(payload);
   }
 }

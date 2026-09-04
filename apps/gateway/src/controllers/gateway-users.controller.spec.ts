@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as request from 'supertest';
-import { AuthPatterns, UsersPatterns } from 'contracts';
+import { AuthPatterns, SnapsPatterns, UsersPatterns } from 'contracts';
 import { createValidationPipe } from 'nowhere-common';
+import { AccountDeleteOrchestrator } from '../account-delete.orchestrator';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { GatewayUsersController } from './gateway-users.controller';
@@ -30,7 +31,10 @@ describe('GatewayUsersController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GatewayUsersController],
-      providers: [{ provide: GatewayRpcClient, useValue: rpc }],
+      providers: [
+        AccountDeleteOrchestrator,
+        { provide: GatewayRpcClient, useValue: rpc },
+      ],
     })
       .overrideGuard(GatewayAuthGuard)
       .useClass(AllowAuthGuard)
@@ -99,5 +103,34 @@ describe('GatewayUsersController', () => {
       currentPassword: 'Password123!',
       newPassword: 'Password456!',
     });
+  });
+
+  it('maps GET /users/me/export to users.exportUser', async () => {
+    rpc.request.mockResolvedValueOnce({
+      exportedAt: '2026-09-04T00:00:00.000Z',
+      user: { id: 'u1' },
+      settings: { maxDistance: 5000 },
+      snaps: [{ snaps: ['snaps/u1/a.jpg'] }],
+    });
+
+    await request(app.getHttpServer()).get('/users/me/export').expect(200);
+    expect(rpc.request).toHaveBeenCalledWith(UsersPatterns.EXPORT_USER, {
+      userId: 'u1',
+    });
+  });
+
+  it('deletes the account by calling snaps then users then auth in order', async () => {
+    await request(app.getHttpServer())
+      .delete('/users/me')
+      .send({ password: 'Password123!' })
+      .expect(200);
+
+    const calls = rpc.request.mock.calls as Array<[string, unknown]>;
+    expect(calls.map((call) => call[0])).toEqual([
+      AuthPatterns.DEACTIVATE_USER,
+      SnapsPatterns.DELETE_BY_USER_ID,
+      UsersPatterns.PURGE_USER,
+      AuthPatterns.DELETE_CREDENTIALS,
+    ]);
   });
 });

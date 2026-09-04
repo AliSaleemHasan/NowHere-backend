@@ -19,11 +19,20 @@ import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthPatterns, UsersPatterns, ROLES, UserDto } from 'contracts';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
-import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from '../dto';
+import { AccountDeleteOrchestrator } from '../account-delete.orchestrator';
+import {
+  ChangePasswordDto,
+  DeleteAccountDto,
+  UpdateProfileDto,
+  UpdateSettingsDto,
+} from '../dto';
 
 @Controller('users')
 export class GatewayUsersController {
-  constructor(private readonly rpc: GatewayRpcClient) {}
+  constructor(
+    private readonly rpc: GatewayRpcClient,
+    private readonly accountDelete: AccountDeleteOrchestrator,
+  ) {}
 
   @Get('settings')
   @UseGuards(GatewayAuthGuard)
@@ -50,6 +59,21 @@ export class GatewayUsersController {
       userId: id,
       ...body,
     });
+  }
+
+  @Get('me/export')
+  @UseGuards(GatewayAuthGuard)
+  async exportMe(@ReqUser('id') userId: string) {
+    return this.rpc.request(UsersPatterns.EXPORT_USER, { userId });
+  }
+
+  @Delete('me')
+  @UseGuards(GatewayAuthGuard)
+  async deleteMe(
+    @ReqUser('id') userId: string,
+    @Body() body: DeleteAccountDto,
+  ) {
+    return this.accountDelete.deleteAccount(userId, body.password);
   }
 
   @Post('me/password')

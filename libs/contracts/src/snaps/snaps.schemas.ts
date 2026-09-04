@@ -43,6 +43,10 @@ export const FindByUserSchema = z.object({
   includeExpired: z.boolean().optional(),
 });
 
+export const DeleteByUserIdSchema = z.object({
+  userId: z.string().min(1),
+});
+
 export const MarkFoundSchema = z.object({
   id: z.string().min(1),
   userId: z.string().min(1),

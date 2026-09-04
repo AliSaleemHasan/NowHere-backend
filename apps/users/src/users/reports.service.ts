@@ -37,6 +37,13 @@ export class ReportsService {
     }
   }
 
+  listByUser(userId: string): Promise<SnapReport[]> {
+    return this.reportRepo.find({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   private throwDuplicate(): never {
     throwHttpProblem(
       HttpStatus.CONFLICT,
