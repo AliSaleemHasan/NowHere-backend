@@ -6,6 +6,7 @@ export interface ProblemDetails {
   detail: string;
   instance: string;
   timestamp: string;
+  code?: string;
   [key: string]: unknown;
 }
 

@@ -14,7 +14,13 @@ export class DataResponseInterceptor implements NestInterceptor {
 
     const request = context.switchToHttp().getRequest<Request>();
     const path = (request.path || request.url || '').split('?')[0];
-    if (path === '/health' || path.endsWith('/health')) {
+    if (
+      path === '/health' ||
+      path.endsWith('/health') ||
+      path === '/docs' ||
+      path === '/docs-json' ||
+      path.startsWith('/docs/')
+    ) {
       return next.handle();
     }
 
@@ -35,4 +41,3 @@ export class DataResponseInterceptor implements NestInterceptor {
     );
   }
 }
-

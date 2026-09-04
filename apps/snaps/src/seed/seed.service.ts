@@ -10,8 +10,10 @@ import {
   AuthPatterns,
   AuthResponse,
   SignupPayload,
+  UserSettingsDto,
 } from 'contracts';
 import { NATS_CLIENT, natsRequest, Tags } from 'nowhere-common';
+import { addDays } from '../snaps/snaps-near-params';
 
 @Injectable()
 export class SeedService {
@@ -154,11 +156,16 @@ export class SeedService {
     }
 
     const new_snaps: Snap[] = [];
+    const disappearDaysByUser = new Map<string, number>();
     for (let i = 0; i < locations.length; i++) {
       try {
         const current_user = users[i % users.length];
         if (!current_user?.id) continue;
 
+        const disappearDays = await this.disappearDaysFor(
+          current_user.id,
+          disappearDaysByUser,
+        );
         const newSnap = await this.SnapsModel.create({
           _userId: current_user.id,
           description: `This is a small description for snap posted by a user with name ${current_user.firstName} ${current_user.lastName} and email ${current_user.email}`,
@@ -177,12 +184,38 @@ export class SeedService {
               Math.floor(Math.random() * Object.keys(Tags).length)
             ]
           ],
+          expiresAt: addDays(new Date(), disappearDays),
         });
         new_snaps.push(newSnap);
       } catch (e) {
-        this.logger.error(e.message);
+        this.logger.error(e instanceof Error ? e.message : e);
       }
     }
     return new_snaps;
+  }
+
+  private async disappearDaysFor(
+    userId: string,
+    cache: Map<string, number>,
+  ): Promise<number> {
+    const cached = cache.get(userId);
+    if (cached !== undefined) {
+      return cached;
+    }
+    let days = 1;
+    try {
+      const settings = await natsRequest<UserSettingsDto, { id: string }>(
+        this.natsClient,
+        UsersPatterns.GET_SETTINGS,
+        { id: userId },
+      );
+      if (settings?.snapDisappearTime) {
+        days = settings.snapDisappearTime;
+      }
+    } catch {
+      days = 1;
+    }
+    cache.set(userId, days);
+    return days;
   }
 }

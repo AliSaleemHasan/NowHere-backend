@@ -40,6 +40,8 @@ kubectl apply -f k8s
 
 `k8s/secrets/` is gitignored. Only `k8s/secrets.example/` with `change_me_*` values is committed.
 
+With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file.
+
 ---
 
 ## Cloud Providers & Secrets Management (Strategy Pattern)

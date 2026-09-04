@@ -6,10 +6,12 @@ import {
 } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { Observable, throwError } from 'rxjs';
+import { readProblemCode } from './http-problem';
 
 export interface SerializedRpcError {
   statusCode: number;
   message: string;
+  code?: string;
 }
 
 function serializeUnknown(exception: unknown): SerializedRpcError {
@@ -17,12 +19,15 @@ function serializeUnknown(exception: unknown): SerializedRpcError {
     const error = exception.getError();
     if (typeof error === 'object' && error && 'statusCode' in error) {
       const payload = error as SerializedRpcError;
+      const code = readProblemCode(payload);
       return {
-        statusCode: Number(payload.statusCode) || HttpStatus.INTERNAL_SERVER_ERROR,
+        statusCode:
+          Number(payload.statusCode) || HttpStatus.INTERNAL_SERVER_ERROR,
         message:
           typeof payload.message === 'string'
             ? payload.message
             : 'Request failed',
+        ...(code ? { code } : {}),
       };
     }
     return {
@@ -35,17 +40,19 @@ function serializeUnknown(exception: unknown): SerializedRpcError {
     const status = exception.getStatus();
     const response = exception.getResponse();
     let message = exception.message;
+    let code: string | undefined;
     if (typeof response === 'string') {
       message = response;
     } else if (typeof response === 'object' && response !== null) {
       const body = response as { message?: string | string[] };
+      code = readProblemCode(body);
       if (typeof body.message === 'string') {
         message = body.message;
       } else if (Array.isArray(body.message)) {
         message = body.message.join(', ');
       }
     }
-    return { statusCode: status, message };
+    return { statusCode: status, message, ...(code ? { code } : {}) };
   }
 
   if (

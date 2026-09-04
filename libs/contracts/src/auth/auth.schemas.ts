@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { PasswordSchema } from './password.schema';
 
 export const ValidateUserSchema = z.object({
   email: z.email(),
-  password: z.string().min(6),
+  password: z.string(),
 });
 export type ValidateUserPayload = z.infer<typeof ValidateUserSchema>;
 
@@ -13,7 +14,7 @@ export type ValidateTokenPayload = z.infer<typeof ValidateTokenSchema>;
 
 export const SignupSchema = z.object({
   email: z.email(),
-  password: z.string().min(6),
+  password: PasswordSchema,
   firstName: z.string(),
   lastName: z.string(),
   username: z.string().optional(),

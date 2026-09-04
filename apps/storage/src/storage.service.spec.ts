@@ -14,7 +14,7 @@ describe('StorageService', () => {
     listFiles: jest.Mock;
     deleteFile: jest.Mock;
   };
-  let cache: { get: jest.Mock; set: jest.Mock };
+  let cache: { get: jest.Mock; set: jest.Mock; del: jest.Mock };
 
   beforeEach(async () => {
     strategy = {
@@ -24,7 +24,7 @@ describe('StorageService', () => {
       listFiles: jest.fn(),
       deleteFile: jest.fn(),
     };
-    cache = { get: jest.fn(), set: jest.fn() };
+    cache = { get: jest.fn(), set: jest.fn(), del: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -70,5 +70,34 @@ describe('StorageService', () => {
     await expect(
       service.getPresignedUploadUrl('k', 'image/jpeg'),
     ).rejects.toBeInstanceOf(InternalServerErrorException);
+  });
+
+  it('deletes each key sequentially and invalidates cache', async () => {
+    strategy.deleteFile.mockResolvedValue(undefined);
+    cache.del.mockResolvedValue(undefined);
+
+    await service.deleteFiles(['snaps/a.jpg', 'snaps/b.jpg']);
+
+    expect(strategy.deleteFile.mock.calls).toEqual([
+      ['snaps/a.jpg'],
+      ['snaps/b.jpg'],
+    ]);
+    expect(cache.del).toHaveBeenCalledWith('snaps/a.jpg');
+    expect(cache.del).toHaveBeenCalledWith('snaps/b.jpg');
+  });
+
+  it('ignores missing keys and still invalidates cache', async () => {
+    strategy.deleteFile
+      .mockRejectedValueOnce(new Error('NoSuchKey'))
+      .mockResolvedValueOnce(undefined);
+    cache.del.mockResolvedValue(undefined);
+
+    await expect(
+      service.deleteFiles(['missing.jpg', 'present.jpg']),
+    ).resolves.toBeUndefined();
+
+    expect(strategy.deleteFile).toHaveBeenCalledTimes(2);
+    expect(cache.del).toHaveBeenCalledWith('missing.jpg');
+    expect(cache.del).toHaveBeenCalledWith('present.jpg');
   });
 });

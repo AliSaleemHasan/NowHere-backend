@@ -18,20 +18,37 @@ describe('Gateway product flow (mocked NATS)', () => {
 
   beforeEach(async () => {
     send = jest.fn().mockImplementation((pattern: string) => {
-      if (pattern === AuthPatterns.SIGNUP || pattern === AuthPatterns.VALIDATE_USER) {
+      if (
+        pattern === AuthPatterns.SIGNUP ||
+        pattern === AuthPatterns.VALIDATE_USER
+      ) {
         return of({
-          user: { id: 'u1', email: 'a@a.com', role: ROLES.USER, isActive: true },
+          user: {
+            id: 'u1',
+            email: 'a@a.com',
+            role: ROLES.USER,
+            isActive: true,
+          },
           tokens: { accessToken: 'a', refreshToken: 'r' },
         });
       }
       if (pattern === StoragePatterns.GET_PRESIGNED_UPLOAD) {
-        return of({ uploadUrl: 'https://upload', key: 'snaps/2026-09-03/u1/x.jpg' });
+        return of({
+          uploadUrl: 'https://upload',
+          key: 'snaps/2026-09-03/u1/x.jpg',
+        });
       }
       if (pattern === SnapsPatterns.CREATE) {
         return of({ id: 'snap-1', _userId: 'u1' });
       }
       if (pattern === SnapsPatterns.FIND_NEAR) {
         return of([{ id: 'snap-other', _userId: 'u2' }]);
+      }
+      if (pattern === SnapsPatterns.FIND_BY_USER) {
+        return of([{ id: 'snap-1', _userId: 'u1' }]);
+      }
+      if (pattern === SnapsPatterns.DELETE_ONE) {
+        return of({ deletedCount: 1 });
       }
       return of({});
     });
@@ -64,7 +81,10 @@ describe('Gateway product flow (mocked NATS)', () => {
     });
     expect(signup.tokens.accessToken).toBe('a');
 
-    const login = await auth.login({ email: 'a@a.com', password: 'Password123!' });
+    const login = await auth.login({
+      email: 'a@a.com',
+      password: 'Password123!',
+    });
     expect(login.user.id).toBe('u1');
 
     const presign = await storage.getPresignedUploadURL('u1', {
@@ -89,5 +109,42 @@ describe('Gateway product flow (mocked NATS)', () => {
       _userId: string;
     }>;
     expect(nearby[0]._userId).toBe('u2');
+  });
+
+  it('lists current user snaps and forwards actor on delete', async () => {
+    const mine = (await snaps.findMine('u1')) as Array<{ id: string }>;
+    expect(mine[0].id).toBe('snap-1');
+    expect(send).toHaveBeenCalledWith(SnapsPatterns.FIND_BY_USER, {
+      userId: 'u1',
+      includeExpired: true,
+    });
+
+    await snaps.findMine('u1', '0');
+    expect(send).toHaveBeenCalledWith(SnapsPatterns.FIND_BY_USER, {
+      userId: 'u1',
+      includeExpired: false,
+    });
+
+    await snaps.deleteOne('u1', ROLES.ADMIN, 'snap-1');
+    expect(send).toHaveBeenCalledWith(SnapsPatterns.DELETE_ONE, {
+      id: 'snap-1',
+      userId: 'u1',
+      role: ROLES.ADMIN,
+    });
+  });
+
+  it('forwards optional idempotencyKey on create', async () => {
+    const key = '11111111-1111-4111-8111-111111111111';
+    await snaps.create('u1', {
+      description: 'hello',
+      location: { type: GeoPointType.Point, coordinates: [13.4, 52.5] },
+      snaps: ['snaps/2026-09-03/u1/x.jpg'],
+      tag: Tags.SOCIAL,
+      idempotencyKey: key,
+    } as CreateSnapHttpDto);
+    expect(send).toHaveBeenCalledWith(
+      SnapsPatterns.CREATE,
+      expect.objectContaining({ idempotencyKey: key, userId: 'u1' }),
+    );
   });
 });

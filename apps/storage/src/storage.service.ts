@@ -112,6 +112,16 @@ export class StorageService {
     }
   }
 
+  async deleteFiles(keys: string[]): Promise<void> {
+    for (const key of keys) {
+      const { error } = await tryCatch(this.strategy.deleteFile(key));
+      if (error) {
+        this.logger.warn(`Delete skipped for ${key}: ${error.message}`);
+      }
+      await this.cacheManager.del(key);
+    }
+  }
+
   async uploadPhoto(image: Buffer, userId: string): Promise<string> {
     const key = `profile/${userId}`;
     return await this.uploadFile(image, key);
@@ -124,5 +134,4 @@ export class StorageService {
     }
     return outputs;
   }
-
 }

@@ -9,4 +9,8 @@ export class GatewayEnvVariables extends JwtAccessRequiredNatsEnv {
   @IsOptional()
   @IsString()
   CORS_ORIGIN?: string;
+
+  @IsOptional()
+  @IsString()
+  ENABLE_SWAGGER?: string;
 }

@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  IsUUID,
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
@@ -39,4 +40,8 @@ export class CreateSnapHttpDto {
   @IsEnum(Tags)
   @Transform(({ value }) => value ?? Tags.SOCIAL)
   tag?: Tags;
+
+  @IsOptional()
+  @IsUUID()
+  idempotencyKey?: string;
 }

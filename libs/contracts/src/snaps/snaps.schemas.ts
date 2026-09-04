@@ -13,6 +13,7 @@ export const CreateSnapSchema = z.object({
   ]),
   snaps: z.array(z.string().min(1)).min(1).max(MAX_UPLOAD_BATCH),
   tag: z.string().optional(),
+  idempotencyKey: z.uuid().optional(),
 });
 
 export const FindNearSnapsSchema = z.object({
@@ -26,4 +27,15 @@ export const FindNearSnapsSchema = z.object({
 export const SnapIdPayloadSchema = z.object({
   id: z.string().min(1),
   userId: z.string().optional(),
+});
+
+export const DeleteSnapSchema = z.object({
+  id: z.string().min(1),
+  userId: z.string().min(1),
+  role: z.string().min(1),
+});
+
+export const FindByUserSchema = z.object({
+  userId: z.string().min(1),
+  includeExpired: z.boolean().optional(),
 });

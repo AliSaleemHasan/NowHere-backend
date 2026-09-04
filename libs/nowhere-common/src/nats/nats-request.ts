@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom, TimeoutError, timeout } from 'rxjs';
+import { readProblemCode } from '../filters/http-problem';
 
 export const DEFAULT_NATS_TIMEOUT_MS = 8_000;
 
@@ -57,7 +58,15 @@ export function mapNatsError(err: unknown): never {
       messageFrom(candidate.message) ||
       messageFrom(candidate.detail) ||
       'Request failed';
-    throw new HttpException(message, statusCode);
+    const code = readProblemCode(candidate);
+    throw new HttpException(
+      {
+        statusCode,
+        message,
+        ...(code ? { code } : {}),
+      },
+      statusCode,
+    );
   }
 
   const fallback = messageFrom(root?.message);

@@ -1,8 +1,5 @@
-import { Controller, Logger } from '@nestjs/common';
-import {
-  MessagePattern,
-  Payload,
-} from '@nestjs/microservices';
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { StorageService } from '../storage.service';
 import {
   StoragePatterns,
@@ -11,16 +8,14 @@ import {
   SignedUrlsPayload,
   PresignedUploadPayload,
   PresignedUploadResponse,
+  DeleteFilesSchema,
+  validateSchema,
 } from 'contracts';
 import { toBuffer } from 'nowhere-common';
 
 @Controller()
 export class StorageNatsController {
-  private readonly logger = new Logger(StorageNatsController.name);
-
-  constructor(
-    private readonly storageService: StorageService
-  ) {}
+  constructor(private readonly storageService: StorageService) {}
 
   @MessagePattern(StoragePatterns.UPLOAD_PHOTO)
   async uploadPhoto(
@@ -64,5 +59,11 @@ export class StorageNatsController {
   @MessagePattern(StoragePatterns.LIST_FILES)
   async listFiles(): Promise<string[]> {
     return await this.storageService.listFiles();
+  }
+
+  @MessagePattern(StoragePatterns.DELETE_FILES)
+  async deleteFiles(@Payload() data: unknown): Promise<void> {
+    const payload = validateSchema(DeleteFilesSchema, data);
+    await this.storageService.deleteFiles(payload.keys);
   }
 }

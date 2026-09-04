@@ -7,7 +7,12 @@ describe('AuthNatsController', () => {
   let controller: AuthNatsController;
   let service: AuthenticationService;
 
-  const mockUser = { id: 'user-id', email: 'test@example.com', role: Roles.USER, isActive: true };
+  const mockUser = {
+    id: 'user-id',
+    email: 'test@example.com',
+    role: Roles.USER,
+    isActive: true,
+  };
   const mockTokens = { accessToken: 'access', refreshToken: 'refresh' };
   const authResponse = { user: mockUser, tokens: mockTokens };
 
@@ -36,7 +41,10 @@ describe('AuthNatsController', () => {
 
   describe('validateUser', () => {
     it('should call service.login', async () => {
-      const result = await controller.validateUser({ email: 't@e.com', password: 'password1' });
+      const result = await controller.validateUser({
+        email: 't@e.com',
+        password: 'password1',
+      });
       expect(service.login).toHaveBeenCalledWith('t@e.com', 'password1');
       expect(result).toEqual(authResponse);
     });
@@ -44,7 +52,12 @@ describe('AuthNatsController', () => {
 
   describe('signup', () => {
     it('should call service.signup', async () => {
-      const dto = { email: 't@e.com', password: 'password1', firstName: 'John', lastName: 'Doe' };
+      const dto = {
+        email: 't@e.com',
+        password: 'Password123!',
+        firstName: 'John',
+        lastName: 'Doe',
+      };
       const result = await controller.signup(dto);
       expect(service.signup).toHaveBeenCalledWith(dto);
       expect(result).toEqual(authResponse);

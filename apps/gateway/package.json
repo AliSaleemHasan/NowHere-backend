@@ -15,11 +15,12 @@
   },
   "dependencies": {
     "@nestjs/jwt": "^11.0.0",
+    "@nestjs/swagger": "^11.4.7",
     "bcrypt": "^6.0.0",
+    "contracts": "workspace:*",
     "multer": "^2.0.2",
     "mysql2": "^3.14.2",
     "nowhere-common": "workspace:*",
-    "contracts": "workspace:*",
     "typeorm": "^0.3.26"
   },
   "author": "Ali Hasan",

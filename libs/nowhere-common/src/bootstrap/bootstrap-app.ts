@@ -13,16 +13,20 @@ import { DataResponseInterceptor } from '../interceptors';
 import { natsConnectionOptions } from '../nats';
 import { parseCorsOrigins } from './cors';
 
+type HelmetOptions = Parameters<typeof helmet>[0];
+
 export interface BootstrapAppOptions {
   module: Type<unknown>;
   defaultPort: number;
   enableHelmet?: boolean;
+  helmetOptions?: HelmetOptions;
   enableCors?: boolean;
   requireCorsInProduction?: boolean;
   enableValidation?: boolean;
   enableResponseInterceptor?: boolean;
   microservice?: boolean;
   inheritAppConfig?: boolean;
+  beforeListen?: (app: INestApplication) => void | Promise<void>;
 }
 
 export function resolveListenPort(defaultPort: number): number {
@@ -50,23 +54,27 @@ export async function bootstrapApp(
     module,
     defaultPort,
     enableHelmet = true,
+    helmetOptions,
     enableCors = false,
     requireCorsInProduction = false,
     enableValidation = true,
     enableResponseInterceptor = false,
     microservice = false,
     inheritAppConfig = false,
+    beforeListen,
   } = options;
 
   const app = await NestFactory.create(module);
 
   if (enableHelmet) {
-    app.use(helmet());
+    app.use(helmetOptions ? helmet(helmetOptions) : helmet());
   }
 
   if (enableCors) {
     app.enableCors({
-      origin: parseCorsOrigins({ requireInProduction: requireCorsInProduction }),
+      origin: parseCorsOrigins({
+        requireInProduction: requireCorsInProduction,
+      }),
       credentials: true,
     });
   }
@@ -90,6 +98,10 @@ export async function bootstrapApp(
       inheritAppConfig ? { inheritAppConfig: true } : undefined,
     );
     await app.startAllMicroservices();
+  }
+
+  if (beforeListen) {
+    await beforeListen(app);
   }
 
   await app.listen(resolveListenPort(defaultPort), '0.0.0.0');

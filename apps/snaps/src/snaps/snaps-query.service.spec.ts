@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { of } from 'rxjs';
-import { SnapsService } from './snaps.service';
 import { Snap, SnapStatus } from './schemas/snap.schema';
-import { SnapsGateway } from './gateway';
+import { SnapsQueryService } from './snaps-query.service';
+import { SnapsNearParamsService } from './snaps-near-params';
 import { UsersPatterns } from 'contracts';
 import { NATS_CLIENT } from 'nowhere-common';
 
-describe('SnapsService', () => {
-  let service: SnapsService;
+describe('SnapsQueryService', () => {
+  let service: SnapsQueryService;
   let snapModel: {
     find: jest.Mock;
     findOne: jest.Mock;
@@ -53,20 +53,17 @@ describe('SnapsService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        SnapsService,
+        SnapsQueryService,
+        SnapsNearParamsService,
         { provide: getModelToken(Snap.name), useValue: snapModel },
         { provide: NATS_CLIENT, useValue: natsClient },
-        {
-          provide: SnapsGateway,
-          useValue: { handleNewSnap: jest.fn() },
-        },
       ],
     }).compile();
 
-    service = module.get(SnapsService);
+    service = module.get(SnapsQueryService);
   });
 
-  it('findNear queries all successful snaps, not only the caller', async () => {
+  it('findNear queries active successful snaps, not only the caller', async () => {
     await service.findNear({
       location: [13.4, 52.5],
       tags: [],
@@ -77,11 +74,13 @@ describe('SnapsService', () => {
     const query = snapModel.find.mock.calls[0][0];
     expect(query.status).toBe(SnapStatus.SUCCESS);
     expect(query._userId).toBeUndefined();
+    expect(query.createdAt).toBeUndefined();
+    expect(query.expiresAt).toEqual({ $gt: expect.any(Date) });
   });
 
   it('nearby feed returns another user unseen snap near the same point', async () => {
     const result = await service.getSeenSnaps(
-      { location: [13.4, 52.5], tags: [] } as any,
+      { location: [13.4, 52.5], tags: [] },
       'caller',
       false,
     );
@@ -115,17 +114,30 @@ describe('SnapsService', () => {
     });
 
     const unseen = await service.getSeenSnaps(
-      { location: [13.4, 52.5], tags: [] } as any,
+      { location: [13.4, 52.5], tags: [] },
       'caller',
       false,
     );
     const seen = await service.getSeenSnaps(
-      { location: [13.4, 52.5], tags: [] } as any,
+      { location: [13.4, 52.5], tags: [] },
       'caller',
       true,
     );
 
     expect(unseen.map((snap) => snap.id)).not.toContain('snap-other');
     expect(seen.map((snap) => snap.id)).toContain('snap-other');
+  });
+
+  it('findByUser includes expired snaps by default', async () => {
+    await service.findByUser('caller');
+    expect(snapModel.find).toHaveBeenCalledWith({ _userId: 'caller' });
+  });
+
+  it('findByUser can exclude expired snaps', async () => {
+    await service.findByUser('caller', false);
+    expect(snapModel.find).toHaveBeenCalledWith({
+      _userId: 'caller',
+      expiresAt: { $gt: expect.any(Date) },
+    });
   });
 });

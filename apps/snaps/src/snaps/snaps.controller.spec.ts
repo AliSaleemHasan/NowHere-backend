@@ -1,25 +1,40 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SnapsNatsController } from './controllers/snaps.nats.controller';
-import { SnapsService } from './snaps.service';
+import { SnapsCreateService } from './snaps-create.service';
+import { SnapsDeleteService } from './snaps-delete.service';
+import { SnapsQueryService } from './snaps-query.service';
+import { ROLES } from 'contracts';
 
 describe('SnapsNatsController', () => {
   let controller: SnapsNatsController;
-  let service: any;
+  let query: {
+    findAll: jest.Mock;
+    findByTags: jest.Mock;
+    findOne: jest.Mock;
+    findByUser: jest.Mock;
+    getSeenSnaps: jest.Mock;
+  };
+  let create: { create: jest.Mock };
+  let remove: { deleteAll: jest.Mock; deleteSnap: jest.Mock };
 
   beforeEach(async () => {
-    service = {
-      create: jest.fn(),
+    query = {
       findAll: jest.fn(),
       findByTags: jest.fn(),
       findOne: jest.fn(),
-      deleteAll: jest.fn(),
-      deleteSnap: jest.fn(),
+      findByUser: jest.fn(),
       getSeenSnaps: jest.fn(),
     };
+    create = { create: jest.fn() };
+    remove = { deleteAll: jest.fn(), deleteSnap: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SnapsNatsController],
-      providers: [{ provide: SnapsService, useValue: service }],
+      providers: [
+        { provide: SnapsQueryService, useValue: query },
+        { provide: SnapsCreateService, useValue: create },
+        { provide: SnapsDeleteService, useValue: remove },
+      ],
     }).compile();
 
     controller = module.get<SnapsNatsController>(SnapsNatsController);
@@ -30,32 +45,56 @@ describe('SnapsNatsController', () => {
   });
 
   describe('create', () => {
-    it('should call service.create', async () => {
-      const dto: any = {
+    it('should call create service', async () => {
+      const dto = {
         userId: 'u1',
-        location: { type: 'Point', coordinates: [0, 0] },
+        location: {
+          type: 'Point' as const,
+          coordinates: [0, 0] as [number, number],
+        },
         snaps: ['snaps/2026-09-03/u1/a.jpg'],
       };
       await controller.create(dto);
-      expect(service.create).toHaveBeenCalledWith('u1', dto);
+      expect(create.create).toHaveBeenCalledWith('u1', dto);
     });
   });
 
   describe('findAll', () => {
-    it('should call service.findAll', async () => {
+    it('should call query.findAll', async () => {
       await controller.findAll();
-      expect(service.findAll).toHaveBeenCalled();
+      expect(query.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findNear', () => {
-    it('should call service.getSeenSnaps with seen: false', async () => {
+    it('should call query.getSeenSnaps with seen: false', async () => {
       await controller.findNear({ userId: 'u1', lng: 1, lat: 2 });
-      expect(service.getSeenSnaps).toHaveBeenCalledWith(
+      expect(query.getSeenSnaps).toHaveBeenCalledWith(
         { tags: undefined, location: [1, 2] },
         'u1',
         false,
       );
+    });
+  });
+
+  describe('deleteOne', () => {
+    it('forwards id with actor identity', async () => {
+      await controller.deleteOne({
+        id: 's1',
+        userId: 'u1',
+        role: ROLES.USER,
+      });
+      expect(remove.deleteSnap).toHaveBeenCalledWith('s1', {
+        userId: 'u1',
+        role: ROLES.USER,
+      });
+    });
+  });
+
+  describe('findByUser', () => {
+    it('calls query.findByUser', async () => {
+      await controller.findByUser({ userId: 'u1', includeExpired: false });
+      expect(query.findByUser).toHaveBeenCalledWith('u1', false);
     });
   });
 });

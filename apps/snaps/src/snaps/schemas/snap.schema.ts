@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 import { GeoPointType, Tags } from 'nowhere-common';
 
 export type SnapDocument = HydratedDocument<Snap>;
@@ -51,9 +51,20 @@ export class Snap {
 
   @Prop({ type: String, enum: SnapStatus, default: SnapStatus.PROCESSING })
   status: SnapStatus;
+
+  @Prop({ type: Date })
+  expiresAt: Date;
+
+  @Prop({ type: String })
+  idempotencyKey?: string;
 }
 
 export const SnapSchema = SchemaFactory.createForClass(Snap);
 
 SnapSchema.index({ location: '2dsphere' });
 SnapSchema.index({ createdAt: -1, location: '2dsphere' });
+SnapSchema.index({ expiresAt: 1 });
+SnapSchema.index(
+  { _userId: 1, idempotencyKey: 1 },
+  { unique: true, sparse: true },
+);
