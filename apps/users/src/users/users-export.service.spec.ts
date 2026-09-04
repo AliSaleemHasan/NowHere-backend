@@ -16,7 +16,7 @@ describe('UsersExportService', () => {
     getUserById: jest.Mock;
     getSeen: jest.Mock;
   };
-  let settings: { getUserSetting: jest.Mock };
+  let settings: { findSettings: jest.Mock };
   let bookmarks: { listBookmarks: jest.Mock };
   let reports: { listByUser: jest.Mock };
 
@@ -58,7 +58,7 @@ describe('UsersExportService', () => {
         ]),
     };
     settings = {
-      getUserSetting: jest.fn().mockResolvedValue(settingsRow),
+      findSettings: jest.fn().mockResolvedValue(settingsRow),
     };
     bookmarks = {
       listBookmarks: jest
@@ -119,6 +119,7 @@ describe('UsersExportService', () => {
     expect(json).toContain('snaps/2026-09-03/u1/a.jpg');
     expect(json).toContain('avatars/u1.jpg');
 
+    expect(settings.findSettings).toHaveBeenCalledWith('u1');
     expect(natsClient.send).toHaveBeenCalledWith(SnapsPatterns.FIND_BY_USER, {
       userId: 'u1',
       includeExpired: true,
@@ -133,5 +134,14 @@ describe('UsersExportService', () => {
         ([pattern]) => pattern === StoragePatterns.GET_SIGNED_URLS,
       ),
     ).toBe(false);
+  });
+
+  it('exports settings as null when none exist and does not create defaults', async () => {
+    settings.findSettings.mockResolvedValue(null);
+
+    const result = await service.exportUser({ userId: 'u1' });
+
+    expect(result.settings).toBeNull();
+    expect(settings.findSettings).toHaveBeenCalledWith('u1');
   });
 });

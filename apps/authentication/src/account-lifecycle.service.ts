@@ -21,7 +21,8 @@ export class AccountLifecycleService {
   ): Promise<{ success: true }> {
     const user = await this.credentials.findOneBy({ id: payload.userId });
     if (!user) {
-      throw new UnauthorizedException(GENERIC_CREDENTIALS_ERROR);
+      // Last-step delete may have succeeded while the NATS reply timed out.
+      return { success: true };
     }
 
     const passwordMatches = await bcrypt.compare(

@@ -80,7 +80,7 @@ function sendSmtpMail(options: {
     socket.setTimeout(SMTP_TIMEOUT_MS);
     socket.once('timeout', () => finish(new Error('SMTP timeout')));
     socket.once('error', (err) => finish(err));
-    socket.once('end', () => finish());
+    socket.once('end', () => finish(new Error('SMTP connection closed')));
 
     socket.on('data', (chunk: Buffer) => {
       buffer += chunk.toString('utf8');

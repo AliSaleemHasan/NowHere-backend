@@ -25,7 +25,7 @@ export class UsersExportService {
   async exportUser(payload: ExportUserPayload): Promise<UserExportDto> {
     const user = await this.usersService.getUserById(payload.userId);
     const [settings, seen, bookmarks, reports, snapsRaw] = await Promise.all([
-      this.usersSettings.getUserSetting(payload.userId),
+      this.usersSettings.findSettings(payload.userId),
       this.usersService.getSeen({ userId: payload.userId }),
       this.bookmarksService.listBookmarks(payload.userId),
       this.reportsService.listByUser(payload.userId),

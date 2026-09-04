@@ -15,16 +15,20 @@ export class UsersSettingsService {
   ) {}
 
   async getUserSetting(id: string) {
-    const userSettings = await this.settingsRepository.findOne({
-      where: { user: { id } },
-      relations: { user: true },
-    });
-
+    const userSettings = await this.findSettings(id);
     if (userSettings) {
-      return this.withoutUser(userSettings);
+      return userSettings;
     }
 
     return this.createUserSettings(id);
+  }
+
+  async findSettings(userId: string) {
+    const userSettings = await this.settingsRepository.findOne({
+      where: { user: { id: userId } },
+      relations: { user: true },
+    });
+    return userSettings ? this.withoutUser(userSettings) : null;
   }
 
   async updateSettings(payload: UpdateSettingsPayload) {

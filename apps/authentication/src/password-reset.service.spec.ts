@@ -108,6 +108,20 @@ describe('PasswordResetService', () => {
     expect(savedCalls[0][0].tokenHash).not.toBe(raw);
   });
 
+  it('still returns accepted when persisting a token for a known email fails', async () => {
+    credentials.findOneBy.mockResolvedValue({
+      id: 'u1',
+      email: 'a@a.com',
+      isActive: true,
+    });
+    tokens.save.mockRejectedValue(new Error('duplicate token hash'));
+
+    await expect(service.forgotPassword({ email: 'a@a.com' })).resolves.toEqual(
+      { accepted: true },
+    );
+    expect(mailer.sendPasswordReset).not.toHaveBeenCalled();
+  });
+
   it('returns 400 PASSWORD_RESET_INVALID for an expired token', async () => {
     const raw = 'expired-token';
     tokens.findOneBy.mockResolvedValue({

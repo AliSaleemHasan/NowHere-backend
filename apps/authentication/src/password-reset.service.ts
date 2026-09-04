@@ -15,7 +15,7 @@ import { hashPassword } from './hash-password';
 import { SmtpMailer } from './smtp-mailer';
 import { generateResetToken, hashResetToken } from './token-hash';
 
-export const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class PasswordResetService {
@@ -38,33 +38,40 @@ export class PasswordResetService {
       return { accepted: true };
     }
 
-    const rawToken = generateResetToken();
-    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
-    await this.tokens.delete({ userId: user.id });
-    await this.tokens.save(
-      this.tokens.create({
-        userId: user.id,
-        tokenHash: hashResetToken(rawToken),
-        expiresAt,
-        usedAt: null,
-      }),
-    );
-
-    const resetUrl = this.buildResetUrl(rawToken);
-    let delivered = false;
     try {
-      delivered = await this.mailer.sendPasswordReset(user.email, resetUrl);
-    } catch (err) {
-      this.logger.warn(
-        `Failed to send password reset email: ${err instanceof Error ? err.message : err}`,
+      const rawToken = generateResetToken();
+      const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+      await this.tokens.delete({ userId: user.id });
+      await this.tokens.save(
+        this.tokens.create({
+          userId: user.id,
+          tokenHash: hashResetToken(rawToken),
+          expiresAt,
+          usedAt: null,
+        }),
       );
-    }
 
-    const result: ForgotPasswordResult = { accepted: true };
-    if (!delivered && this.config.get<string>('NODE_ENV') !== 'production') {
-      result.devResetUrl = resetUrl;
+      const resetUrl = this.buildResetUrl(rawToken);
+      let delivered = false;
+      try {
+        delivered = await this.mailer.sendPasswordReset(user.email, resetUrl);
+      } catch (err) {
+        this.logger.warn(
+          `Failed to send password reset email: ${err instanceof Error ? err.message : err}`,
+        );
+      }
+
+      const result: ForgotPasswordResult = { accepted: true };
+      if (!delivered && this.config.get<string>('NODE_ENV') !== 'production') {
+        result.devResetUrl = resetUrl;
+      }
+      return result;
+    } catch (err) {
+      this.logger.error(
+        `Password reset persist failed: ${err instanceof Error ? err.message : err}`,
+      );
+      return { accepted: true };
     }
-    return result;
   }
 
   async resetPassword(

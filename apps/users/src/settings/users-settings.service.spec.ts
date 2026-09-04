@@ -72,6 +72,14 @@ describe('UsersSettingsService (unit)', () => {
     expect(result).not.toHaveProperty('user');
   });
 
+  it('findSettings returns null without inserting defaults', async () => {
+    settingsRepo.findOne.mockResolvedValue(null);
+
+    await expect(service.findSettings('u1')).resolves.toBeNull();
+    expect(settingsRepo.save.mock.calls).toHaveLength(0);
+    expect(settingsRepo.create.mock.calls).toHaveLength(0);
+  });
+
   it('404s when creating settings for a missing user', async () => {
     settingsRepo.findOne.mockResolvedValue(null);
     userRepo.findOne.mockResolvedValue(null);

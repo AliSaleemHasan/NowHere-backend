@@ -23,6 +23,7 @@ describe('AccountLifecycleService', () => {
   let tokens: { delete: jest.Mock };
 
   beforeEach(async () => {
+    (bcrypt.compare as jest.Mock).mockReset();
     credentials = {
       findOneBy: jest.fn(),
       save: jest.fn(),
@@ -85,6 +86,17 @@ describe('AccountLifecycleService', () => {
     await expect(
       service.deactivateUser({ userId: 'u1', password: 'Password123!' }),
     ).resolves.toEqual({ success: true });
+    expect(bcrypt.compare).toHaveBeenCalledWith('Password123!', 'hash');
+    expect(credentials.save).not.toHaveBeenCalled();
+  });
+
+  it('succeeds when credentials are already gone so delete can retry', async () => {
+    credentials.findOneBy.mockResolvedValue(null);
+
+    await expect(
+      service.deactivateUser({ userId: 'u1', password: 'Password123!' }),
+    ).resolves.toEqual({ success: true });
+    expect(bcrypt.compare).not.toHaveBeenCalled();
     expect(credentials.save).not.toHaveBeenCalled();
   });
 
