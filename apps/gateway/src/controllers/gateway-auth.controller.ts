@@ -63,7 +63,7 @@ export class GatewayAuthController {
       'Always 202 with the same body whether the email exists (no enumeration). Mailhog captures mail in the local compose stack.',
   })
   @HttpCode(HttpStatus.ACCEPTED)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 5, ttl: 15 * 60_000 } })
   async forgotPassword(@Body() body: ForgotPasswordDto) {
     return this.rpc.request(AuthPatterns.FORGOT_PASSWORD, body);
   }
@@ -71,7 +71,7 @@ export class GatewayAuthController {
   @Post('reset-password')
   @ApiOperation({ summary: 'Reset password with emailed token' })
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Throttle({ default: { limit: 5, ttl: 15 * 60_000 } })
   async resetPassword(@Body() body: ResetPasswordDto) {
     return this.rpc.request(AuthPatterns.RESET_PASSWORD, body);
   }

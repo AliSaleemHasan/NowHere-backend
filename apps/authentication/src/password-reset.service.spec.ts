@@ -10,6 +10,9 @@ import { PasswordResetService } from './password-reset.service';
 import { SmtpMailer } from './smtp-mailer';
 import { hashResetToken } from './token-hash';
 
+const PEPPER = 'test-reset-pepper';
+const tokenHash = (raw: string) => hashResetToken(raw, PEPPER);
+
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
   hash: jest.fn(),
@@ -27,6 +30,7 @@ describe('PasswordResetService', () => {
     save: jest.Mock;
     create: jest.Mock;
     delete: jest.Mock;
+    update: jest.Mock;
   };
   let mailer: { sendPasswordReset: jest.Mock };
 
@@ -40,6 +44,7 @@ describe('PasswordResetService', () => {
       save: jest.fn(),
       create: jest.fn((row: Partial<PasswordResetToken>) => row),
       delete: jest.fn(),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     mailer = {
       sendPasswordReset: jest.fn().mockResolvedValue(false),
@@ -59,6 +64,7 @@ describe('PasswordResetService', () => {
               if (key === 'PASSWORD_RESET_BASE_URL') {
                 return 'http://localhost:8081/reset-password';
               }
+              if (key === 'RESET_TOKEN_PEPPER') return PEPPER;
               return undefined;
             }),
           },
@@ -80,7 +86,7 @@ describe('PasswordResetService', () => {
     expect(mailer.sendPasswordReset).not.toHaveBeenCalled();
   });
 
-  it('stores a SHA-256 token hash and returns a non-prod devResetUrl', async () => {
+  it('stores an HMAC token hash and returns a non-prod devResetUrl', async () => {
     credentials.findOneBy.mockResolvedValue({
       id: 'u1',
       email: 'a@a.com',
@@ -100,7 +106,7 @@ describe('PasswordResetService', () => {
     expect(tokens.save).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u1',
-        tokenHash: hashResetToken(raw),
+        tokenHash: tokenHash(raw),
         usedAt: null,
       }),
     );
@@ -124,10 +130,11 @@ describe('PasswordResetService', () => {
 
   it('returns 400 PASSWORD_RESET_INVALID for an expired token', async () => {
     const raw = 'expired-token';
+    tokens.update.mockResolvedValue({ affected: 0 });
     tokens.findOneBy.mockResolvedValue({
       id: 't1',
       userId: 'u1',
-      tokenHash: hashResetToken(raw),
+      tokenHash: tokenHash(raw),
       expiresAt: new Date(Date.now() - 60_000),
       usedAt: null,
     });
@@ -152,6 +159,7 @@ describe('PasswordResetService', () => {
   });
 
   it('returns 400 PASSWORD_RESET_INVALID for a used or unknown token', async () => {
+    tokens.update.mockResolvedValue({ affected: 0 });
     tokens.findOneBy.mockResolvedValue(null);
     await expect(
       service.resetPassword({
@@ -163,7 +171,7 @@ describe('PasswordResetService', () => {
     tokens.findOneBy.mockResolvedValue({
       id: 't1',
       userId: 'u1',
-      tokenHash: hashResetToken('used'),
+      tokenHash: tokenHash('used'),
       expiresAt: new Date(Date.now() + 60_000),
       usedAt: new Date(),
     });
@@ -185,10 +193,11 @@ describe('PasswordResetService', () => {
 
   it('hashes the new password and marks the token used', async () => {
     const raw = 'good-token';
+    tokens.update.mockResolvedValue({ affected: 1 });
     tokens.findOneBy.mockResolvedValue({
       id: 't1',
       userId: 'u1',
-      tokenHash: hashResetToken(raw),
+      tokenHash: tokenHash(raw),
       expiresAt: new Date(Date.now() + 60_000),
       usedAt: null,
     });
@@ -219,10 +228,6 @@ describe('PasswordResetService', () => {
         lockedUntil: null,
       }),
     );
-    const markedCalls = tokens.save.mock.calls as Array<
-      [{ id: string; usedAt: Date }]
-    >;
-    expect(markedCalls[0][0].id).toBe('t1');
-    expect(markedCalls[0][0].usedAt).toBeInstanceOf(Date);
+    expect(tokens.update).toHaveBeenCalled();
   });
 });

@@ -25,4 +25,8 @@ export class AuthenticationEnvVariables extends JwtRefreshMysqlNatsEnv {
   @IsOptional()
   @IsString()
   PASSWORD_RESET_BASE_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  RESET_TOKEN_PEPPER?: string;
 }

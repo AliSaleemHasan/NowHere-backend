@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -16,7 +17,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GatewayAuthGuard } from '../guards/auth.guard';
-import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
+import { ReqUser, RoleGuard, UserRoles, throwHttpProblem } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthPatterns, UsersPatterns, ROLES, UserDto } from 'contracts';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
@@ -174,7 +175,15 @@ export class GatewayUsersController {
   @Get(':email')
   @ApiOperation({ summary: 'Get user by email' })
   @UseGuards(GatewayAuthGuard)
-  async getByEmail(@Param('email') email: string) {
+  async getByEmail(
+    @ReqUser() actor: { email?: string; role?: string },
+    @Param('email') email: string,
+  ) {
+    const isSelf =
+      (actor.email || '').toLowerCase() === email.toLowerCase();
+    if (!isSelf && actor.role !== ROLES.ADMIN) {
+      throwHttpProblem(HttpStatus.FORBIDDEN, 'Forbidden');
+    }
     return this.rpc.request(UsersPatterns.GET_USER_BY_EMAIL, { email });
   }
 }
