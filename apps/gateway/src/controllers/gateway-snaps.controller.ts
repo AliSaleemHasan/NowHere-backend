@@ -88,9 +88,9 @@ export class GatewaySnapsController {
     return this.rpc.request(SnapsPatterns.FIND_ONE, { id, userId });
   }
 
+  // Owner-or-admin is enforced in snaps; this route only authenticates.
   @Delete(':id')
-  @UserRoles([ROLES.ADMIN])
-  @UseGuards(GatewayAuthGuard, RoleGuard)
+  @UseGuards(GatewayAuthGuard)
   async deleteOne(
     @ReqUser('id') userId: string,
     @ReqUser('role') role: string,

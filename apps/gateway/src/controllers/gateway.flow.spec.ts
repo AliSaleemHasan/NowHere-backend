@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { of } from 'rxjs';
@@ -7,8 +8,15 @@ import { GatewaySnapsController } from './gateway-snaps.controller';
 import { GatewayStorageController } from './gateway-storage.controller';
 import { AuthPatterns, SnapsPatterns, StoragePatterns, ROLES } from 'contracts';
 import { CreateSnapHttpDto } from '../dto/create-snap.dto';
-import { GeoPointType, NATS_CLIENT, Tags } from 'nowhere-common';
+import {
+  GeoPointType,
+  NATS_CLIENT,
+  RoleGuard,
+  Tags,
+  UserRoles,
+} from 'nowhere-common';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
+import { GatewayAuthGuard } from '../guards/auth.guard';
 
 describe('Gateway product flow (mocked NATS)', () => {
   let auth: GatewayAuthController;
@@ -125,12 +133,24 @@ describe('Gateway product flow (mocked NATS)', () => {
       includeExpired: false,
     });
 
-    await snaps.deleteOne('u1', ROLES.ADMIN, 'snap-1');
+    await snaps.deleteOne('u1', ROLES.USER, 'snap-1');
     expect(send).toHaveBeenCalledWith(SnapsPatterns.DELETE_ONE, {
       id: 'snap-1',
       userId: 'u1',
-      role: ROLES.ADMIN,
+      role: ROLES.USER,
     });
+  });
+
+  it('DELETE /snaps/:id requires auth but not admin', () => {
+    const handler = controllerHandler(GatewaySnapsController, 'deleteOne');
+    expect(handlerGuards(handler)).toEqual([GatewayAuthGuard]);
+    expect(handlerRoles(handler)).toBeUndefined();
+  });
+
+  it('DELETE /snaps (deleteAll) stays admin-only', () => {
+    const handler = controllerHandler(GatewaySnapsController, 'deleteAll');
+    expect(handlerGuards(handler)).toEqual([GatewayAuthGuard, RoleGuard]);
+    expect(handlerRoles(handler)).toEqual([ROLES.ADMIN]);
   });
 
   it('forwards optional idempotencyKey on create', async () => {
@@ -148,3 +168,26 @@ describe('Gateway product flow (mocked NATS)', () => {
     );
   });
 });
+
+type RouteHandler = (...args: never[]) => unknown;
+
+function controllerHandler(
+  Controller: { prototype: object },
+  name: string,
+): RouteHandler {
+  const handler: unknown = Reflect.get(Controller.prototype, name);
+  if (typeof handler !== 'function') {
+    throw new Error(`Missing handler ${name}`);
+  }
+  return handler as RouteHandler;
+}
+
+function handlerGuards(handler: RouteHandler): unknown[] {
+  const guards: unknown = Reflect.getMetadata(GUARDS_METADATA, handler);
+  return Array.isArray(guards) ? guards : [];
+}
+
+function handlerRoles(handler: RouteHandler): ROLES[] | undefined {
+  const roles: unknown = Reflect.getMetadata(UserRoles.KEY, handler);
+  return Array.isArray(roles) ? (roles as ROLES[]) : undefined;
+}
