@@ -8,19 +8,39 @@ import {
   SetSeenSchema,
   UserIdPayloadSchema,
   EmailPayloadSchema,
+  UpdateProfileSchema,
+  UpdateSettingsSchema,
   validateSchema,
 } from 'contracts';
 import { toBuffer } from 'nowhere-common';
+import { UsersSettingsService } from '../../settings/users-settings.service';
+import { UsersProfileService } from '../users-profile.service';
 import { UsersService } from '../users.service';
 
 @Controller()
 export class UsersNatsController {
-  constructor(private usersService: UsersService) {}
+  constructor(
+    private usersService: UsersService,
+    private usersProfile: UsersProfileService,
+    private usersSettings: UsersSettingsService,
+  ) {}
 
   @MessagePattern(UsersPatterns.GET_SETTINGS)
   async getSettings(@Payload() data: { id: string }) {
     const payload = validateSchema(UserIdPayloadSchema, data);
-    return await this.usersService.getUserSetting(payload.id);
+    return await this.usersSettings.getUserSetting(payload.id);
+  }
+
+  @MessagePattern(UsersPatterns.UPDATE_PROFILE)
+  async updateProfile(@Payload() data: unknown) {
+    const payload = validateSchema(UpdateProfileSchema, data);
+    return await this.usersProfile.updateProfile(payload);
+  }
+
+  @MessagePattern(UsersPatterns.UPDATE_SETTINGS)
+  async updateSettings(@Payload() data: unknown) {
+    const payload = validateSchema(UpdateSettingsSchema, data);
+    return await this.usersSettings.updateSettings(payload);
   }
 
   @MessagePattern(UsersPatterns.GET_ALL_USERS_INFO)
@@ -57,6 +77,9 @@ export class UsersNatsController {
 
   @MessagePattern(UsersPatterns.SET_USER_PHOTO)
   async setUserPhoto(@Payload() data: { image: unknown; userId: string }) {
-    return await this.usersService.setUserPhoto(toBuffer(data.image), data.userId);
+    return await this.usersService.setUserPhoto(
+      toBuffer(data.image),
+      data.userId,
+    );
   }
 }

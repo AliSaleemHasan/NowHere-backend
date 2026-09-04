@@ -29,4 +29,10 @@ export class Credential {
 
   @Column({ type: 'datetime', nullable: true })
   lastLoginAt: Date;
+
+  @Column({ type: 'int', default: 0 })
+  failedLoginCount: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  lockedUntil: Date | null;
 }

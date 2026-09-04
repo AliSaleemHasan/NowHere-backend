@@ -8,7 +8,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { In, Repository } from 'typeorm';
-import { Settings } from '../settings/entities/settings.entity';
 import { ClientProxy } from '@nestjs/microservices';
 import { SnapSeen } from './entities/snaps-seen.entity';
 import {
@@ -26,14 +25,10 @@ export class UsersService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     @InjectRepository(SnapSeen) private snapSeenRepo: Repository<SnapSeen>,
-    @InjectRepository(Settings)
-    private settingsRepository: Repository<Settings>,
     @Inject(NATS_CLIENT) private natsClient: ClientProxy,
   ) {}
 
-  async createUser(
-    createUserDto: CreateUserInfoPayload & { id?: string },
-  ) {
+  async createUser(createUserDto: CreateUserInfoPayload & { id?: string }) {
     const userId = createUserDto.id || createUserDto.authId;
     const email = createUserDto.email;
 
@@ -133,30 +128,6 @@ export class UsersService {
 
     const updatedUser = await this.userRepository.save(user);
     return { user: updatedUser, userImage: signedURL.signed };
-  }
-
-  async getUserSetting(id: string) {
-    const userSettings = await this.settingsRepository.findOne({
-      where: { user: { id } },
-      relations: { user: true },
-    });
-
-    if (userSettings) {
-      const { user, ...settings } = userSettings;
-      return { ...settings };
-    }
-
-    return this.createUserSettings(id);
-  }
-
-  async createUserSettings(userId: string) {
-    const user = await this.getUserById(userId);
-
-    const settings = this.settingsRepository.create({
-      user,
-    });
-
-    return await this.settingsRepository.save(settings);
   }
 
   async addSeen(seenObject: { snapId: string; userId: string }) {

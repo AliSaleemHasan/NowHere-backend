@@ -2,12 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { ForbiddenException, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  UnauthorizedException,
+  ConflictException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthenticationService } from './authentication.service';
 import { Credential } from './entities/user-credentials-entity';
 import { JetStreamPublisher } from 'nowhere-common';
-import { ROLES } from 'contracts';
+import { ProblemCodes, ROLES } from 'contracts';
+import { LOGIN_LOCKOUT_DURATION_MS } from './login-lockout';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
@@ -84,6 +91,85 @@ describe('AuthenticationService', () => {
     );
   });
 
+  it('does not create credential rows for unknown emails', async () => {
+    repo.findOneBy.mockResolvedValue(null);
+    await expect(service.login('missing@a.com', 'x')).rejects.toThrow(
+      'Invalid email or password',
+    );
+    expect(repo.save).not.toHaveBeenCalled();
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it('locks after 5 failed logins; the 6th is 423 ACCOUNT_LOCKED even if the password matches', async () => {
+    const stored = {
+      id: 'u1',
+      email: 'a@a.com',
+      password: 'hash',
+      isActive: true,
+      role: ROLES.USER,
+      failedLoginCount: 0,
+      lockedUntil: null as Date | null,
+    };
+    repo.findOneBy.mockImplementation(async () => ({ ...stored }));
+    repo.save.mockImplementation(async (row) => {
+      Object.assign(stored, row);
+      return stored;
+    });
+    (bcrypt.compare as jest.Mock).mockReset();
+    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+    for (let i = 0; i < 5; i++) {
+      await expect(service.login('a@a.com', 'wrong')).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
+    }
+    expect(stored.failedLoginCount).toBe(5);
+    expect(stored.lockedUntil).toBeInstanceOf(Date);
+    expect(stored.lockedUntil!.getTime()).toBeGreaterThan(Date.now());
+    expect(stored.lockedUntil!.getTime() - Date.now()).toBeLessThanOrEqual(
+      LOGIN_LOCKOUT_DURATION_MS,
+    );
+
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    try {
+      await service.login('a@a.com', 'Password123!');
+      throw new Error('expected login to reject');
+    } catch (err) {
+      expect(err).toBeInstanceOf(HttpException);
+      const exception = err as HttpException;
+      expect(exception.getStatus()).toBe(HttpStatus.LOCKED);
+      expect(exception.getResponse()).toEqual(
+        expect.objectContaining({
+          code: ProblemCodes.ACCOUNT_LOCKED,
+        }),
+      );
+    }
+    expect(bcrypt.compare).toHaveBeenCalledTimes(5);
+  });
+
+  it('resets the failure counter on a successful login', async () => {
+    repo.findOneBy.mockResolvedValue({
+      id: 'u1',
+      email: 'a@a.com',
+      password: 'hash',
+      isActive: true,
+      role: ROLES.USER,
+      failedLoginCount: 3,
+      lockedUntil: null,
+    });
+    repo.save.mockImplementation(async (row) => row);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+    await service.login('a@a.com', 'Password123!');
+
+    expect(repo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        failedLoginCount: 0,
+        lockedUntil: null,
+      }),
+    );
+  });
+
   it('rejects disabled accounts', async () => {
     repo.findOneBy.mockResolvedValue({
       id: 'u1',
@@ -93,9 +179,9 @@ describe('AuthenticationService', () => {
       role: ROLES.USER,
     });
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-    await expect(service.login('a@a.com', 'Password123!')).rejects.toBeInstanceOf(
-      ForbiddenException,
-    );
+    await expect(
+      service.login('a@a.com', 'Password123!'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('signup always persists USER and ignores a smuggled role', async () => {

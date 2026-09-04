@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { CreateUserInfoSchema } from './users.schemas';
+import {
+  CreateUserInfoSchema,
+  UpdateProfileSchema,
+  UpdateSettingsSchema,
+} from './users.schemas';
 
 // ── Message Patterns ──
 
@@ -15,6 +19,8 @@ export function isAdminRole(role?: string): boolean {
 // ── Schemas & Types ──
 
 export type CreateUserInfoPayload = z.infer<typeof CreateUserInfoSchema>;
+export type UpdateProfilePayload = z.infer<typeof UpdateProfileSchema>;
+export type UpdateSettingsPayload = z.infer<typeof UpdateSettingsSchema>;
 
 export interface UserDto {
   id: string;

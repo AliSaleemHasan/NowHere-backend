@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
+import { ChangePasswordService } from './change-password.service';
 import { AuthNatsController } from './controllers/auth.nats.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -33,7 +34,7 @@ import { AuthenticationEnvVariables } from './utils/auth-env-variables';
     }),
   ],
   controllers: [AuthNatsController],
-  providers: [AuthenticationService],
+  providers: [AuthenticationService, ChangePasswordService],
   exports: [AuthenticationService],
 })
 export class AuthenticationModule {}

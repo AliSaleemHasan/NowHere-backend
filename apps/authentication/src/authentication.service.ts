@@ -18,12 +18,17 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { isDuplicateKeyError, JetStreamPublisher, tryCatch } from 'nowhere-common';
+import {
+  isDuplicateKeyError,
+  JetStreamPublisher,
+  tryCatch,
+} from 'nowhere-common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GENERIC_CREDENTIALS_ERROR } from './auth-errors';
 import { Credential } from './entities/user-credentials-entity';
+import { hashPassword } from './hash-password';
+import { assertAccountUnlocked, withRecordedFailure } from './login-lockout';
 import { QueryFailedError, Repository } from 'typeorm';
-
-const GENERIC_LOGIN_ERROR = 'Invalid email or password';
 
 @Injectable()
 export class AuthenticationService implements OnModuleInit {
@@ -62,7 +67,7 @@ export class AuthenticationService implements OnModuleInit {
 
     const admin = this.userRepository.create({
       email,
-      password: await this.hashPassword(password),
+      password: await hashPassword(password),
       role: ROLES.ADMIN,
     });
 
@@ -114,19 +119,31 @@ export class AuthenticationService implements OnModuleInit {
       throw new QueryFailedError('get user by email', undefined, error);
     }
 
-    const passwordMatches = user
-      ? await bcrypt.compare(password, user.password)
-      : false;
+    if (!user) {
+      throw new UnauthorizedException(GENERIC_CREDENTIALS_ERROR);
+    }
 
-    if (!user || !passwordMatches) {
-      throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
+    assertAccountUnlocked(user);
+
+    const passwordMatches = await bcrypt.compare(password, user.password);
+    if (!passwordMatches) {
+      await this.userRepository.save({
+        ...user,
+        ...withRecordedFailure(user),
+      });
+      throw new UnauthorizedException(GENERIC_CREDENTIALS_ERROR);
     }
 
     if (!user.isActive) {
       throw new ForbiddenException('Account is disabled');
     }
 
-    await this.userRepository.save({ ...user, lastLoginAt: new Date() });
+    await this.userRepository.save({
+      ...user,
+      lastLoginAt: new Date(),
+      failedLoginCount: 0,
+      lockedUntil: null,
+    });
 
     const tokens = await this.generateTokens(user, user.id);
     return this.toAuthResponse({ user, tokens });
@@ -136,7 +153,7 @@ export class AuthenticationService implements OnModuleInit {
     const { error: createUserError, data: newUser } = await tryCatch(
       this.createUserCredentials({
         email: createUserDto.email,
-        password: await this.hashPassword(createUserDto.password),
+        password: await hashPassword(createUserDto.password),
         role: ROLES.USER,
       }),
     );
@@ -182,11 +199,6 @@ export class AuthenticationService implements OnModuleInit {
 
     const tokens = await this.generateTokens(user, user.id);
     return this.toAuthResponse({ user, tokens });
-  }
-
-  private async hashPassword(password: string): Promise<string> {
-    const salt = await bcrypt.genSalt();
-    return bcrypt.hash(password, salt);
   }
 
   async generateTokens(user: Partial<Credential>, Id: string) {

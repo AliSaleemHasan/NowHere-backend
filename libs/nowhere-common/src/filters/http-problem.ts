@@ -11,6 +11,12 @@ type HttpProblemBody = {
   code?: string;
 };
 
+class LockedException extends HttpException {
+  constructor(response: string | Record<string, unknown>) {
+    super(response, HttpStatus.LOCKED);
+  }
+}
+
 export function readProblemCode(source: unknown): string | undefined {
   if (typeof source !== 'object' || source === null) {
     return undefined;
@@ -36,6 +42,9 @@ export function httpProblem(
   }
   if (status === HttpStatus.NOT_FOUND) {
     return new NotFoundException(body);
+  }
+  if (status === HttpStatus.LOCKED) {
+    return new LockedException(body);
   }
   return new HttpException(body, status);
 }

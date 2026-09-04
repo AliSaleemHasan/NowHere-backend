@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthNatsController } from './controllers/auth.nats.controller';
 import { AuthenticationService } from './authentication.service';
+import { ChangePasswordService } from './change-password.service';
 import { ROLES as Roles } from 'contracts';
 
 describe('AuthNatsController', () => {
   let controller: AuthNatsController;
   let service: AuthenticationService;
+  let changePassword: ChangePasswordService;
 
   const mockUser = {
     id: 'user-id',
@@ -28,11 +30,18 @@ describe('AuthNatsController', () => {
             refreshToken: jest.fn().mockResolvedValue(authResponse),
           },
         },
+        {
+          provide: ChangePasswordService,
+          useValue: {
+            changePassword: jest.fn().mockResolvedValue({ success: true }),
+          },
+        },
       ],
     }).compile();
 
     controller = module.get<AuthNatsController>(AuthNatsController);
     service = module.get<AuthenticationService>(AuthenticationService);
+    changePassword = module.get<ChangePasswordService>(ChangePasswordService);
   });
 
   it('should be defined', () => {
@@ -69,6 +78,19 @@ describe('AuthNatsController', () => {
       const result = await controller.refreshToken({ token: 't' });
       expect(service.refreshToken).toHaveBeenCalledWith('t');
       expect(result).toEqual(authResponse);
+    });
+  });
+
+  describe('changePassword', () => {
+    it('should call changePasswordService', async () => {
+      const dto = {
+        userId: 'user-id',
+        currentPassword: 'Password123!',
+        newPassword: 'Password456!',
+      };
+      const result = await controller.changePassword(dto);
+      expect(changePassword.changePassword).toHaveBeenCalledWith(dto);
+      expect(result).toEqual({ success: true });
     });
   });
 });

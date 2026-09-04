@@ -6,4 +6,6 @@ export const UsersPatterns = {
   SET_USER_PHOTO: 'users.setUserPhoto',
   SET_SEEN_SNAP: 'users.setSeenSnap',
   NOT_SEEN_SNAPS: 'users.notSeenSnaps',
+  UPDATE_PROFILE: 'users.updateProfile',
+  UPDATE_SETTINGS: 'users.updateSettings',
 } as const;

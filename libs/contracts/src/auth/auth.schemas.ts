@@ -19,3 +19,9 @@ export const SignupSchema = z.object({
   lastName: z.string(),
   username: z.string().optional(),
 });
+
+export const ChangePasswordSchema = z.object({
+  userId: z.string().min(1),
+  currentPassword: z.string().min(1),
+  newPassword: PasswordSchema,
+});

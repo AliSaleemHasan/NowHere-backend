@@ -31,4 +31,17 @@ describe('HttpExceptionMapper', () => {
     expect(problem.detail).toBe('boom');
     expect(problem.code).toBeUndefined();
   });
+
+  it('uses Locked as the title for 423 ACCOUNT_LOCKED', () => {
+    const exception = httpProblem(
+      423,
+      'Account is locked',
+      ProblemCodes.ACCOUNT_LOCKED,
+    );
+    const problem = mapper.map(exception, '/auth/login');
+    expect(problem.status).toBe(423);
+    expect(problem.title).toBe('Locked');
+    expect(problem.detail).toBe('Account is locked');
+    expect(problem.code).toBe(ProblemCodes.ACCOUNT_LOCKED);
+  });
 });

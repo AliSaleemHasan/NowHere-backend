@@ -1,4 +1,5 @@
 import { HttpException } from '@nestjs/common';
+import { STATUS_CODES } from 'http';
 import { readProblemCode } from '../http-problem';
 import { ExceptionMapper, ProblemDetails } from '../problem-details.interface';
 
@@ -33,7 +34,7 @@ export class HttpExceptionMapper implements ExceptionMapper<HttpException> {
 
     const problem: ProblemDetails = {
       type: 'about:blank',
-      title: exception.name.replace(/Exception$/, ''),
+      title: STATUS_CODES[status] ?? exception.name.replace(/Exception$/, ''),
       status: status,
       detail: detail,
       instance: requestUrl,

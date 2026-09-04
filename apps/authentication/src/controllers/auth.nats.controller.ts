@@ -9,13 +9,18 @@ import {
   ValidateUserSchema,
   ValidateTokenSchema,
   SignupSchema,
+  ChangePasswordSchema,
   validateSchema,
 } from 'contracts';
 import { AuthenticationService } from '../authentication.service';
+import { ChangePasswordService } from '../change-password.service';
 
 @Controller()
 export class AuthNatsController {
-  constructor(private readonly authService: AuthenticationService) {}
+  constructor(
+    private readonly authService: AuthenticationService,
+    private readonly changePasswordService: ChangePasswordService,
+  ) {}
 
   @MessagePattern(AuthPatterns.VALIDATE_USER)
   async validateUser(
@@ -37,5 +42,11 @@ export class AuthNatsController {
   ): Promise<AuthResponse> {
     const payload = validateSchema(ValidateTokenSchema, data);
     return await this.authService.refreshToken(payload.token);
+  }
+
+  @MessagePattern(AuthPatterns.CHANGE_PASSWORD)
+  async changePassword(@Payload() data: unknown) {
+    const payload = validateSchema(ChangePasswordSchema, data);
+    return await this.changePasswordService.changePassword(payload);
   }
 }

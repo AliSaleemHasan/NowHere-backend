@@ -1,10 +1,14 @@
 import { Test } from '@nestjs/testing';
-import { UsersService } from '../users.service';
+import { UsersSettingsService } from '../../settings/users-settings.service';
 import { UsersNatsController } from '../controllers/users.nats.controller';
+import { UsersProfileService } from '../users-profile.service';
+import { UsersService } from '../users.service';
 
 describe('UsersNatsController (unit)', () => {
   let controller: UsersNatsController;
   let service: jest.Mocked<UsersService>;
+  let profile: jest.Mocked<UsersProfileService>;
+  let settings: jest.Mocked<UsersSettingsService>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -17,10 +21,20 @@ describe('UsersNatsController (unit)', () => {
             getUserById: jest.fn(),
             getUserWithImage: jest.fn(),
             getAllUsers: jest.fn(),
-            getUserSetting: jest.fn(),
             getSeen: jest.fn(),
             addSeen: jest.fn(),
             setUserPhoto: jest.fn(),
+          },
+        },
+        {
+          provide: UsersProfileService,
+          useValue: { updateProfile: jest.fn() },
+        },
+        {
+          provide: UsersSettingsService,
+          useValue: {
+            getUserSetting: jest.fn(),
+            updateSettings: jest.fn(),
           },
         },
       ],
@@ -28,10 +42,15 @@ describe('UsersNatsController (unit)', () => {
 
     controller = module.get(UsersNatsController);
     service = module.get(UsersService);
+    profile = module.get(UsersProfileService);
+    settings = module.get(UsersSettingsService);
   });
 
   it('getByEmail returns service result', async () => {
-    service.getUserByEmail.mockResolvedValue({ id: 'u1', email: 'a@a.com' } as any);
+    service.getUserByEmail.mockResolvedValue({
+      id: 'u1',
+      email: 'a@a.com',
+    } as any);
     const res = await controller.getUserByEmailNats({ email: 'a@a.com' });
     expect(service.getUserByEmail).toHaveBeenCalledWith('a@a.com');
     expect(res).toEqual({ id: 'u1', email: 'a@a.com' });
@@ -51,5 +70,33 @@ describe('UsersNatsController (unit)', () => {
     service.getAllUsers.mockResolvedValue([{ id: 'u1' }] as any);
     const res = await controller.getAllUsersInfo();
     expect(res).toEqual({ users: [{ id: 'u1' }] });
+  });
+
+  it('updateProfile delegates after validation', async () => {
+    profile.updateProfile.mockResolvedValue({
+      id: 'u1',
+      firstName: 'Ada',
+    } as any);
+    const res = await controller.updateProfile({
+      userId: 'u1',
+      firstName: 'Ada',
+    });
+    expect(profile.updateProfile).toHaveBeenCalledWith({
+      userId: 'u1',
+      firstName: 'Ada',
+    });
+    expect(res).toEqual({ id: 'u1', firstName: 'Ada' });
+  });
+
+  it('updateSettings rejects out-of-enum values', async () => {
+    await expect(
+      controller.updateSettings({
+        userId: 'u1',
+        maxDistance: 123,
+        newSnapDistance: 250,
+        snapDisappearTime: 1,
+      }),
+    ).rejects.toThrow();
+    expect(settings.updateSettings).not.toHaveBeenCalled();
   });
 });

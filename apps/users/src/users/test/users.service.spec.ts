@@ -4,7 +4,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
 import { SnapSeen } from '../entities/snaps-seen.entity';
-import { Settings } from '../../settings/entities/settings.entity';
 import { NotFoundException } from '@nestjs/common';
 import { NATS_CLIENT } from 'nowhere-common';
 
@@ -12,12 +11,14 @@ describe('UsersService (unit)', () => {
   let service: UsersService;
   let userRepo: jest.Mocked<Repository<User>>;
   let snapSeenRepo: jest.Mocked<Repository<SnapSeen>>;
-  let settingsRepo: jest.Mocked<Repository<Settings>>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [
-        { provide: NATS_CLIENT, useValue: { send: jest.fn(), emit: jest.fn() } },
+        {
+          provide: NATS_CLIENT,
+          useValue: { send: jest.fn(), emit: jest.fn() },
+        },
         UsersService,
         {
           provide: getRepositoryToken(User),
@@ -37,22 +38,12 @@ describe('UsersService (unit)', () => {
             findOne: jest.fn(),
           },
         },
-        {
-          provide: getRepositoryToken(Settings),
-          useValue: {
-            create: jest.fn(),
-            save: jest.fn(),
-            find: jest.fn(),
-            findOne: jest.fn(),
-          },
-        },
       ],
     }).compile();
 
     service = module.get(UsersService);
     userRepo = module.get(getRepositoryToken(User));
     snapSeenRepo = module.get(getRepositoryToken(SnapSeen));
-    settingsRepo = module.get(getRepositoryToken(Settings));
   });
 
   it('createUser creates and saves a user', async () => {
@@ -70,7 +61,10 @@ describe('UsersService (unit)', () => {
 
     userRepo.findOne.mockResolvedValue(null);
     const result = await service.createUser(dto);
-    expect(userRepo.create).toHaveBeenCalledWith({ ...dto, id: dto.id || dto.authId });
+    expect(userRepo.create).toHaveBeenCalledWith({
+      ...dto,
+      id: dto.id || dto.authId,
+    });
     expect(userRepo.save).toHaveBeenCalledWith(entity);
     expect(result).toEqual(entity);
   });

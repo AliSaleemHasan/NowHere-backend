@@ -1,12 +1,13 @@
 import { ROLES } from 'contracts/users';
 import { z } from 'zod';
-import { SignupSchema } from './auth.schemas';
+import { ChangePasswordSchema, SignupSchema } from './auth.schemas';
 
 // ── Message Patterns ──
 
 // ── Payload Schemas & Types ──
 
 export type SignupPayload = z.infer<typeof SignupSchema>;
+export type ChangePasswordPayload = z.infer<typeof ChangePasswordSchema>;
 
 export interface AuthTokens {
   accessToken: string;

@@ -1,8 +1,11 @@
 import {
+  Body,
   Controller,
   Get,
-  Put,
   Param,
+  Patch,
+  Post,
+  Put,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -13,27 +16,51 @@ import {
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UsersPatterns, ROLES, UserDto } from 'contracts';
+import { AuthPatterns, UsersPatterns, ROLES, UserDto } from 'contracts';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
+import { ChangePasswordDto, UpdateProfileDto, UpdateSettingsDto } from '../dto';
 
 @Controller('users')
 export class GatewayUsersController {
   constructor(private readonly rpc: GatewayRpcClient) {}
 
-  @Get('id/:id')
+  @Get('settings')
   @UseGuards(GatewayAuthGuard)
-  async getUserById(@Param('id') id: string) {
-    return this.rpc.request<{ user: UserDto; userImage: string }, { id: string }>(
-      UsersPatterns.GET_USER_BY_ID,
-      { id },
-    );
+  async getUserSettings(@ReqUser('id') id: string) {
+    return this.rpc.request(UsersPatterns.GET_SETTINGS, { id });
   }
 
-  @Get()
-  @UserRoles([ROLES.ADMIN])
-  @UseGuards(GatewayAuthGuard, RoleGuard)
-  async getAllUsers() {
-    return this.rpc.request(UsersPatterns.GET_ALL_USERS_INFO, {});
+  @Put('settings')
+  @UseGuards(GatewayAuthGuard)
+  async updateUserSettings(
+    @ReqUser('id') id: string,
+    @Body() body: UpdateSettingsDto,
+  ) {
+    return this.rpc.request(UsersPatterns.UPDATE_SETTINGS, {
+      userId: id,
+      ...body,
+    });
+  }
+
+  @Patch('me')
+  @UseGuards(GatewayAuthGuard)
+  async updateMe(@ReqUser('id') id: string, @Body() body: UpdateProfileDto) {
+    return this.rpc.request(UsersPatterns.UPDATE_PROFILE, {
+      userId: id,
+      ...body,
+    });
+  }
+
+  @Post('me/password')
+  @UseGuards(GatewayAuthGuard)
+  async changePassword(
+    @ReqUser('id') id: string,
+    @Body() body: ChangePasswordDto,
+  ) {
+    return this.rpc.request(AuthPatterns.CHANGE_PASSWORD, {
+      userId: id,
+      ...body,
+    });
   }
 
   @Put('image')
@@ -57,10 +84,20 @@ export class GatewayUsersController {
     });
   }
 
-  @Get('settings')
+  @Get('id/:id')
   @UseGuards(GatewayAuthGuard)
-  async getUserSettings(@ReqUser('id') id: string) {
-    return this.rpc.request(UsersPatterns.GET_SETTINGS, { id });
+  async getUserById(@Param('id') id: string) {
+    return this.rpc.request<
+      { user: UserDto; userImage: string },
+      { id: string }
+    >(UsersPatterns.GET_USER_BY_ID, { id });
+  }
+
+  @Get()
+  @UserRoles([ROLES.ADMIN])
+  @UseGuards(GatewayAuthGuard, RoleGuard)
+  async getAllUsers() {
+    return this.rpc.request(UsersPatterns.GET_ALL_USERS_INFO, {});
   }
 
   @Get(':email')
