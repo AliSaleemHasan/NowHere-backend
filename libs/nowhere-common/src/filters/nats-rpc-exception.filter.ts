@@ -1,11 +1,13 @@
 import {
+  ArgumentsHost,
   Catch,
   HttpException,
   HttpStatus,
   RpcExceptionFilter,
 } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
-import { Observable, throwError } from 'rxjs';
+import { EMPTY, Observable, throwError } from 'rxjs';
+import { HttpExceptionFilter } from './http-exception-filter';
 import { readProblemCode } from './http-problem';
 
 export interface SerializedRpcError {
@@ -76,7 +78,16 @@ function serializeUnknown(exception: unknown): SerializedRpcError {
 
 @Catch()
 export class NatsRpcExceptionFilter implements RpcExceptionFilter {
-  catch(exception: unknown): Observable<never> {
+  private readonly httpFilter = new HttpExceptionFilter();
+
+  catch(exception: unknown, host?: ArgumentsHost): Observable<never> {
+    // This filter is registered on the HTTP app as well as NATS. On HTTP it
+    // must write a response; returning an Observable leaves the socket open.
+    if (host && typeof host.getType === 'function' && host.getType() === 'http') {
+      this.httpFilter.catch(exception, host);
+      return EMPTY as Observable<never>;
+    }
+
     const payload = serializeUnknown(exception);
     return throwError(() => new RpcException(payload));
   }
