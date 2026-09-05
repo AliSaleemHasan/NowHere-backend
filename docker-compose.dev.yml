@@ -75,7 +75,7 @@ services:
       target: dev
     environment:
       NODE_ENV: development
-      ENABLE_SEED: ${ENABLE_SEED:-false}
+      ENABLE_SEED: ${ENABLE_SEED:-true}
       NATS_URL: nats://${NATS_TOKEN:-dev_nats_token}@nats:4222
     volumes:
       - ./apps/snaps:/usr/src/apps/snaps

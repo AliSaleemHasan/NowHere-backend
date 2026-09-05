@@ -80,6 +80,10 @@ sql_data
 uploads
 tmp
 
+# local Netherlands demo seeder (never commit)
+scripts/demo-nl-seed.mjs
+scripts/.demo-nl-assets/
+
 
 .nx/cache
 .nx/workspace-data

@@ -1,221 +1,207 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { readdirSync } from 'fs';
-import { join } from 'path';
 import { InjectModel } from '@nestjs/mongoose';
-import { Snap } from '../snaps/schemas/snap.schema';
-import { Model } from 'mongoose';
 import { ClientProxy } from '@nestjs/microservices';
+import { Model } from 'mongoose';
 import {
-  UsersPatterns,
   AuthPatterns,
   AuthResponse,
   SignupPayload,
-  UserSettingsDto,
+  UsersPatterns,
 } from 'contracts';
 import { NATS_CLIENT, natsRequest, Tags } from 'nowhere-common';
+import { Snap, SnapResolution, SnapStatus } from '../snaps/schemas/snap.schema';
 import { addDays } from '../snaps/snaps-near-params';
+
+const SEED_MARKER = '[nowhere-seed]';
+const SEED_USER_COUNT = 8;
+const POINTS_PER_REGION = 4;
+const SEED_TTL_DAYS = 7;
+const SEED_PASSWORD = 'Password123!';
+const SEED_TAGS = [
+  Tags.SOCIAL,
+  Tags.INTERESTING,
+  Tags.HIDDEN_GEM,
+  Tags.FINDINGS,
+  Tags.LOST,
+  Tags.PROMOTION,
+] as const;
+
+type SeedUser = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+};
+
+export type SeedResult = {
+  skipped: boolean;
+  users: number;
+  snaps: number;
+};
+
+const FIRST_NAMES = [
+  'Ada',
+  'Grace',
+  'Linus',
+  'Niels',
+  'Marie',
+  'Alan',
+  'Hedy',
+  'Nikola',
+];
 
 @Injectable()
 export class SeedService {
-  private readonly logger: Logger = new Logger(SeedService.name);
+  private readonly logger = new Logger(SeedService.name);
 
   constructor(
-    @InjectModel(Snap.name) private SnapsModel: Model<Snap>,
-    @Inject(NATS_CLIENT) private natsClient: ClientProxy,
+    @InjectModel(Snap.name) private readonly snapsModel: Model<Snap>,
+    @Inject(NATS_CLIENT) private readonly natsClient: ClientProxy,
   ) {}
 
-  generateLocations = () => {
-    const regions = {
+  generateLocations(): number[][] {
+    const regions: Record<string, [number, number]> = {
       hungary: [17.650397, 47.687457],
       netherlands: [4.904138, 52.367573],
       syria: [36.2765, 33.5138],
       italy: [12.496366, 41.902782],
       germany: [13.404954, 52.520008],
     };
+    const earthKm = 6371;
+    const radiusKm = 8;
+    const points: number[][] = [];
 
-    const EARTH_RADIUS = 6371;
-    const radiusKm = 20;
-    const pointsPerRegion = 400;
-
-    function generateRandomPoint(centerLng, centerLat, radiusKm) {
-      const radiusInRad = radiusKm / EARTH_RADIUS;
-      const bearing = Math.random() * 2 * Math.PI;
-      const distance = Math.random() * radiusInRad;
-
-      const lat1 = deg2rad(centerLat);
-      const lng1 = deg2rad(centerLng);
-
-      const lat2 = Math.asin(
-        Math.sin(lat1) * Math.cos(distance) +
-          Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
-      );
-
-      const lng2 =
-        lng1 +
-        Math.atan2(
-          Math.sin(bearing) * Math.sin(distance) * Math.cos(lat1),
-          Math.cos(distance) - Math.sin(lat1) * Math.sin(lat2),
+    for (const [lng, lat] of Object.values(regions)) {
+      for (let i = 0; i < POINTS_PER_REGION; i++) {
+        const radiusInRad = radiusKm / earthKm;
+        const bearing = Math.random() * 2 * Math.PI;
+        const distance = Math.random() * radiusInRad;
+        const lat1 = (lat * Math.PI) / 180;
+        const lng1 = (lng * Math.PI) / 180;
+        const lat2 = Math.asin(
+          Math.sin(lat1) * Math.cos(distance) +
+            Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing),
         );
-
-      return [rad2deg(lng2), rad2deg(lat2)];
-    }
-
-    function deg2rad(deg) {
-      return deg * (Math.PI / 180);
-    }
-
-    function rad2deg(rad) {
-      return rad * (180 / Math.PI);
-    }
-
-    function generateAllLocations() {
-      const allPoints: number[][] = [];
-      for (const [region, [lng, lat]] of Object.entries(regions)) {
-        for (let i = 0; i < pointsPerRegion; i++) {
-          allPoints.push(generateRandomPoint(lng, lat, radiusKm));
-        }
+        const lng2 =
+          lng1 +
+          Math.atan2(
+            Math.sin(bearing) * Math.sin(distance) * Math.cos(lat1),
+            Math.cos(distance) - Math.sin(lat1) * Math.sin(lat2),
+          );
+        points.push([(lng2 * 180) / Math.PI, (lat2 * 180) / Math.PI]);
       }
-      return allPoints;
     }
-
-    return generateAllLocations();
-  };
-
-  generateNames(numOfUsers: number = 100): string[] {
-    const names = [
-      'ali',
-      'yara',
-      'yousef',
-      'manar',
-      'nisreen',
-      'ahmad',
-      'haidar',
-      'yasmin',
-      'aya',
-      'leen',
-      'hassan',
-      'hasan',
-      'husen',
-      'adam',
-      'manuel',
-      'laszlo',
-      'anees',
-      'reema',
-      'hala',
-      'kareem',
-      'selvester',
-      'darwen',
-      'zakaraia',
-    ];
-
-    const usersNames: string[] = [];
-    for (let i = 0; i < numOfUsers; i++) {
-      usersNames[i] =
-        `${names[Math.floor(Math.random() * names.length)]} ${names[Math.floor(Math.random() * names.length)]}`;
-    }
-    return usersNames;
+    return points;
   }
 
-  async seed() {
-    const user_names = this.generateNames();
-
-    for (let i = 0; i < user_names.length; i++) {
-      const name = user_names[i];
-      try {
-        await natsRequest<AuthResponse, SignupPayload>(
-          this.natsClient,
-          AuthPatterns.SIGNUP,
-          {
-            email: `${name.split(' ').join('_')}@test.com`,
-            password: 'Password123!',
-            firstName: name.split(' ')[0],
-            lastName: name.split(' ')[1],
+  async seed(): Promise<SeedResult> {
+    const removed = await this.snapsModel.deleteMany({
+      $or: [
+        { description: { $regex: /^\[nowhere-seed\]/ } },
+        {
+          description: {
+            $regex: /^This is a small description for snap posted by a user/,
           },
-        );
-      } catch (e) {
-        // user may already exist
-      }
+        },
+      ],
+    });
+    if (removed.deletedCount) {
+      this.logger.log(`Removed ${removed.deletedCount} previous demo snaps.`);
     }
 
-    const usersRes = await natsRequest<{
-      users: Array<{
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string;
-      }>;
-    }>(this.natsClient, UsersPatterns.GET_ALL_USERS_INFO, {});
-    const users = usersRes?.users || [];
-
-    const locations = this.generateLocations();
-    let uploadedSnaps: string[] = [];
-    try {
-      uploadedSnaps = readdirSync(join(__dirname, '..', '..', '..', 'uploads'));
-    } catch {
-      uploadedSnaps = ['default_snap.jpg'];
+    const users = await this.ensureSeedUsers();
+    if (users.length === 0) {
+      this.logger.error('Seed created no users; not inserting snaps.');
+      return { skipped: false, users: 0, snaps: 0 };
     }
 
-    const new_snaps: Snap[] = [];
-    const disappearDaysByUser = new Map<string, number>();
-    for (let i = 0; i < locations.length; i++) {
-      try {
-        const current_user = users[i % users.length];
-        if (!current_user?.id) continue;
+    const now = new Date();
+    const docs = this.generateLocations().map((coordinates, index) => {
+      const user = users[index % users.length];
+      return {
+        _userId: user.id,
+        description: `${SEED_MARKER} ${user.firstName} ${user.lastName}`,
+        snaps: ['seed/placeholder.jpg'],
+        location: { type: 'Point', coordinates },
+        tag: SEED_TAGS[index % SEED_TAGS.length],
+        status: SnapStatus.SUCCESS,
+        resolution: SnapResolution.OPEN,
+        expiresAt: addDays(now, SEED_TTL_DAYS),
+      };
+    });
 
-        const disappearDays = await this.disappearDaysFor(
-          current_user.id,
-          disappearDaysByUser,
-        );
-        const newSnap = await this.SnapsModel.create({
-          _userId: current_user.id,
-          description: `This is a small description for snap posted by a user with name ${current_user.firstName} ${current_user.lastName} and email ${current_user.email}`,
-          snaps: new Array(Math.floor(Math.random() * 4) || 1)
-            .fill(null)
-            .map(
-              (_, index) =>
-                `uploads/${uploadedSnaps[index % uploadedSnaps.length]}`,
-            ),
-          location: {
-            type: 'Point',
-            coordinates: locations[i],
-          },
-          tag: Tags[
-            Object.keys(Tags)[
-              Math.floor(Math.random() * Object.keys(Tags).length)
-            ]
-          ],
-          expiresAt: addDays(new Date(), disappearDays),
-        });
-        new_snaps.push(newSnap);
-      } catch (e) {
-        this.logger.error(e instanceof Error ? e.message : e);
-      }
-    }
-    return new_snaps;
+    const inserted = await this.snapsModel.insertMany(docs, { ordered: false });
+    this.logger.log(
+      `Seeded ${inserted.length} snaps for ${users.length} users.`,
+    );
+    return { skipped: false, users: users.length, snaps: inserted.length };
   }
 
-  private async disappearDaysFor(
-    userId: string,
-    cache: Map<string, number>,
-  ): Promise<number> {
-    const cached = cache.get(userId);
-    if (cached !== undefined) {
-      return cached;
+  private async ensureSeedUsers(): Promise<SeedUser[]> {
+    const users: SeedUser[] = [];
+    for (let i = 0; i < SEED_USER_COUNT; i++) {
+      const firstName = FIRST_NAMES[i];
+      const lastName = `Seed${i}`;
+      const email = `seed.user.${i}@nowhere.test`;
+      const created = await this.signupOrLoad({
+        email,
+        firstName,
+        lastName,
+      });
+      if (created) users.push(created);
     }
-    let days = 1;
+    return users;
+  }
+
+  private async signupOrLoad(input: {
+    email: string;
+    firstName: string;
+    lastName: string;
+  }): Promise<SeedUser | null> {
     try {
-      const settings = await natsRequest<UserSettingsDto, { id: string }>(
+      const res = await natsRequest<AuthResponse, SignupPayload>(
         this.natsClient,
-        UsersPatterns.GET_SETTINGS,
-        { id: userId },
+        AuthPatterns.SIGNUP,
+        {
+          email: input.email,
+          password: SEED_PASSWORD,
+          firstName: input.firstName,
+          lastName: input.lastName,
+        },
       );
-      if (settings?.snapDisappearTime) {
-        days = settings.snapDisappearTime;
+      if (res?.user?.id) {
+        return {
+          id: res.user.id,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+        };
       }
     } catch {
-      days = 1;
+      this.logger.warn(`Signup skipped for ${input.email}, loading existing.`);
     }
-    cache.set(userId, days);
-    return days;
+
+    try {
+      const existing = await natsRequest<{ id: string }, { email: string }>(
+        this.natsClient,
+        UsersPatterns.GET_USER_BY_EMAIL,
+        { email: input.email },
+      );
+      if (existing?.id) {
+        return {
+          id: existing.id,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: input.email,
+        };
+      }
+    } catch (err) {
+      this.logger.warn(
+        `Could not resolve seed user ${input.email}: ${
+          err instanceof Error ? err.message : err
+        }`,
+      );
+    }
+    return null;
   }
 }
