@@ -3,6 +3,7 @@ export * from './create-credential.dto';
 export * from './create-snap.dto';
 export * from './presigned-upload.dto';
 export * from './update-profile.dto';
+export * from './set-user-photo.dto';
 export * from './update-settings.dto';
 export * from './change-password.dto';
 export * from './report-snap.dto';

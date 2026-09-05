@@ -240,6 +240,14 @@ describe('Gateway product flow (mocked NATS)', () => {
     ).toEqual([GatewayAuthGuard]);
   });
 
+  it('forwards a profile image storage key, not a file buffer', async () => {
+    await users.updateUserImage('u1', { key: 'profile/u1/a.jpg' });
+    expect(send).toHaveBeenCalledWith(UsersPatterns.SET_USER_PHOTO, {
+      key: 'profile/u1/a.jpg',
+      userId: 'u1',
+    });
+  });
+
   it('forwards optional idempotencyKey on create', async () => {
     const key = '11111111-1111-4111-8111-111111111111';
     await snaps.create('u1', {

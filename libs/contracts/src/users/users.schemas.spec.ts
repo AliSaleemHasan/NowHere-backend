@@ -1,4 +1,8 @@
-import { UpdateProfileSchema, UpdateSettingsSchema } from './users.schemas';
+import {
+  SetUserPhotoSchema,
+  UpdateProfileSchema,
+  UpdateSettingsSchema,
+} from './users.schemas';
 
 describe('users contracts', () => {
   it('rejects settings values outside the bound enums', () => {
@@ -30,5 +34,15 @@ describe('users contracts', () => {
       bio: 'hello',
     });
     expect(patch.success).toBe(true);
+  });
+
+  it('requires a userId and object key for profile photos', () => {
+    expect(SetUserPhotoSchema.safeParse({ userId: 'u1' }).success).toBe(false);
+    expect(
+      SetUserPhotoSchema.safeParse({
+        userId: 'u1',
+        key: 'profile/u1/a.jpg',
+      }).success,
+    ).toBe(true);
   });
 });

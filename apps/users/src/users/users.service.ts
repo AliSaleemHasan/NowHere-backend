@@ -12,11 +12,15 @@ import { ClientProxy } from '@nestjs/microservices';
 import { SnapSeen } from './entities/snaps-seen.entity';
 import {
   CreateUserInfoPayload,
+  SetUserPhotoPayload,
   StoragePatterns,
-  UploadPhotoPayload,
   SignedUrlPayload,
 } from 'contracts';
-import { NATS_CLIENT, natsRequest } from 'nowhere-common';
+import {
+  NATS_CLIENT,
+  assertProfileImageKey,
+  natsRequest,
+} from 'nowhere-common';
 
 @Injectable()
 export class UsersService {
@@ -98,35 +102,38 @@ export class UsersService {
     return await this.userRepository.find();
   }
 
-  async setUserPhoto(imageFile: Buffer, userId: string) {
-    const imageKey = await natsRequest<{ key: string }, UploadPhotoPayload>(
-      this.natsClient,
-      StoragePatterns.UPLOAD_PHOTO,
-      {
-        image: imageFile,
-        userId,
-      },
-    );
+  async setUserPhoto(payload: SetUserPhotoPayload) {
+    assertProfileImageKey(payload.key, payload.userId);
 
-    if (!imageKey?.key)
-      throw new BadRequestException('Error loading Image to storage');
+    const user = await this.getUserById(payload.userId);
+    const previousKey = user.image;
+    user.image = payload.key;
+    const updatedUser = await this.userRepository.save(user);
+
+    if (previousKey && previousKey !== payload.key) {
+      try {
+        await natsRequest<void, { keys: string[] }>(
+          this.natsClient,
+          StoragePatterns.DELETE_FILES,
+          { keys: [previousKey] },
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Failed to delete previous profile image ${previousKey}: ${err?.message}`,
+        );
+      }
+    }
 
     const signedURL = await natsRequest<{ signed: string }, SignedUrlPayload>(
       this.natsClient,
       StoragePatterns.GET_SIGNED_URL,
-      { key: imageKey.key },
+      { key: payload.key },
     );
 
-    if (!signedURL)
+    if (!signedURL?.signed) {
       throw new BadRequestException('Error Getting image signedURL..');
+    }
 
-    const user = await this.userRepository.preload({
-      id: userId,
-      image: imageKey.key,
-    });
-    if (!user) throw new NotFoundException('User not found');
-
-    const updatedUser = await this.userRepository.save(user);
     return { user: updatedUser, userImage: signedURL.signed };
   }
 

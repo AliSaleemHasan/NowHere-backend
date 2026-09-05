@@ -107,6 +107,14 @@ export function assertOwnedObjectKey(
   }
 }
 
+export function assertProfileImageKey(key: string, userId: string): void {
+  assertOwnedObjectKey(key, userId);
+  const parts = key.split('/').filter(Boolean);
+  if (parts[0] !== 'profile') {
+    throw new ForbiddenException('Object key is not a profile image');
+  }
+}
+
 export function assertSnapImageKeys(keys: string[], userId: string): void {
   if (
     !Array.isArray(keys) ||

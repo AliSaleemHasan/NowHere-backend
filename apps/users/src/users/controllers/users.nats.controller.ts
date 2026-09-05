@@ -15,9 +15,9 @@ import {
   CreateReportSchema,
   ExportUserSchema,
   PurgeUserSchema,
+  SetUserPhotoSchema,
   validateSchema,
 } from 'contracts';
-import { toBuffer } from 'nowhere-common';
 import { UsersSettingsService } from '../../settings/users-settings.service';
 import { UsersProfileService } from '../users-profile.service';
 import { UsersService } from '../users.service';
@@ -89,11 +89,9 @@ export class UsersNatsController {
   }
 
   @MessagePattern(UsersPatterns.SET_USER_PHOTO)
-  async setUserPhoto(@Payload() data: { image: unknown; userId: string }) {
-    return await this.usersService.setUserPhoto(
-      toBuffer(data.image),
-      data.userId,
-    );
+  async setUserPhoto(@Payload() data: unknown) {
+    const payload = validateSchema(SetUserPhotoSchema, data);
+    return await this.usersService.setUserPhoto(payload);
   }
 
   @MessagePattern(UsersPatterns.ADD_BOOKMARK)

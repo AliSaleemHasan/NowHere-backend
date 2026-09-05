@@ -115,6 +115,29 @@ describe('UsersNatsController (unit)', () => {
     expect(res).toEqual({ id: 'u1', firstName: 'Ada' });
   });
 
+  it('setUserPhoto rejects a payload without a key', async () => {
+    await expect(
+      controller.setUserPhoto({ userId: 'u1' } as any),
+    ).rejects.toThrow();
+    expect(service.setUserPhoto).not.toHaveBeenCalled();
+  });
+
+  it('setUserPhoto validates the key payload then delegates', async () => {
+    service.setUserPhoto.mockResolvedValue({
+      user: { id: 'u1' },
+      userImage: 'https://signed',
+    } as any);
+    const res = await controller.setUserPhoto({
+      userId: 'u1',
+      key: 'profile/u1/a.jpg',
+    });
+    expect(service.setUserPhoto).toHaveBeenCalledWith({
+      userId: 'u1',
+      key: 'profile/u1/a.jpg',
+    });
+    expect(res).toEqual({ user: { id: 'u1' }, userImage: 'https://signed' });
+  });
+
   it('updateSettings rejects out-of-enum values', async () => {
     await expect(
       controller.updateSettings({

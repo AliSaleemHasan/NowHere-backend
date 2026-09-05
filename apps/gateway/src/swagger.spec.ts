@@ -57,6 +57,7 @@ describe('Gateway OpenAPI', () => {
       ['/users/me/bookmarks', 'get'],
       ['/users/me/bookmarks/{snapId}', 'put'],
       ['/users/me/bookmarks/{snapId}', 'delete'],
+      ['/users/image', 'put'],
       ['/snaps/me', 'get'],
       ['/snaps/{id}', 'delete'],
       ['/snaps/{id}/found', 'post'],

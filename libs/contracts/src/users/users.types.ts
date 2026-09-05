@@ -7,6 +7,7 @@ import {
   ListBookmarksSchema,
   PurgeUserSchema,
   ReportReasonSchema,
+  SetUserPhotoSchema,
   UpdateProfileSchema,
   UpdateSettingsSchema,
 } from './users.schemas';
@@ -73,6 +74,7 @@ export type ListBookmarksPayload = z.infer<typeof ListBookmarksSchema>;
 export type CreateReportPayload = z.infer<typeof CreateReportSchema>;
 export type ExportUserPayload = z.infer<typeof ExportUserSchema>;
 export type PurgeUserPayload = z.infer<typeof PurgeUserSchema>;
+export type SetUserPhotoPayload = z.infer<typeof SetUserPhotoSchema>;
 
 export interface ExportedSnapDto {
   id?: string;

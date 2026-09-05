@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { DeleteFilesSchema } from './storage.schemas';
 
-export interface UploadPhotoPayload {
-  image: Buffer | { type: string; data: number[] } | string;
-  userId: string;
-}
-
 export interface SignedUrlPayload {
   key: string;
 }

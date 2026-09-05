@@ -9,11 +9,6 @@ import {
   Post,
   Put,
   UseGuards,
-  UseInterceptors,
-  UploadedFile,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GatewayAuthGuard } from '../guards/auth.guard';
@@ -23,13 +18,13 @@ import {
   UserRoles,
   throwHttpProblem,
 } from 'nowhere-common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthPatterns, UsersPatterns, ROLES, UserDto } from 'contracts';
 import { GatewayRpcClient } from '../rpc/gateway-rpc.client';
 import { AccountDeleteOrchestrator } from '../account-delete.orchestrator';
 import {
   ChangePasswordDto,
   DeleteAccountDto,
+  SetUserPhotoDto,
   UpdateProfileDto,
   UpdateSettingsDto,
 } from '../dto';
@@ -138,23 +133,18 @@ export class GatewayUsersController {
   }
 
   @Put('image')
-  @ApiOperation({ summary: 'Upload profile photo' })
+  @ApiOperation({
+    summary: 'Attach a previously uploaded profile photo',
+    description:
+      'Client PUTs bytes via POST /storage/presigned-upload with prefix profile, then sends the returned key here.',
+  })
   @UseGuards(GatewayAuthGuard)
-  @UseInterceptors(FileInterceptor('photo'))
   async updateUserImage(
     @ReqUser('id') id: string,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 5 * 1024 * 1024 }),
-          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png|webp)$/ }),
-        ],
-      }),
-    )
-    photo: Express.Multer.File,
+    @Body() body: SetUserPhotoDto,
   ) {
     return this.rpc.request(UsersPatterns.SET_USER_PHOTO, {
-      image: photo.buffer,
+      key: body.key,
       userId: id,
     });
   }

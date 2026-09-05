@@ -107,6 +107,23 @@ describe('GatewayUsersController', () => {
     });
   });
 
+  it('maps PUT /users/image to setUserPhoto with the object key', async () => {
+    await request(server())
+      .put('/users/image')
+      .send({ key: 'profile/u1/a.jpg' })
+      .expect(200)
+      .expect({ ok: true });
+    expect(rpc.request).toHaveBeenCalledWith(UsersPatterns.SET_USER_PHOTO, {
+      key: 'profile/u1/a.jpg',
+      userId: 'u1',
+    });
+  });
+
+  it('rejects PUT /users/image without a key', async () => {
+    await request(server()).put('/users/image').send({}).expect(400);
+    expect(rpc.request).not.toHaveBeenCalled();
+  });
+
   it('maps GET /users/me/export to users.exportUser', async () => {
     rpc.request.mockResolvedValueOnce({
       exportedAt: '2026-09-04T00:00:00.000Z',

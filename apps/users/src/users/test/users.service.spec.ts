@@ -4,20 +4,24 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../entities/user.entity';
 import { Repository } from 'typeorm';
 import { SnapSeen } from '../entities/snaps-seen.entity';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { StoragePatterns } from 'contracts';
 import { NATS_CLIENT } from 'nowhere-common';
+import { of } from 'rxjs';
 
 describe('UsersService (unit)', () => {
   let service: UsersService;
   let userRepo: jest.Mocked<Repository<User>>;
   let snapSeenRepo: jest.Mocked<Repository<SnapSeen>>;
+  let send: jest.Mock;
 
   beforeEach(async () => {
+    send = jest.fn().mockReturnValue(of({}));
     const module = await Test.createTestingModule({
       providers: [
         {
           provide: NATS_CLIENT,
-          useValue: { send: jest.fn(), emit: jest.fn() },
+          useValue: { send, emit: jest.fn() },
         },
         UsersService,
         {
@@ -141,6 +145,49 @@ describe('UsersService (unit)', () => {
       lastName: 'B',
     } as any);
     expect(result).toEqual(existing);
+    expect(userRepo.save).not.toHaveBeenCalled();
+  });
+
+  it('setUserPhoto stores an owned profile key and returns a signed url', async () => {
+    const user = {
+      id: 'u1',
+      email: 'a@a.com',
+      image: 'profile/u1/old.jpg',
+    } as User;
+    userRepo.findOne.mockResolvedValue(user);
+    userRepo.save.mockImplementation(async (row) => row as User);
+    send.mockImplementation((pattern: string) => {
+      if (pattern === StoragePatterns.GET_SIGNED_URL) {
+        return of({ signed: 'https://signed/profile' });
+      }
+      if (pattern === StoragePatterns.DELETE_FILES) {
+        return of(undefined);
+      }
+      return of({});
+    });
+
+    const result = await service.setUserPhoto({
+      userId: 'u1',
+      key: 'profile/u1/new.jpg',
+    });
+
+    expect(result.user.image).toBe('profile/u1/new.jpg');
+    expect(result.userImage).toBe('https://signed/profile');
+    expect(send).toHaveBeenCalledWith(StoragePatterns.DELETE_FILES, {
+      keys: ['profile/u1/old.jpg'],
+    });
+    expect(send).toHaveBeenCalledWith(StoragePatterns.GET_SIGNED_URL, {
+      key: 'profile/u1/new.jpg',
+    });
+  });
+
+  it('rejects a snap key as a profile photo', async () => {
+    await expect(
+      service.setUserPhoto({
+        userId: 'u1',
+        key: 'snaps/2026-09-03/u1/a.jpg',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
     expect(userRepo.save).not.toHaveBeenCalled();
   });
 });

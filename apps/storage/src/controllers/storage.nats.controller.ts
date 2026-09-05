@@ -3,7 +3,6 @@ import { MessagePattern, Payload } from '@nestjs/microservices';
 import { StorageService } from '../storage.service';
 import {
   StoragePatterns,
-  UploadPhotoPayload,
   SignedUrlPayload,
   SignedUrlsPayload,
   PresignedUploadPayload,
@@ -11,22 +10,10 @@ import {
   DeleteFilesSchema,
   validateSchema,
 } from 'contracts';
-import { toBuffer } from 'nowhere-common';
 
 @Controller()
 export class StorageNatsController {
   constructor(private readonly storageService: StorageService) {}
-
-  @MessagePattern(StoragePatterns.UPLOAD_PHOTO)
-  async uploadPhoto(
-    @Payload() data: UploadPhotoPayload,
-  ): Promise<{ key: string }> {
-    const key = await this.storageService.uploadPhoto(
-      toBuffer(data.image),
-      data.userId,
-    );
-    return { key };
-  }
 
   @MessagePattern(StoragePatterns.GET_SIGNED_URL)
   async getSignedUrl(

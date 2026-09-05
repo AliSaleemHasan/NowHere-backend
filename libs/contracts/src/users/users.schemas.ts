@@ -87,3 +87,8 @@ export const ExportUserSchema = z.object({
 export const PurgeUserSchema = z.object({
   userId: z.string().min(1),
 });
+
+export const SetUserPhotoSchema = z.object({
+  userId: z.string().min(1),
+  key: z.string().min(1),
+});

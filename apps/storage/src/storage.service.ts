@@ -105,27 +105,6 @@ export class StorageService {
     return signedURL;
   }
 
-  /**
-   * Direct server-side buffer upload
-   */
-  async uploadFile(
-    file: Buffer,
-    key: string,
-    contentType?: string,
-  ): Promise<string> {
-    this.logger.log(`Uploading direct file buffer for ${key}...`);
-    const { data, error } = await tryCatch(
-      this.strategy.uploadFile(file, key, contentType),
-    );
-
-    if (error || !data) {
-      this.logger.error(`Direct file upload failed: ${error?.message}`);
-      throw new InternalServerErrorException('File upload failed');
-    }
-
-    return data;
-  }
-
   async listFiles(prefix = ''): Promise<string[]> {
     const { data, error } = await tryCatch(this.strategy.listFiles(prefix));
     if (error) {
@@ -151,11 +130,6 @@ export class StorageService {
       this.logger.warn(`Delete skipped for ${key}: ${error.message}`);
     }
     await this.cacheManager.del(key);
-  }
-
-  async uploadPhoto(image: Buffer, userId: string): Promise<string> {
-    const key = `profile/${userId}`;
-    return await this.uploadFile(image, key);
   }
 
   async getSignedUrls(keys: string[]): Promise<string[]> {

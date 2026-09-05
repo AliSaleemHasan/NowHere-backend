@@ -3,5 +3,4 @@ export * from './geo';
 export * from './handle-mongoose-errors';
 export * from './mysql-errors';
 export * from './storage-keys';
-export * from './to-buffer';
 export * from './try-catch';
