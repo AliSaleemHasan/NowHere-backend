@@ -117,14 +117,6 @@ pnpm nx test gateway
 
 CI (`.github/workflows/backend.yml`) runs lint, typecheck, unit tests, and a no-push `docker build` of the **gateway** image. It does not deploy and does not start compose.
 
-Compose HTTP smoke is **local-required** (full stack is slower than the ~8 minute CI budget). With `docker compose -f docker-compose.dev.yml up`:
-
-```bash
-pnpm test:e2e:smoke
-```
-
-Hits `http://localhost:3005` (override with `GATEWAY_URL`): health → signup → settings put → presign (skips uploading bytes) → create snap twice with the same idempotency key → nearby → `GET /snaps/me` → delete snap → export → delete account.
-
 ---
 
 ## Build
