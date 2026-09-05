@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { MAX_RESOLUTION_NOTE, MAX_UPLOAD_BATCH } from '../shared/limits';
+import { StringListQuerySchema } from '../shared/query-list';
 
 export const SNAP_RESOLUTIONS = ['OPEN', 'FOUND'] as const;
 export const SnapResolutionSchema = z.enum(SNAP_RESOLUTIONS);
@@ -23,7 +24,7 @@ export const FindNearSnapsSchema = z.object({
   userId: z.string().min(1),
   lng: z.union([z.number(), z.string()]),
   lat: z.union([z.number(), z.string()]),
-  tags: z.array(z.string()).optional(),
+  tags: StringListQuerySchema,
   maxDistance: z.number().optional(),
 });
 

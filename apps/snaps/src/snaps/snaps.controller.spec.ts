@@ -87,6 +87,20 @@ describe('SnapsNatsController', () => {
         false,
       );
     });
+
+    it('coerces a single HTTP tag string into a tag list', async () => {
+      await controller.findNear({
+        userId: 'u1',
+        lng: 4.9,
+        lat: 52.3,
+        tags: 'LOST' as never,
+      });
+      expect(query.getSeenSnaps).toHaveBeenCalledWith(
+        { tags: ['LOST'], location: [4.9, 52.3] },
+        'u1',
+        false,
+      );
+    });
   });
 
   describe('deleteOne', () => {

@@ -16,7 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { GatewayAuthGuard } from '../guards/auth.guard';
 import { ReqUser, RoleGuard, UserRoles } from 'nowhere-common';
-import { SnapsPatterns, UsersPatterns, ROLES } from 'contracts';
+import { SnapsPatterns, UsersPatterns, ROLES, toStringList } from 'contracts';
 import { CreateSnapHttpDto } from '../dto/create-snap.dto';
 import { MarkFoundHttpDto } from '../dto/mark-found.dto';
 import { ReportSnapHttpDto } from '../dto/report-snap.dto';
@@ -38,8 +38,10 @@ export class GatewaySnapsController {
   @Get('tags')
   @ApiOperation({ summary: 'Find snaps by tags' })
   @UseGuards(GatewayAuthGuard)
-  async findByTags(@Query('tags') tags: string[]) {
-    return this.rpc.request(SnapsPatterns.FIND_BY_TAGS, { tags });
+  async findByTags(@Query('tags') tags?: string | string[]) {
+    return this.rpc.request(SnapsPatterns.FIND_BY_TAGS, {
+      tags: toStringList(tags),
+    });
   }
 
   @Get('near/:lng/:lat')
@@ -49,13 +51,13 @@ export class GatewaySnapsController {
     @ReqUser('id') userId: string,
     @Param('lng') lng: string,
     @Param('lat') lat: string,
-    @Query('tags') tags?: string[],
+    @Query('tags') tags?: string | string[],
   ) {
     return this.rpc.request(SnapsPatterns.FIND_NEAR, {
       userId,
       lng,
       lat,
-      tags,
+      tags: toStringList(tags),
     });
   }
 
@@ -66,13 +68,13 @@ export class GatewaySnapsController {
     @ReqUser('id') userId: string,
     @Param('lng') lng: string,
     @Param('lat') lat: string,
-    @Query('tags') tags?: string[],
+    @Query('tags') tags?: string | string[],
   ) {
     return this.rpc.request(SnapsPatterns.FIND_SEEN, {
       userId,
       lng,
       lat,
-      tags,
+      tags: toStringList(tags),
     });
   }
 
