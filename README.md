@@ -1,133 +1,62 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://github.com/AliSaleemHasan/NowHere-frontend/blob/master/assets/images/icon.png" width="120" alt="Nest Logo" /></a>
-</p>
+# NowHere backend
 
-  <p align="center">A Social Media APP Built with <a href="http://nodejs.org" target="_blank">Nest JS</a> framework for knowing what's up nearby.</p>
-    <p align="center">
+Location-based ephemeral photo snaps. An Expo client talks HTTP to a NestJS gateway; domain logic lives in separate Nest apps.
 
-</p>
+**This is a local Compose demo / portfolio system, not a hosted product.** There is no production URL.
 
-## Description
+Matches the CV line: NestJS monorepo (Nx) for real-time nearby updates. Portfolio system.
 
-This is a minimalistic Social Media Application that helps people know what's happening nearby in real-time.
-People can see what others posted (from their camera feeds) and know if there's something lost, a hidden gem, or a promotion happening nearby.
+Site: [ali-hasan.me/projects/nowhere](https://ali-hasan.me/projects/nowhere) · app: [NowHere-frontend](https://github.com/AliSaleemHasan/NowHere-frontend)
 
----
+## What’s in this repo
 
-## Project Setup
+| App | Port (compose) | Role |
+|-----|----------------|------|
+| gateway | 3005 | HTTP + JWT verify + NATS request-reply. OpenAPI at `/docs` when `ENABLE_SWAGGER=true` |
+| snaps | 3000 | Nearby snaps, Mongo `2dsphere`, Socket.IO (**on this process**, not the gateway) |
+| users | 3001 | Profile, settings, bookmarks, reports, DSGVO export/delete |
+| storage | 3002 | Presigned PUT for snap photos; S3-compatible / GCS / MinIO |
+| authentication | 3004 | bcrypt, JWT, lockout, forgot-password **202**, HMAC reset tokens |
 
-### Install Dependencies
+Stores: Mongo (snaps), MySQL (users + credentials), MinIO, Redis, NATS with JetStream. Mailhog in the **dev** compose file (`:8025` UI, SMTP `:1025`).
+
+Transport between services is **NATS**, not gRPC.
+
+## Architecture
+
+- **Gateway:** HTTP API. Verifies JWT locally. Forwards work over NATS. Does not open Mongo/MySQL/S3 at runtime.
+- **Auth:** bcrypt (not Argon2). JWT default is HMAC (`ACCESS_SECRET` / `REFRESH_SECRET`, not RS256). Refresh is a JWT; there is no refresh-token table. Forgot-password always returns 202.
+- **Users:** profile, settings, bookmarks, reports, `GET /users/me/export`, `DELETE /users/me` with `{ password }`. JetStream `AUTH_EVENTS` consumer for signup fan-out.
+- **Snaps:** Mongo `2dsphere`. Nearby: `$geoWithin` `$centerSphere`, `$near` fallback. Default vision distance in code is **5 km**. In-process Socket.IO; does not survive a second replica.
+- **Storage:** `POST /storage/presigned-upload` then PUT bytes. Profile photos go multipart through the gateway. `STORAGE_PROVIDER`: `aws` | `gcp` | `minio`.
+
+`k8s/` is example manifests (`replicas: 1`), not a production cluster.
+
+This is not: likes/comments, OAuth, a store listing, or 1,000 concurrent sockets.
+
+## Run locally
 
 ```bash
 pnpm install
-# for specific service
-pnpm install --filter [service name]
+docker compose -f docker-compose.dev.yml up --build
 ```
 
-### Local Setup
-
 ```bash
-# development locally with docker
-docker compose -f docker-compose.dev.yml up
-# production-like compose (publishes gateway :3005 and snaps :3000 for Socket.IO)
-docker compose up
-# kubernetes: copy example secrets, fill locally, then apply
-cp -r k8s/secrets.example k8s/secrets
-kubectl apply -f k8s/secrets
-kubectl apply -f k8s
+curl http://localhost:3005/health    # gateway
+curl http://localhost:3000/health    # snaps
+# OpenAPI: http://localhost:3005/docs  (ENABLE_SWAGGER=true)
 ```
 
-`k8s/secrets/` is gitignored. Only `k8s/secrets.example/` with `change_me_*` values is committed.
+Production-like compose (still local): `docker compose up` — publishes gateway `:3005` and snaps `:3000`.
 
-With `ENABLE_SWAGGER=true` (set for `nowhere-gateway` in `docker-compose.dev.yml`), OpenAPI UI is at `http://localhost:3005/docs`. `GET /snaps/me` lists the authenticated user's snaps (pass `?includeExpired=0` to hide expired ones). Authenticated owners can `DELETE /snaps/:id` (admins still can); `DELETE /snaps` stays admin-only. Bookmarks are `GET /users/me/bookmarks` and `PUT|DELETE /users/me/bookmarks/:snapId`. Authenticated users can `POST /snaps/:id/report`, `POST /snaps/:id/found`, and the author can `POST /snaps/:id/reopen`. DSGVO: `GET /users/me/export` returns a JSON pack (object keys, not signed URLs); `DELETE /users/me` with `{ password }` deactivates auth, deletes snaps + profile, then credentials. Forgot/reset: `POST /auth/forgot-password` always 202 (no email enumeration) and `POST /auth/reset-password`. Mailhog UI is at `http://localhost:8025` (SMTP `:1025`) in the dev compose file; authentication sends there when `SMTP_HOST` is set. Language toggle lives in the Expo app settings (DE/EN), not on the gateway.
-
----
-
-## Cloud Providers & Secrets Management (Strategy Pattern)
-
-The backend uses a **Strategy Pattern** for both **Secret Management** and **Cloud Storage**, allowing you to switch between cloud providers (Google Cloud, AWS, or local environment) without changing any application code.
-
-### 1. Secrets Management (`SECRETS_PROVIDER`)
-
-Supported values: `gcp` | `aws` | `env` (default: auto-detected or `env` for local dev).
-
-#### Working Locally with Cloud Secrets (Without Duplicating `.env` Files)
-
-You **do not** need to copy cloud keys into every microservice `.env` file. You can use your machine's global developer credentials:
-
-- **Google Cloud Secret Manager (GCP)**:
-
-  ```bash
-  # 1. Login with Application Default Credentials (ADC) once:
-  gcloud auth application-default login
-
-  # 2. Set your default project:
-  gcloud config set project your-gcp-project-id
-  ```
-
-  The `@google-cloud/secret-manager` library will automatically authenticate via ADC (`~/.config/gcloud/`).
-
-- **AWS Secrets Manager**:
-
-  ```bash
-  # Configure your AWS CLI credentials once:
-  aws configure
-  ```
-
-  The AWS SDK automatically reads your credentials from `~/.aws/credentials`.
-
-- **Single Root `.env` Option**:
-  Alternatively, define shared environment variables in a single `.env` file in the repository root (`/backend/.env`):
-  ```env
-  SECRETS_PROVIDER=gcp
-  GCP_PROJECT_ID=your-gcp-project-id
-  # OR for AWS:
-  # SECRETS_PROVIDER=aws
-  # AWS_REGION=us-east-1
-  ```
-
----
-
-### 2. Cloud Storage (`STORAGE_PROVIDER`)
-
-Supported values: `aws` (AWS S3 / MinIO / R2) | `gcp` (Google Cloud Storage) | `minio`.
-
-- **Direct Presigned Uploads**: Clients request presigned URLs from the gateway (`POST /storage/presigned-upload`) and upload media directly to S3/GCS/MinIO, then create a snap with the object keys (`POST /snaps`).
-- **Service Isolation**: Only the `storage` microservice requires S3/GCS credentials. All other microservices (`users`, `snaps`, `gateway`, `authentication`) communicate with `storage` exclusively over NATS and do not require bucket credentials.
-
-`SecretManagerModule` in `nowhere-common` is an optional Strategy-pattern loader (GCP/AWS/env). Apps currently boot from `ConfigModule` / `.env`. Wire it at bootstrap when you want secrets to come from a cloud manager instead of files.
-
----
-
-## Run Tests
+## Tests / CI
 
 ```bash
-# Lint (gateway HTTP/OpenAPI), typecheck, unit tests (also what GitHub Actions runs)
-pnpm exec eslint "apps/gateway/src/**/*.ts"
 pnpm typecheck
 pnpm test
-
-# For specific service via Nx
-pnpm nx test users
-pnpm nx test snaps
-pnpm nx test storage
-pnpm nx test authentication
-pnpm nx test gateway
+pnpm nx test users   # also snaps, storage, authentication, gateway
 ```
 
-CI (`.github/workflows/backend.yml`) runs lint, typecheck, unit tests, and a no-push `docker build` of the **gateway** image. It does not deploy and does not start compose.
+`.github/workflows/backend.yml` runs lint, typecheck, unit tests, and a no-push `docker build` of the **gateway** image. It does not deploy and does not start compose.
 
----
-
-## Build
-
-```bash
-# Build all packages & services
-pnpm nx run-many --target=build --all
-```
-
----
-
-## Stay in Touch
-
-- Author - [Ali Hasan](https://www.linkedin.com/in/ali-saleem-hasan/)
+Ali Saleem Hasan — [ali-hasan.me](https://ali-hasan.me)
